@@ -102,9 +102,9 @@ ${ ... "${ ... }" ... }
 #### 2.6.1 Bool & Unit & FD
 
 ```
-<bool lit> = "true" | "false"
-<unit lit> = "unit"
-<fd lit> = "stdin" | "stdout" | "stderr"
+<bool literal> = "true" | "false"
+<unit literal> = "unit"
+<fd literal> = "stdin" | "stdout" | "stderr"
 ```
 
 #### 2.6.2 Integer
@@ -118,13 +118,13 @@ _TODO: integer literal of various radix support_
 #### 2.6.3 String
 
 ```
-<string> = '"' ( <string char> | <interpolation> ) * '"'
+<string literal> = '"' ( <string char> | <interpolation> ) * '"'
 ```
 
 #### 2.6.4 Path
 
 ```
-<path>        = <path start> ( <raw char> | <interpolation> )*
+<path literal>        = <path start> ( <raw char> | <interpolation> )*
 <path start>  = "./" | "../" | "/"
 ```
 
@@ -154,25 +154,103 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 
 ### 3.1 Expression
 
-#### 3.1.1 Function Call
+#### 3.1.1 Literals
 
 ```
-<function call> = <identifier> <expression>*
+<literal>
+	= <int literal> | <bool literal> | <unit literal> | <fd literal>
+	| <string literal> | <path literal>
+	| <array literal>  | <map literal>
 ```
 
-#### 3.1.2 Command
+##### 3.1.1.1 Array Literal
 
 ```
-<command> = '!' ( <interpolation> | <raw token> | <paren expr> )*
+<array literal> = '[' <array items>? ']'
+<array items> = <expression> (',' <expression>)*
+```
+
+##### 3.1.1.2 Map Literal
+
+```
+<map literal> = '{' <map items>? '}'
+<map items> = <map item> (',' <map item>)*
+<map item> = <expression> ':' <expression>
+```
+
+#### 3.1.2 Atom Expression
+
+```
+<atom expr> = <literal> | <identifier> | <paren expr>
+<paren expr> = '(' <expression> ')'
 ```
 
 #### 3.1.3 Operator Expression
 
+##### 3.1.3.1 Binary Operator Expression
+
 ```
-<op expr> = <expression> <operator> <expression>
-<operator>
+<binop expr> = <expression> <binary op> <expression>
+<binary op>
 	= '+' | '-' | '*' | '/' | '%'
 	| '>' | '<' | '>=' | '<=' | '==' | '!='
+	| "or" | "and"
+```
+
+##### 3.1.3.2 Binary Operator Precedence Table
+
+| Operator          | Associativity | Precedence |
+| ----------------- | ------------- | ---------- |
+| `== ` `!=`        | left          | 0          |
+| `>` `<` `>=` `<=` | left          | 1          |
+| `+` `-`""         | left          | 2          |
+| `*` `/` `%`       | left          | 3          |
+
+##### 3.1.3.3 Unary Operator
+
+```
+<unop expr> = <unary op> <expression>
+<unary op> = '+' | '-' | "not"
+```
+
+#### 3.1.4 Procedure Call
+
+##### 3.1.4.1 Function Call
+
+```
+<function call> = <identifier> <atom expr>*
+```
+
+##### 3.1.4.2 Invoking Command
+
+```
+<command> = '!' ( <interpolation> | <raw token> )*
+```
+
+##### 3.1.4.4 Redirection
+
+```
+<redirection> = "redirect" <redirect item> (',' <redirect item>)*
+<redirect item> = <fd literal>? <redirect action>
+<redirect action>
+	= "to" <expression> "append"?
+	| "from" <expression>
+```
+
+##### 3.1.4.5 Procedure Call
+
+```
+<procedure call> = ( <function call> | <command> ) <redirection>? 
+```
+
+#### 3.1.5 Expression
+
+```
+<expression>
+	= <procedure call>
+	| <atom expr>
+	| <binop expr>
+	| <unop expr>
 ```
 
 ### 3.2 Statement
