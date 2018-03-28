@@ -11,7 +11,7 @@ The specification contains standard guideline for implementing and understanding
 ```
 <identifier> = <ident head> <ident tail>*
 <ident head> = <letter> | '_'
-<ident tail> = <digit> | <ident head>
+<ident tail> = <digit>  | <ident head>
 ```
 
 #### 2.1.1 Keywords
@@ -43,8 +43,8 @@ Following punctuations are meaningful:
 
 ```
 <built-in type>
-	= "Int" | "Bool" | "Unit" | "String"
-	| "Path" | "Array" | "Map" | "ExitCode" | "FD"
+	= "Int"  | "Bool"  | "Unit" | "String"
+	| "Path" | "Array" | "Map"  | "ExitCode" | "FD"
 ```
 
 ### 2.4 Character
@@ -59,7 +59,7 @@ Following punctuations are meaningful:
 Raw characters and tokens are only used in special contexts where getting rid of the "lexical restriction" conforms better to the tradition of shell and is more intuitive and convenient for language users.
 
 ```
-<raw char> = <normal char> | <escape char>
+<raw char>    = <normal char> | <escape char>
 <normal char> = [^<whitespace>"\]
 <escape char> = '\' ( ' ' | '"' | '$' | '{' | '}' | '\')
 
@@ -85,7 +85,7 @@ _TODO: string escaped characters may be incomplete_
 
 _TODO: Explain interpolation in later section and add a link here_
 
-In lexical analysis, interpolations create a new context and suspend the previous recognizing sequence, typically used in [string literal](#2.6.3 String), [path literal](#2.6.4 Path) and other syntax structures.
+In lexical analysis, interpolations create a new context and suspend the previous recognizing sequence, typically used in string literal (see 2.6.3), path literal (see 2.6.4) and other syntax structures.
 
 ```
 <interpolation> = '${' ... '}'
@@ -104,7 +104,7 @@ ${ ... "${ ... }" ... }
 ```
 <bool literal> = "true" | "false"
 <unit literal> = "unit"
-<fd literal> = "stdin" | "stdout" | "stderr"
+<fd literal>   = "stdin" | "stdout" | "stderr"
 ```
 
 #### 2.6.2 Integer
@@ -158,7 +158,8 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 
 ```
 <literal>
-	= <int literal> | <bool literal> | <unit literal> | <fd literal>
+	= <int literal>    | <bool literal>
+	| <unit literal>   | <fd literal>
 	| <string literal> | <path literal>
 	| <array literal>  | <map literal>
 ```
@@ -167,7 +168,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 
 ```
 <array literal> = '[' <array items>? ']'
-<array items> = <expression> (',' <expression>)*
+<array items>   = <expression> (',' <expression>)*
 ```
 
 ##### 3.1.1.2 Map Literal
@@ -192,8 +193,8 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <binop expr> = <expression> <binary op> <expression>
 <binary op>
-	= '+' | '-' | '*' | '/' | '%'
-	| '>' | '<' | '>=' | '<=' | '==' | '!='
+	= '+'  | '-' | '*'  | '/'  | '%'
+	| '>'  | '<' | '>=' | '<=' | '==' | '!='
 	| "or" | "and"
 ```
 
@@ -260,7 +261,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <type> = <simple type> | <complex type>
 <simple type>
-	= "Int" | "Bool" | "String"
+	= "Int"  | "Bool" | "String"
 	| "Path" | "Unit" | "FD" | "ExitCode"
 <complex type> = <array type> | <map type>
 <array type>   = "Array" <atom type>
@@ -298,7 +299,9 @@ And all statements within the same innermost block must have same level of inden
 
 ```
 <define func> =
-	"export"? "define" <identifier> '(' <param list> ')' '=' <program>
+	"export"? "define" <identifier> '(' <param list>? ')' '=' <program>
+<param list>  = <param dec> (',' <param dec>)*
+<param dec>   = <identifier> ':' <type>
 ```
 
 `<define func>` introduces new block on `<program>`.
@@ -353,8 +356,8 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 ##### 3.2.6.1 Loop Control
 
 ```
-<break>    = "break" <integer>
-<continue> = "continue" <integer>
+<break>    = "break" <integer>?
+<continue> = "continue" <integer>?
 ```
 
 #### 3.2.7 Program
