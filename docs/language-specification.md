@@ -20,10 +20,10 @@ Following identifiers are keywords:
 
 ```
 or not and
-define return
+define return export
 if else
 switch case default
-for in
+for in break continue
 redirect from to append
 ```
 
@@ -124,8 +124,8 @@ _TODO: integer literal of various radix support_
 #### 2.6.4 Path
 
 ```
-<path literal>        = <path start> ( <raw char> | <interpolation> )*
-<path start>  = "./" | "../" | "/"
+<path literal> = <path start> ( <raw char> | <interpolation> )*
+<path start>   = "./" | "../" | "/"
 ```
 
 ### 2.7 Misc
@@ -174,14 +174,14 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 
 ```
 <map literal> = '{' <map items>? '}'
-<map items> = <map item> (',' <map item>)*
-<map item> = <expression> ':' <expression>
+<map items>   = <map item> (',' <map item>)*
+<map item>    = <expression> ':' <expression>
 ```
 
 #### 3.1.2 Atom Expression
 
 ```
-<atom expr> = <literal> | <identifier> | <paren expr>
+<atom expr>  = <literal> | <identifier> | <paren expr>
 <paren expr> = '(' <expression> ')'
 ```
 
@@ -201,10 +201,11 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 
 | Operator          | Associativity | Precedence |
 | ----------------- | ------------- | ---------- |
-| `== ` `!=`        | left          | 0          |
-| `>` `<` `>=` `<=` | left          | 1          |
-| `+` `-`""         | left          | 2          |
-| `*` `/` `%`       | left          | 3          |
+| `or` `and`        | left          | 0          |
+| `== ` `!=`        | left          | 1          |
+| `>` `<` `>=` `<=` | left          | 2          |
+| `+` `-`           | left          | 3          |
+| `*` `/` `%`       | left          | 4          |
 
 ##### 3.1.3.3 Unary Operator
 
@@ -230,7 +231,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.4.4 Redirection
 
 ```
-<redirection> = "redirect" <redirect item> (',' <redirect item>)*
+<redirection>   = "redirect" <redirect item> (',' <redirect item>)*
 <redirect item> = <fd literal>? <redirect action>
 <redirect action>
 	= "to" <expression> "append"?
@@ -240,7 +241,8 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.4.5 Procedure Call
 
 ```
-<procedure call> = ( <function call> | <command> ) <redirection>? 
+<procedure call> = ( <function call> | <command> ) <redirection>? <pipeline>?
+<pipeline> = '|' <procedure call>
 ```
 
 #### 3.1.5 Expression
@@ -253,5 +255,121 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 	| <unop expr>
 ```
 
+#### 3.1.6 Type Expression
+
+```
+<type> = <simple type> | <complex type>
+<simple type>
+	= "Int" | "Bool" | "String"
+	| "Path" | "Unit" | "FD" | "ExitCode"
+<complex type> = <array type> | <map type>
+<array type>   = "Array" <atom type>
+<map type>     = "Map" <atom type> <atom type>
+<atom type>    = <simple type> | '(' <complex type> ')'
+```
+
 ### 3.2 Statement
+
+#### 3.2.1 Indentation Issue
+
+If we say "`<statement>` introduces new block on `<program>`", all indentations of token in `<program>` must be greater than the line which the starting token of `<statement>` is in if `<program>` is in a different line, which means the following:
+
+```
+<indent N> <statement> ( <program> | <line break>
+<indent (N+x)> <program> )
+```
+
+And all statements within the same innermost block must have same level of indentation.
+
+#### 3.2.1 Definition
+
+```
+<definition> = <define var> | <define func>
+```
+
+##### 3.2.1.1 Variable Definition
+
+```
+<define var> =
+	"export"? "define" <identifier> ( ':' <type> )? '=' <expression>
+```
+
+##### 3.2.1.2 Function Definition
+
+```
+<define func> =
+	"export"? "define" <identifier> '(' <param list> ')' '=' <program>
+```
+
+`<define func>` introduces new block on `<program>`.
+
+#### 3.2.2 Assignment
+
+```
+<assignment> = <identifier> '=' <expression>
+```
+
+#### 3.2.3 return
+
+`return` is used for returning from the control flow of current enclosing function.
+
+```
+<return> = return <expression>
+```
+
+#### 3.2.4 if
+
+```
+<if>   = "if" <expression> ':' <program> <else>?
+<else> = "else" ':'? <program>
+```
+
+`<if>` and `<else>` both introduce new block on corresponding `<program>`.
+
+The `if` and its matching `else` must be in same level of indentation, if two or more unmatched `if`s are in the same indentation level, next `else` will match the closest `if`.
+
+#### 3.2.5 swich
+
+```
+<switch>  = "switch" <expression> <case>+ <default>?
+<case>    = "case" <expression> ':' <program>
+<default> = "default" ':'? <program>
+```
+
+`<case>` and `<default>` both introduce new block on corresponding `<program>`.
+
+#### 3.2.6 for
+
+```
+<for> = "for" <loop condition> ':' <loop body>
+<loop condition>
+	= <identifier> "in" <expression>
+	| <expression>
+<loop body> = ( <statement> | <break> | <continue> )*
+```
+
+`<for>` introduces new block on `<loop body>`.
+
+##### 3.2.6.1 Loop Control
+
+```
+<break>    = "break" <integer>
+<continue> = "continue" <integer>
+```
+
+#### 3.2.7 Program
+
+```
+<statement>
+	= <definition>
+	| <assignment>
+	| <if>
+	| <switch>
+	| <for>
+<program> = <statement>*
+```
+
+## 4. Type System
+
+
 
