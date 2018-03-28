@@ -32,11 +32,11 @@ redirect from to append
 Following punctuations are meaningful:
 
 ```
-+ - * /
++ - * / %
 > < >= <= == !=
 , = :
 [ ] { } ( )
-! $ " '
+! $ " ' #
 ```
 
 ### 2.3 Built-in Types
@@ -47,9 +47,59 @@ Following punctuations are meaningful:
 	| "Path" | "Array" | "Map" | "ExitCode" | "FD"
 ```
 
-### 2.4 Literals
+### 2.4 Character
 
-#### 2.4.1 Bool / Unit / FD
+```
+<line break> = [^\] '\n'
+<whitespace> = ' ' | '\t'
+```
+
+##### 2.4.1 Raw character
+
+Raw characters and tokens are only used in special contexts where getting rid of the "lexical restriction" conforms better to the tradition of shell and is more intuitive and convenient for language users.
+
+```
+<raw char> = <normal char> | <escape char>
+<normal char> = [^<whitespace>"\]
+<escape char> = '\' ( ' ' | '"' | '$' | '{' | '}' | '\')
+
+<raw token> = <raw char>*
+```
+
+##### 2.4.2 Character inside string
+
+_TODO: string escaped characters may be incomplete_
+
+```
+<string char>
+	= <string normal char> | <string escaped char>
+<string normal char>
+	= <normal char>
+	| <whitespace>
+<string escaped char>
+	= <escape char>
+	| '\' ( 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' )
+```
+
+### 2.5 Interpolation
+
+_TODO: Explain interpolation in later section and add a link here_
+
+In lexical analysis, interpolations create a new context and suspend the previous recognizing sequence, typically used in [string literal](#String), [path literal](#Path) and other syntax structures.
+
+```
+<interpolation> = '${' ... '}'
+```
+
+Interpolation can be recognized recursively. e.g.
+
+```
+${ ... "${ ... }" ... }
+```
+
+### 2.6 Literals
+
+#### 2.6.1 Bool & Unit & FD
 
 ```
 <bool lit> = "true" | "false"
@@ -57,63 +107,73 @@ Following punctuations are meaningful:
 <fd lit> = "stdin" | "stdout" | "stderr"
 ```
 
-#### 2.4.2 Integer
+#### 2.6.2 Integer
 
 _TODO: integer literal of various radix support_
 
 ```
-<integer> = <digit>+
+<integer> = ('+' | '-')? <digit>+
 ```
 
-#### 2.4.3 Character
-
-_TODO: escaped characters may be incomplete_
+#### 2.6.3 String
 
 ```
-<line break> = [^\] '\n'
-<whitespace> = ' ' | '\t'
-
-<normal char> = [^<whitespace>"\]
-<enclosed normal char>
-	= <normal char>
-	| <whitespace>
-
-<escape char> = '\' ( ' ' | '"' | '$' | '{' | '}' | '\')
-<enclosed escaped char>
-	= '\' ( 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' )
-	| <escape char>
+<string> = '"' ( <string char> | <interpolation> ) * '"'
 ```
 
-#### 2.4.4 String
+#### 2.6.4 Path
 
 ```
-<string> = '"' ( <enclosed normal char> | <enclosed escaped char> )* '"'
-```
-
-#### 2.4.5 Path
-
-```
-<path>        = <path start> ( <escaped char> | <normal char> )*
+<path>        = <path start> ( <raw char> | <interpolation> )*
 <path start>  = "./" | "../" | "/"
 ```
 
-### 2.5 Misc
+### 2.7 Misc
 
-#### 2.5.1 Indentation
+#### 2.7.1 Comment
+
+When a hash tag `#` is recognized, any following character of the same line is regarded as comment and discarded by lexer.
+
+```
+<comment> = '#' <any character> $
+```
+
+#### 2.7.2 Indentation
 
 Indent of length `N` is `N` consecutive white spaces at line start, no tab `\t` is allowed.
 
 ```
-<indent N> = ^ {n}
+<indent N> = ^[ ]{n}
 ```
 
-#### 2.5.2 Line Joining
+#### 2.7.3 Line Joining
 
 When the last character of a line is `\`, **this backslash**, **next line break** and **indentation of next line** are ignored.
 
 ## 3. Syntax Structure
 
 ### 3.1 Expression
+
+#### 3.1.1 Function Call
+
+```
+<function call> = <identifier> <expression>*
+```
+
+#### 3.1.2 Command
+
+```
+<command> = '!' ( <interpolation> | <raw token> | <paren expr> )*
+```
+
+#### 3.1.3 Operator Expression
+
+```
+<op expr> = <expression> <operator> <expression>
+<operator>
+	= '+' | '-' | '*' | '/' | '%'
+	| '>' | '<' | '>=' | '<=' | '==' | '!='
+```
 
 ### 3.2 Statement
 
