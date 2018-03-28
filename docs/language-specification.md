@@ -85,7 +85,7 @@ _TODO: string escaped characters may be incomplete_
 
 _TODO: Explain interpolation in later section and add a link here_
 
-In lexical analysis, interpolations create a new context and suspend the previous recognizing sequence, typically used in [string literal](#String), [path literal](#Path) and other syntax structures.
+In lexical analysis, interpolations create a new context and suspend the previous recognizing sequence, typically used in [string literal](#2.6.3 String), [path literal](#2.6.4 Path) and other syntax structures.
 
 ```
 <interpolation> = '${' ... '}'
@@ -361,7 +361,8 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ```
 <statement>
-	= <definition>
+	= <expression>
+	| <definition>
 	| <assignment>
 	| <if>
 	| <switch>
