@@ -48,7 +48,7 @@ class SwitchStmt : public Statement {
     std::unique_ptr<Program> default_;
 };
 
-class LoopCondition : public Statement {
+class LoopCondition {
   public:
   private:
 };
