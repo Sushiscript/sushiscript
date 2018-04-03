@@ -2,6 +2,7 @@
 #define SUSHI_AST_STATEMENT_H_
 
 #include "expression.h"
+#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -22,7 +23,7 @@ class IfStmt;
 class ReturnStmt;
 class SwitchStmt;
 class ForStmt;
-class LoopControl;
+class LoopControlStmt;
 
 class StatementVisitor {
   public:
@@ -32,7 +33,7 @@ class StatementVisitor {
     virtual void Visit(ReturnStmt *) = 0;
     virtual void Visit(SwitchStmt *) = 0;
     virtual void Visit(ForStmt *) = 0;
-    virtual void Visit(LoopControl *) = 0;
+    virtual void Visit(LoopControlStmt *) = 0;
 };
 
 class Program {
@@ -117,7 +118,13 @@ class SwitchStmt : public Statement {
 
 class LoopCondition {
   public:
+    bool IsRange() const {
+        return not ident_name_.empty();
+    }
+
   private:
+    std::string ident_name_;
+    std::unique_ptr<Expression> condition_;
 };
 
 class ForStmt : public Statement {
@@ -131,7 +138,9 @@ class ForStmt : public Statement {
     std::unique_ptr<Program> body_;
 };
 
-class LoopControl : public Statement {
+enum class LoopControl : uint8_t { kBreak = 1, kContinue = 2 };
+
+class LoopControlStmt : public Statement {
   public:
     virtual void AcceptVisitor(StatementVisitor &visitor) {
         visitor.Visit(this);
@@ -139,6 +148,7 @@ class LoopControl : public Statement {
 
   private:
     int level_ = 1;
+    LoopControl control_type_;
 };
 
 } // namespace sushi

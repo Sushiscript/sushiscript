@@ -226,7 +226,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.4.2 Invoking Command
 
 ```
-<command> = '!' ( <interpolation> | <raw token> )*
+<command> = '!' ( <interpolation> | <raw token> | <string literal> )*
 ```
 
 ##### 3.1.4.4 Redirection
@@ -235,7 +235,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 <redirection>   = "redirect" <redirect item> (',' <redirect item>)*
 <redirect item> = <fd literal>? <redirect action>
 <redirect action>
-	= "to" <expression> "append"?
+	= "to" (<expression> "append"? | "here")
 	| "from" <expression>
 ```
 
@@ -375,5 +375,7 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ## 4. Type System
 
+## 5. Semantic
 
+## 6. Translation
 
