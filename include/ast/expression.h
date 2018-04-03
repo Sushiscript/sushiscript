@@ -12,29 +12,64 @@ class Type {
   private:
 };
 
+class ExpressionVisitor;
+
 class Expression {
   public:
-    virtual Type Type() = 0;
+    virtual void AcceptVisitor(ExpressionVisitor &visitor) = 0;
+
+  private:
+};
+
+class Variable;
+class Literal;
+class UnaryExpr;
+class BinaryExpr;
+class CommandLike;
+
+class ExpressionVisitor {
+  public:
+    virtual void Visit(Variable *) = 0;
+    virtual void Visit(Literal *) = 0;
+    virtual void Visit(UnaryExpr *) = 0;
+    virtual void Visit(BinaryExpr *) = 0;
+    virtual void Visit(CommandLike *) = 0;
 };
 
 class Variable : public Expression {
   public:
+    virtual void AcceptVisitor(ExpressionVisitor &visitor) {
+        visitor.Visit(this);
+    }
+
   private:
     std::string name_;
 };
 
 class Literal : public Expression {
   public:
+    virtual void AcceptVisitor(ExpressionVisitor &visitor) {
+        visitor.Visit(this);
+    }
+
   private:
 };
 
 class UnaryExpr : public Expression {
   public:
+    virtual void AcceptVisitor(ExpressionVisitor &visitor) {
+        visitor.Visit(this);
+    }
+
   private:
 };
 
 class BinaryExpr : public Expression {
   public:
+    virtual void AcceptVisitor(ExpressionVisitor &visitor) {
+        visitor.Visit(this);
+    }
+
   private:
     std::unique_ptr<Expression> lhs_, rhs_;
 };
@@ -46,6 +81,10 @@ class Redirection {
 
 class CommandLike : public Expression {
   public:
+    virtual void AcceptVisitor(ExpressionVisitor &visitor) {
+        visitor.Visit(this);
+    }
+
   private:
     std::vector<Redirection> redirects_;
 };
