@@ -1,8 +1,9 @@
-# editor plugins
+# editor caches
 
 .ycm_extra_conf.py
 .vscode/
 .sublime*
+*.swp
 
 # build output
 

@@ -1,0 +1,10 @@
+[requires]
+boost/1.66.0@conan/stable
+
+[options]
+boost:shared=True
+
+[generators]
+cmake
+ycm
+
