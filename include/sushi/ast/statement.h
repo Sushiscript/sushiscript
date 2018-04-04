@@ -1,7 +1,8 @@
 #ifndef SUSHI_AST_STATEMENT_H_
 #define SUSHI_AST_STATEMENT_H_
 
-#include "expression.h"
+#include "./expression.h"
+#include "./type.h"
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -138,17 +139,17 @@ class ForStmt : public Statement {
     std::unique_ptr<Program> body_;
 };
 
-enum class LoopControl : uint8_t { kBreak = 1, kContinue = 2 };
-
 class LoopControlStmt : public Statement {
   public:
+    enum class Type : uint8_t { kBreak = 1, kContinue = 2 };
+
     virtual void AcceptVisitor(StatementVisitor &visitor) {
         visitor.Visit(this);
     }
 
   private:
     int level_ = 1;
-    LoopControl control_type_;
+    LoopControlStmt::Type control_type_;
 };
 
 } // namespace sushi
