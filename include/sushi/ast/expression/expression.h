@@ -1,15 +1,22 @@
 #ifndef SUSHI_AST_EXPRESSION_EXPRESSION_H_
 #define SUSHI_AST_EXPRESSION_EXPRESSION_H_
 
+#include "sushi/util/visitor.h"
+
 namespace sushi {
 
-class ExpressionVisitor;
+class Variable;
+class Literal;
+class UnaryExpr;
+class BinaryExpr;
+class CommandLike;
+
+using ExpressionVisitor =
+    sushi::util::Visitor<Variable, Literal, UnaryExpr, BinaryExpr, CommandLike>;
 
 class Expression {
   public:
-    virtual void AcceptVisitor(ExpressionVisitor &visitor) = 0;
-
-  private:
+    SUSHI_VISITABLE(ExpressionVisitor)
 };
 
 } // namespace sushi

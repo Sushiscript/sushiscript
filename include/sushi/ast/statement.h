@@ -3,20 +3,12 @@
 
 #include "./expression.h"
 #include "./type.h"
+#include "sushi/util/visitor.h"
 #include <cstdint>
 #include <memory>
 #include <vector>
 
 namespace sushi {
-
-class StatementVisitor;
-
-class Statement {
-  public:
-    virtual void AcceptVisitor(StatementVisitor &visitor) = 0;
-
-  private:
-};
 
 class VariableDef;
 class FunctionDef;
@@ -26,15 +18,16 @@ class SwitchStmt;
 class ForStmt;
 class LoopControlStmt;
 
-class StatementVisitor {
+using StatementVisitor = sushi::util::Visitor<
+    VariableDef, FunctionDef, IfStmt, ReturnStmt, SwitchStmt, ForStmt,
+    LoopControlStmt>;
+
+class Statement {
   public:
-    virtual void Visit(VariableDef *) = 0;
-    virtual void Visit(FunctionDef *) = 0;
-    virtual void Visit(IfStmt *) = 0;
-    virtual void Visit(ReturnStmt *) = 0;
-    virtual void Visit(SwitchStmt *) = 0;
-    virtual void Visit(ForStmt *) = 0;
-    virtual void Visit(LoopControlStmt *) = 0;
+    SUSHI_VISITABLE(StatementVisitor)
+    virtual ~Statement() {}
+
+  private:
 };
 
 class Program {
@@ -45,9 +38,7 @@ class Program {
 
 class VariableDef : public Statement {
   public:
-    virtual void AcceptVisitor(StatementVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    SUSHI_ACCEPT_VISITOR(Statement)
 
   private:
     bool export_;
@@ -64,9 +55,7 @@ struct Parameter {
 
 class FunctionDef : public Statement {
   public:
-    virtual void AcceptVisitor(StatementVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    SUSHI_ACCEPT_VISITOR(Statement)
 
   private:
     std::string name_;
@@ -77,9 +66,7 @@ class FunctionDef : public Statement {
 
 class IfStmt : public Statement {
   public:
-    virtual void AcceptVisitor(StatementVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    SUSHI_ACCEPT_VISITOR(Statement)
 
   private:
     std::unique_ptr<Expression> condition_;
@@ -90,9 +77,7 @@ class IfStmt : public Statement {
 
 class ReturnStmt : public Statement {
   public:
-    virtual void AcceptVisitor(StatementVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    SUSHI_ACCEPT_VISITOR(Statement)
 
   private:
     std::unique_ptr<Expression> value_;
@@ -107,9 +92,7 @@ class SwitchCase {
 
 class SwitchStmt : public Statement {
   public:
-    virtual void AcceptVisitor(StatementVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    SUSHI_ACCEPT_VISITOR(Statement)
 
   private:
     std::vector<SwitchCase> cases_;
@@ -130,9 +113,7 @@ class LoopCondition {
 
 class ForStmt : public Statement {
   public:
-    virtual void AcceptVisitor(StatementVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    SUSHI_ACCEPT_VISITOR(Statement)
 
   private:
     std::unique_ptr<LoopCondition> condition_;
@@ -141,11 +122,9 @@ class ForStmt : public Statement {
 
 class LoopControlStmt : public Statement {
   public:
-    enum class Type : uint8_t { kBreak = 1, kContinue = 2 };
+    SUSHI_ACCEPT_VISITOR(Statement)
 
-    virtual void AcceptVisitor(StatementVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    enum class Type : uint8_t { kBreak = 1, kContinue = 2 };
 
   private:
     int level_ = 1;

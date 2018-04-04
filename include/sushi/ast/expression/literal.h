@@ -2,15 +2,12 @@
 #define SUSHI_AST_EXPRESSION_LITERAL_H_
 
 #include "./expression.h"
-#include "./visitor.h"
 
 namespace sushi {
 
 class Literal : public Expression {
   public:
-    virtual void AcceptVisitor(ExpressionVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    SUSHI_ACCEPT_VISITOR(Expression)
 
   private:
 };

@@ -2,7 +2,6 @@
 #define SUSHI_AST_EXPRESSION_COMMAND_LIKE_H_
 
 #include "./expression.h"
-#include "./visitor.h"
 #include "boost/variant.hpp"
 #include "sushi/ast/interpolated-string.h"
 #include <string>
@@ -21,13 +20,17 @@ struct Redirection {
     bool append;
 };
 
+class FunctionCall;
+class Command;
+
+using CommandLikeVisitor = sushi::util::Visitor<FunctionCall, Command>;
+
 class CommandLike : public Expression {
   public:
-    CommandLike(std::vector<Redirection> redirs) : redirs_(std::move(redirs)) {}
+    SUSHI_ACCEPT_VISITOR(Expression)
+    SUSHI_VISITABLE(CommandLikeVisitor)
 
-    virtual void AcceptVisitor(ExpressionVisitor &visitor) {
-        visitor.Visit(this);
-    }
+    CommandLike(std::vector<Redirection> redirs) : redirs_(std::move(redirs)) {}
 
   private:
     std::vector<Redirection> redirs_;
@@ -35,6 +38,8 @@ class CommandLike : public Expression {
 
 class FunctionCall : public CommandLike {
   public:
+    SUSHI_ACCEPT_VISITOR(CommandLike)
+
   private:
     std::string func_name_;
     std::vector<std::unique_ptr<Expression>> paramters_;
@@ -42,6 +47,8 @@ class FunctionCall : public CommandLike {
 
 class Command : public CommandLike {
   public:
+    SUSHI_ACCEPT_VISITOR(CommandLike)
+
     using CommandParam =
         boost::variant<InterpolatedString, std::unique_ptr<Expression>>;
 
