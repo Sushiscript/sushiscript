@@ -3,7 +3,7 @@
 
 namespace sushi {
 
-class Type {};
+class TypeExpr {};
 
 } // namespace sushi
 

@@ -1,19 +1,39 @@
-#ifndef SUSHI_AST_EXPRESSION_BINARY_EXPR_H
-#define SUSHI_AST_EXPRESSION_BINARY_EXPR_H
+#ifndef SUSHI_AST_EXPRESSION_BINARY_EXPR_H_
+#define SUSHI_AST_EXPRESSION_BINARY_EXPR_H_
 
 #include "./expression.h"
 #include <memory>
 
 namespace sushi {
 
-class BinaryExpr : public Expression {
-  public:
-    SUSHI_ACCEPT_VISITOR(Expression)
+struct BinaryExpr : public Expression {
+    SUSHI_ACCEPT_VISITOR_FROM(Expression)
 
-  private:
-    std::unique_ptr<Expression> lhs_, rhs_;
+    enum class Operator {
+        kAdd,
+        kMinus,
+        kMult,
+        kDiv,
+        kMod,
+        kLess,
+        kGreat,
+        kLessEq,
+        kGreatEq,
+        kEqual,
+        kNotEq,
+        kAnd,
+        kOr
+    };
+
+    BinaryExpr(
+        std::unique_ptr<Expression> lhs, BinaryExpr::Operator op,
+        std::unique_ptr<Expression> rhs)
+        : lhs(std::move(lhs)), rhs(std::move(rhs)), op(op) {}
+
+    std::unique_ptr<Expression> lhs, rhs;
+    BinaryExpr::Operator op;
 };
 
 } // namespace sushi
 
-#endif // SUSHI_AST_EXPRESSION_BINARY_EXPR_H
+#endif // SUSHI_AST_EXPRESSION_BINARY_EXPR_H_

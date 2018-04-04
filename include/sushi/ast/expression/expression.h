@@ -5,16 +5,16 @@
 
 namespace sushi {
 
-class Variable;
-class Literal;
-class UnaryExpr;
-class BinaryExpr;
-class CommandLike;
+struct Variable;
+struct Literal;
+struct UnaryExpr;
+struct BinaryExpr;
+struct CommandLike;
 
-using ExpressionVisitor =
-    sushi::util::Visitor<Variable, Literal, UnaryExpr, BinaryExpr, CommandLike>;
+using ExpressionVisitor = sushi::util::DefineVisitor<
+    Variable, Literal, UnaryExpr, BinaryExpr, CommandLike>;
 
-class Expression {
+struct Expression {
   public:
     SUSHI_VISITABLE(ExpressionVisitor)
 };

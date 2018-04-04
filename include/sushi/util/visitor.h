@@ -6,37 +6,84 @@ namespace util {
 
 namespace detail {
 
-template <typename... Ts>
-struct VisitorImpl;
-
-template <typename T>
-struct VisitorImpl<T> {
-    virtual void Visit(T &) = 0;
+template <bool kConst, typename T>
+struct Ref {
+    using Type = const T &;
 };
 
-template <typename T, typename... Ts>
-struct VisitorImpl<T, Ts...> : VisitorImpl<Ts...> {
-    using VisitorImpl<Ts...>::Visit;
-    virtual void Visit(T &) = 0;
+template <typename T>
+struct Ref<false, T> {
+    using Type = T &;
+};
+
+template <bool kConst, typename... Ts>
+struct VisitorImpl;
+
+template <bool kConst, typename T>
+struct VisitorImpl<kConst, T> {
+    virtual void Visit(typename Ref<kConst, T>::Type) = 0;
+};
+
+template <bool kConst, typename T, typename... Ts>
+struct VisitorImpl<kConst, T, Ts...> : VisitorImpl<kConst, Ts...> {
+    using VisitorImpl<kConst, Ts...>::Visit;
+    virtual void Visit(typename Ref<kConst, T>::Type) = 0;
 };
 
 } // namespace detail
 
-template <typename... Ts>
-struct Visitor : detail::VisitorImpl<Ts...> {
-    virtual ~Visitor<Ts...>() {}
+template <bool kConst, typename... Ts>
+struct Visitor : detail::VisitorImpl<kConst, Ts...> {
+    using Const = Visitor<true, Ts...>;
+    using Mutable = Visitor<false, Ts...>;
+    virtual ~Visitor<kConst, Ts...>() {}
+
+  protected:
+    template <typename T>
+    struct VisitorToParam {
+        using Type = typename detail::Ref<kConst, T>::Type;
+    };
 };
 
-#define SUSHI_ACCEPT_VISITOR(B)                                                \
-    virtual void AcceptVisitor(B::TheVisitor &v) override {                    \
+template <typename... Ts>
+using ConstVisitor = Visitor<true, Ts...>;
+
+template <typename... Ts>
+using MutableVisitor = Visitor<false, Ts...>;
+
+template <typename... Ts>
+struct DefineVisitor {
+    using Const = ConstVisitor<Ts...>;
+    using Mutable = MutableVisitor<Ts...>;
+};
+
+#define SUSHI_VISITABLE(V)                                                     \
+  protected:                                                                   \
+    using ConstVisitor = V::Const;                                             \
+    using MutableVisitor = V::Mutable;                                         \
+                                                                               \
+  public:                                                                      \
+    virtual void AcceptVisitor(ConstVisitor &) const = 0;                      \
+    virtual void AcceptVisitor(ConstVisitor &&) const = 0;                     \
+    virtual void AcceptVisitor(MutableVisitor &) = 0;                          \
+    virtual void AcceptVisitor(MutableVisitor &&) = 0;
+
+#define SUSHI_ACCEPT_VISITOR_FROM(B)                                           \
+    virtual void AcceptVisitor(B::ConstVisitor &v) const override {            \
+        v.Visit(*this);                                                        \
+    }                                                                          \
+    virtual void AcceptVisitor(B::ConstVisitor &&v) const override {           \
+        v.Visit(*this);                                                        \
+    }                                                                          \
+    virtual void AcceptVisitor(B::MutableVisitor &v) override {                \
+        v.Visit(*this);                                                        \
+    }                                                                          \
+    virtual void AcceptVisitor(B::MutableVisitor &&v) override {               \
         v.Visit(*this);                                                        \
     }
 
-#define SUSHI_VISITABLE(v)                                                     \
-    using TheVisitor = v;                                                      \
-    virtual void AcceptVisitor(TheVisitor &) = 0;
-
-#define SUSHI_VISITING(t, p) virtual void Visit(t &p) override
+#define SUSHI_VISITING(T, t)                                                   \
+    virtual void Visit(VisitorToParam<T>::Type t) override
 
 } // namespace util
 

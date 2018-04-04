@@ -6,12 +6,12 @@
 
 namespace sushi {
 
-class Variable : public Expression {
-  public:
-    SUSHI_ACCEPT_VISITOR(Expression)
+struct Variable : public Expression {
+    SUSHI_ACCEPT_VISITOR_FROM(Expression)
 
-  private:
-    std::string name_;
+    Variable(const std::string &name) : name(name) {}
+
+    std::string name;
 };
 
 } // namespace sushi
