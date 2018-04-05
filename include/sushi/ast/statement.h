@@ -2,7 +2,7 @@
 #define SUSHI_AST_STATEMENT_H_
 
 #include "./expression.h"
-#include "./type.h"
+#include "./type-expr.h"
 #include "sushi/util/visitor.h"
 #include <cstdint>
 #include <memory>
