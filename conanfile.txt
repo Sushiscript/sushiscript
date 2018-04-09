@@ -7,4 +7,3 @@ boost:shared=True
 [generators]
 cmake
 ycm
-
