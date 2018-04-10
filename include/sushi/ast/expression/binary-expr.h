@@ -5,8 +5,9 @@
 #include <memory>
 
 namespace sushi {
+namespace ast {
 
-struct BinaryExpr : public Expression {
+struct BinaryExpr : Expression {
     SUSHI_ACCEPT_VISITOR_FROM(Expression)
 
     enum class Operator {
@@ -33,6 +34,8 @@ struct BinaryExpr : public Expression {
     std::unique_ptr<Expression> lhs, rhs;
     BinaryExpr::Operator op;
 };
+
+} // namespace ast
 
 } // namespace sushi
 

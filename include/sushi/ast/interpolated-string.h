@@ -7,6 +7,7 @@
 #include <string>
 
 namespace sushi {
+namespace ast {
 
 class InterpolatedString {
   public:
@@ -84,6 +85,7 @@ class InterpolatedString {
     InterpolatedNode *tail_;
 };
 
+} // namespace ast
 } // namespace sushi
 
 #endif // SUSHI_AST_INTERPOLATED_STRING_H_

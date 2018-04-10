@@ -5,8 +5,9 @@
 #include <string>
 
 namespace sushi {
+namespace ast {
 
-struct Variable : public Expression {
+struct Variable : Expression {
     SUSHI_ACCEPT_VISITOR_FROM(Expression)
 
     Variable(const std::string &name) : name(name) {}
@@ -14,6 +15,7 @@ struct Variable : public Expression {
     std::string name;
 };
 
+} // namespace ast
 } // namespace sushi
 
 #endif // SUSHI_AST_EXPRESSION_VARIABLE_H_

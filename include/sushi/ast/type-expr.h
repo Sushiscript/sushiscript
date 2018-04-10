@@ -1,11 +1,13 @@
 #ifndef SUSHI_AST_TYPE_H_
 #define SUSHI_AST_TYPE_H_
 
+#include "sushi/type-system/type.h"
 #include "sushi/util/visitor.h"
 #include <memory>
 #include <utility>
 
 namespace sushi {
+namespace ast {
 
 struct TypeLit;
 struct ArrayType;
@@ -20,15 +22,14 @@ struct TypeExpr {
     SUSHI_VISITABLE(TypeExprVisitor);
 };
 
-struct TypeLit : public TypeExpr {
+struct TypeLit : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
-    enum class Value { kInt, kBool, kUnit, kFd, kExitCode, kPath, kString };
-    TypeLit(TypeLit::Value type) : type(type) {}
-    TypeLit::Value type;
+    TypeLit(type::BuiltInAtom::Type type) : type(type) {}
+    type::BuiltInAtom::Type type;
 };
 
-struct ArrayType : public TypeExpr {
+struct ArrayType : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
     ArrayType(std::unique_ptr<TypeExpr> element)
@@ -37,16 +38,17 @@ struct ArrayType : public TypeExpr {
     std::unique_ptr<TypeExpr> element;
 };
 
-struct MapType : public TypeExpr {
+struct MapType : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
-    MapType(TypeLit::Value key, std::unique_ptr<TypeExpr> value)
+    MapType(type::BuiltInAtom::Type key, std::unique_ptr<TypeExpr> value)
         : key(key), value(std::move(value)) {}
 
-    TypeLit::Value key;
+    type::BuiltInAtom::Type key;
     std::unique_ptr<TypeExpr> value;
 };
 
+} // namespace ast
 } // namespace sushi
 
 #endif // SUSHI_AST_TYPE_H_

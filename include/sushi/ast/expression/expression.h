@@ -4,6 +4,7 @@
 #include "sushi/util/visitor.h"
 
 namespace sushi {
+namespace ast {
 
 struct Variable;
 struct Literal;
@@ -15,10 +16,10 @@ using ExpressionVisitor = sushi::util::DefineVisitor<
     Variable, Literal, UnaryExpr, BinaryExpr, CommandLike>;
 
 struct Expression {
-  public:
     SUSHI_VISITABLE(ExpressionVisitor)
 };
 
+} // namespace ast
 } // namespace sushi
 
 #endif // namespace SUSHI_AST_EXPRESSION_EXPRESSION_H_

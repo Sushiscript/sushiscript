@@ -5,8 +5,9 @@
 #include <memory>
 
 namespace sushi {
+namespace ast {
 
-struct UnaryExpr : public Expression {
+struct UnaryExpr : Expression {
     SUSHI_ACCEPT_VISITOR_FROM(Expression)
 
     enum struct Operator { kNot, kNeg, kPos };
@@ -18,6 +19,7 @@ struct UnaryExpr : public Expression {
     Operator op;
 };
 
+} // namespace ast
 } // namespace sushi
 
 #endif // SUSHI_AST_EXPRESSION_UNARY_EXPR_H

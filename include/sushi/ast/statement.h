@@ -10,6 +10,7 @@
 #include <vector>
 
 namespace sushi {
+namespace ast {
 
 struct VariableDef;
 struct FunctionDef;
@@ -32,7 +33,7 @@ struct Program {
     std::vector<std::unique_ptr<Statement>> statements;
 };
 
-struct VariableDef : public Statement {
+struct VariableDef : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     VariableDef(
@@ -48,7 +49,7 @@ struct VariableDef : public Statement {
     std::unique_ptr<Expression> value;
 };
 
-struct FunctionDef : public Statement {
+struct FunctionDef : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     struct Parameter {
@@ -68,7 +69,7 @@ struct FunctionDef : public Statement {
     std::unique_ptr<Program> body;
 };
 
-struct IfStmt : public Statement {
+struct IfStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     IfStmt(
@@ -83,13 +84,13 @@ struct IfStmt : public Statement {
     std::unique_ptr<Program> false_body;
 };
 
-struct ReturnStmt : public Statement {
+struct ReturnStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     std::unique_ptr<Expression> value;
 };
 
-struct SwitchStmt : public Statement {
+struct SwitchStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     struct Case {
@@ -105,7 +106,7 @@ struct SwitchStmt : public Statement {
     std::unique_ptr<Program> default_;
 };
 
-struct ForStmt : public Statement {
+struct ForStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     struct Condition {
@@ -129,7 +130,7 @@ struct ForStmt : public Statement {
     std::unique_ptr<Program> body;
 };
 
-struct LoopControlStmt : public Statement {
+struct LoopControlStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     enum struct Value : uint8_t { kBreak = 1, kContinue = 2 };
@@ -141,6 +142,7 @@ struct LoopControlStmt : public Statement {
     int level;
 };
 
+} // namespace ast
 } // namespace sushi
 
 #endif // SUSHI_AST_STATEMENT_H_

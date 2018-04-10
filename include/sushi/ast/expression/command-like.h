@@ -9,6 +9,7 @@
 #include <vector>
 
 namespace sushi {
+namespace ast {
 
 struct Redirection {
     enum struct Direction { kIn = 1, kOut = 2 };
@@ -33,7 +34,7 @@ struct Command;
 
 using CommandLikeVisitor = sushi::util::DefineVisitor<FunctionCall, Command>;
 
-struct CommandLike : public Expression {
+struct CommandLike : Expression {
     SUSHI_ACCEPT_VISITOR_FROM(Expression)
     SUSHI_VISITABLE(CommandLikeVisitor)
 
@@ -42,7 +43,7 @@ struct CommandLike : public Expression {
     std::vector<Redirection> redirs;
 };
 
-struct FunctionCall : public CommandLike {
+struct FunctionCall : CommandLike {
     SUSHI_ACCEPT_VISITOR_FROM(CommandLike)
 
     FunctionCall(
@@ -56,7 +57,7 @@ struct FunctionCall : public CommandLike {
     std::vector<std::unique_ptr<Expression>> parameters;
 };
 
-struct Command : public CommandLike {
+struct Command : CommandLike {
     SUSHI_ACCEPT_VISITOR_FROM(CommandLike)
 
     using CommandParam =
@@ -72,6 +73,7 @@ struct Command : public CommandLike {
     std::vector<CommandParam> parameters;
 };
 
+} // namespace ast
 } // namespace sushi
 
 #endif // SUSHI_AST_EXPRESSION_COMMAND_LIKE_H_
