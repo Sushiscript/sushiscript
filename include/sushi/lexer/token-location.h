@@ -34,6 +34,15 @@ struct TokenLocation {
     bool operator>=(const TokenLocation &rhs) const {
         return not(*this < rhs);
     }
+
+    void NextColumn() {
+        ++column;
+    }
+
+    void NewLine() {
+        ++line;
+        column = 0;
+    }
 };
 
 } // namespace sushi
