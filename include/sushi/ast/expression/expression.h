@@ -11,9 +11,10 @@ struct Literal;
 struct UnaryExpr;
 struct BinaryExpr;
 struct CommandLike;
+struct Indexing;
 
 using ExpressionVisitor = sushi::util::DefineVisitor<
-    Variable, Literal, UnaryExpr, BinaryExpr, CommandLike>;
+    Variable, Literal, UnaryExpr, BinaryExpr, CommandLike, Indexing>;
 
 struct Expression {
     SUSHI_VISITABLE(ExpressionVisitor)

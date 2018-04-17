@@ -10,5 +10,6 @@
 #include "./expression/literal.h"
 #include "./expression/unary-expr.h"
 #include "./expression/variable.h"
+#include "./expression/indexing.h"
 
 #endif // SUSHI_AST_EXPRESSION_H_

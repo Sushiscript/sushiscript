@@ -246,7 +246,14 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 <pipeline> = '|' <procedure call>
 ```
 
-#### 3.1.5 Expression
+#### 3.1.5 Indexing
+
+```
+<indexing> = <expression> '[' <expression> ']'
+```
+
+
+#### 3.1.6 Expression
 
 ```
 <expression>
@@ -254,9 +261,10 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 	| <atom expr>
 	| <binop expr>
 	| <unop expr>
+	| <indexing>
 ```
 
-#### 3.1.6 Type Expression
+#### 3.1.7 Type Expression
 
 ```
 <type> = <simple type> | <complex type>
