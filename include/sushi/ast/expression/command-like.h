@@ -2,6 +2,7 @@
 #define SUSHI_AST_EXPRESSION_COMMAND_LIKE_H_
 
 #include "./expression.h"
+#include "./identifier.h"
 #include "./literal.h"
 #include "boost/variant.hpp"
 #include "sushi/ast/interpolated-string.h"
@@ -47,13 +48,12 @@ struct FunctionCall : CommandLike {
     SUSHI_ACCEPT_VISITOR_FROM(CommandLike)
 
     FunctionCall(
-        std::string func_name,
-        std::vector<std::unique_ptr<Expression>> parameters,
+        Identifier func, std::vector<std::unique_ptr<Expression>> parameters,
         std::vector<Redirection> redirs)
-        : CommandLike(std::move(redirs)), func_name(std::move(func_name)),
+        : CommandLike(std::move(redirs)), func(std::move(func)),
           parameters(std::move(parameters)){};
 
-    std::string func_name;
+    Identifier func;
     std::vector<std::unique_ptr<Expression>> parameters;
 };
 
