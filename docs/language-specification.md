@@ -43,7 +43,7 @@ Following punctuations are meaningful:
 
 ```
 <built-in type>
-	= "Int"  | "Bool"  | "Unit" | "String"
+	= "Int"  | "Bool"  | "Unit" | "String"   | "Char"
 	| "Path" | "Array" | "Map"  | "ExitCode" | "FD"
 ```
 
@@ -115,13 +115,19 @@ _TODO: integer literal of various radix support_
 <integer> = ('+' | '-')? <digit>+
 ```
 
-#### 2.6.3 String
+#### 2.6.3 Character
+
+```
+<char literal> = "'" <string char> "'"
+```
+
+#### 2.6.4 String
 
 ```
 <string literal> = '"' ( <string char> | <interpolation> ) * '"'
 ```
 
-#### 2.6.4 Path
+#### 2.6.5 Path
 
 ```
 <path literal> = <path start> ( <raw char> | <interpolation> )*
@@ -162,6 +168,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 	| <unit literal>   | <fd literal>
 	| <string literal> | <path literal>
 	| <array literal>  | <map literal>
+	| <char literal>
 ```
 
 ##### 3.1.1.1 Array Literal

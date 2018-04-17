@@ -24,7 +24,16 @@ struct Type {
 struct BuiltInAtom : Type {
     SUSHI_ACCEPT_VISITOR_FROM(Type)
 
-    enum class Type { kInt, kBool, kUnit, kFd, kExitCode, kPath, kString };
+    enum class Type {
+        kInt,
+        kBool,
+        kUnit,
+        kFd,
+        kExitCode,
+        kPath,
+        kString,
+        kChar
+    };
 
     BuiltInAtom(BuiltInAtom::Type type) : type(type) {}
 
