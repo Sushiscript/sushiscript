@@ -2,6 +2,7 @@
 #define SUSHI_AST_EXPRESSION_EXPRESSION_H_
 
 #include "sushi/util/visitor.h"
+#include "sushi/ast/statement/statement.h"
 
 namespace sushi {
 namespace ast {
@@ -16,7 +17,8 @@ struct Indexing;
 using ExpressionVisitor = sushi::util::DefineVisitor<
     Variable, Literal, UnaryExpr, BinaryExpr, CommandLike, Indexing>;
 
-struct Expression {
+struct Expression: Statement {
+    SUSHI_ACCEPT_VISITOR_FROM(Statement)
     SUSHI_VISITABLE(ExpressionVisitor)
 };
 
