@@ -39,7 +39,7 @@ class Scope {
     }
 
     const Scope::IdentInfo *
-    LookUp(const std::string &identifier, const TokenLocation &use_loc) {
+    LookUp(const std::string &identifier, const TokenLocation &use_loc) const {
         auto iter = bindings_.find(identifier);
         if (iter != end(bindings_) and use_loc > iter->second.defined_loc) {
             return &iter->second;
@@ -58,6 +58,10 @@ class Scope {
         return true;
     }
 
+    const Scope *Outer() const {
+        return outer_.get();
+    }
+
   private:
     std::shared_ptr<Scope> outer_;
     std::unordered_map<std::string, IdentInfo> bindings_;
@@ -65,13 +69,33 @@ class Scope {
 
 class Environment {
   public:
-    struct BlockInfo {
-        std::shared_ptr<Scope> scope;
-    };
+    bool
+    Insert(const ast::Identifier *ident, std::shared_ptr<Scope> def_scope) {
+        if (idents_.count(ident)) {
+            return false;
+        }
+        idents_[ident] = def_scope;
+        return true;
+    }
+    bool Insert(const ast::Program *block, std::shared_ptr<Scope> scope) {
+        if (blocks_.count(block)) {
+            return false;
+        }
+        blocks_[block] = scope;
+        return true;
+    }
+    const Scope *LookUp(const ast::Identifier *ident) const {
+        auto iter = idents_.find(ident);
+        return iter == end(idents_) ? nullptr : iter->second.get();
+    }
+    const Scope *LookUp(const ast::Program *block) const {
+        auto iter = blocks_.find(block);
+        return iter == end(blocks_) ? nullptr : iter->second.get();
+    }
 
   private:
     std::unordered_map<const ast::Identifier *, std::shared_ptr<Scope>> idents_;
-    std::unordered_map<const ast::Program *, Environment::BlockInfo> blocks_;
+    std::unordered_map<const ast::Program *, std::shared_ptr<Scope>> blocks_;
 };
 
 } // namespace sushi
