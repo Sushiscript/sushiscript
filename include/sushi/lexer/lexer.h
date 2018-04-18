@@ -6,7 +6,7 @@
 #include "./token.h"
 #include "boost/optional.hpp"
 #include <istream>
-
+#include <utility>
 namespace sushi {
 
 namespace detail {
@@ -14,9 +14,9 @@ namespace detail {
 class SourceStream : public LookaheadStream<char> {
   public:
     SourceStream(std::istream &is, TokenLocation start)
-        : is_(is), next_loc_(start) {}
+        : is_(is), next_loc_(std::move(start)) {}
 
-    virtual boost::optional<char> Next() override {
+    boost::optional<char> Next() override {
         auto n = LookaheadStream<char>::Next();
         if (n) {
             if (*n == '\n') {
@@ -48,7 +48,7 @@ class SourceStream : public LookaheadStream<char> {
 class Lexer : public LookaheadStream<Token> {
   public:
   private:
-    virtual boost::optional<Token> Consume() override {
+    boost::optional<Token> Consume() override {
         return boost::none;
     }
     detail::SourceStream input_;
