@@ -4,8 +4,9 @@
 .vscode/
 .sublime*
 *.swp
+.idea/
 
 # build output
 
 build/
-
+cmake-build-debug/
