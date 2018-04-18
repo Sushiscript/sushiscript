@@ -2,12 +2,14 @@
 #define SUSHI_LEXER_TOKEN_H_
 
 #include "./token-location.h"
+#include "boost/variant.hpp"
 #include <string>
 
 namespace sushi {
 
 struct Token {
     enum class Type {
+        kIdent,
         // keywords
         kOr,
         kNot,
@@ -68,15 +70,18 @@ struct Token {
         kStringLit,
         kPathLit,
         kIntLit,
+        kRawString,
         // special
         kIndent,
         kLineBreak,
         kError
     };
 
+    using Data = boost::variant<int, std::string>;
+
     Token::Type type;
     TokenLocation location;
-    std::string content = "";
+    Data content;
 };
 
 } // namespace sushi
