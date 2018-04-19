@@ -30,6 +30,14 @@ boost::optional<T> operator|(boost::optional<T> opt, F f) {
     return std::move(opt);
 }
 
+template <typename T, typename F>
+boost::optional<std::result_of_t<F(T)>> operator>(boost::optional<T> opt, F f) {
+    if (not opt) {
+        return boost::none;
+    }
+    return f(std::move(*opt));
+}
+
 } // namespace monadic_optional
 
 } // namespace util

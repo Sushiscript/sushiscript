@@ -54,6 +54,13 @@ class SourceStream : public LookaheadStream<char> {
 } // namespace detail
 
 class Lexer : public LookaheadStream<Token> {
+    void Raw(bool b) {
+        raw_mode_ = b;
+    }
+    bool Raw() {
+        return raw_mode_;
+    }
+
   private:
     auto RecordLocation() {
         return [loc = input_.NextLocation()](Token::Type t, Token::Data s) {
@@ -96,74 +103,85 @@ class Lexer : public LookaheadStream<Token> {
         }
         return false;
     }
-    boost::optional<Token> DoubleOperator() {
-        auto op = input_.LookaheadMany(2);
+    boost::optional<Token> TryDoubleOperator() {
+        std::string op = input_.LookaheadMany(2);
         if (op.size() < 2) {
             return boost::none;
         }
-        if (op == ">=")
-            return SkipAndMake(Token::Type::kGreaterEq, 2);
-        if (op == "<=")
-            return SkipAndMake(Token::Type::kLessEq, 2);
-        if (op == "==")
-            return SkipAndMake(Token::Type::kDoubleEq, 2);
-        if (op == "!=")
-            return SkipAndMake(Token::Type::kNotEqual, 2);
-        return boost::none;
-    }
-    boost::optional<Token> SingleOperator() {
-        switch (*input_.Lookahead()) {
-        case '+':
-            return SkipAndMake(Token::Type::kPlus);
-        case '-':
-            return SkipAndMake(Token::Type::kMinus);
-        case '*':
-            return SkipAndMake(Token::Type::kStar);
-        case '%':
-            return SkipAndMake(Token::Type::kPercent);
-        case '<':
-            return SkipAndMake(Token::Type::kLAngle);
-        case '>':
-            return SkipAndMake(Token::Type::kRAngle);
-        case ',':
-            return SkipAndMake(Token::Type::kComma);
-        case ':':
-            return SkipAndMake(Token::Type::kColon);
-        case '!':
-            return SkipAndMake(Token::Type::kExclamation);
-        case '$':
-            return SkipAndMake(Token::Type::kDollar);
-        default:
+        auto iter = Token::DoublePunctuationMap().find(op);
+        if (iter == end(Token::DoublePunctuationMap())) {
             return boost::none;
         }
+        return SkipAndMake(iter->second, 2, op);
     }
-    boost::optional<Token> Integer() {
+    boost::optional<Token> TrySingleOperator() {
+        auto iter = Token::SinglePunctuationMap().find(*input_.Lookahead());
+        if (iter == end(Token::SinglePunctuationMap())) {
+            return boost::none;
+        }
+        return SkipAndMake(
+            iter->second, 1, std::string(1, *input_.Lookahead()));
+    }
+    boost::optional<Token> TryPunctuation() {
+        using namespace sushi::util::monadic_optional;
+        return TryDoubleOperator() | [this]() { return TrySingleOperator(); };
+    }
+    void SkipSpaces() {
+        input_.SkipWhile([](char c) { return isspace(c); });
+    }
+    Token StringLiteral() {
+        auto token = RecordLocation();
+        input_.Next();
+    }
+    Token CharLiteral() {
+        auto token = RecordLocation();
+        input_.Next();
+    }
+    Token IntLiteral() {
         auto token = RecordLocation();
         auto i = input_.TakeWhile([](char c) { return std::isdigit(c); });
-        return i.empty() ? boost::optional<Token>()
-                         : token(Token::Type::kIntLit, std::stoi(i));
+        return token(Token::Type::kIntLit, std::stoi(i));
     }
-    boost::optional<Token> Punctuation() {
-        using namespace sushi::util::monadic_optional;
-        return DoubleOperator() | [this]() { return SingleOperator(); };
+    Token Identifier() {
+        // todo
     }
-    boost::optional<Token> Identifier() {
-        return boost::none;
+    Token UnknownCharacter(char c) {
+        return SkipAndMake(Token::Type::kOtherChar, 1, static_cast<int>(c));
     }
-    Token InvalidCharacterError() {
-        auto c = input_.Lookahead();
-        // return Token();
+    Token NormalLookaheadDispatch() {
+        char lookahead = *input_.Lookahead();
+        if (lookahead == '"')
+            return StringLiteral();
+        if (lookahead == '\'')
+            return CharLiteral();
+        if (isdigit(lookahead))
+            return IntLiteral();
+        if (isalpha(lookahead) or lookahead == '_')
+            return Identifier();
+        return TryPunctuation().value_or_eval(
+            [lookahead, this]() { UnknownCharacter(lookahead); });
     }
-    boost::optional<Token> Consume() override {
+    boost::optional<Token> NormalMode() {
         if (start_of_line_) {
             return Indentation();
         }
-        input_.SkipWhile([](char c) { return isspace(c); });
+        SkipSpaces();
         boost::optional<Token> next_tok;
         return next_tok;
     }
+    boost::optional<Token> RawMode() {
+        SkipSpaces();
+        return boost::none;
+    }
+    boost::optional<Token> Consume() override {
+        if (not input_.Lookahead()) {
+            return boost::none;
+        }
+        return raw_mode_ ? NormalMode() : RawMode();
+    }
     detail::SourceStream input_;
     bool start_of_line_ = true;
+    bool raw_mode_ = false;
 };
 
 } // namespace sushi
