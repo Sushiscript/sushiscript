@@ -24,7 +24,7 @@ define return export
 if else
 switch case default
 for in break continue
-redirect from to append
+redirect from to append here
 ```
 
 ### 2.2 Punctuations
@@ -32,9 +32,9 @@ redirect from to append
 Following punctuations are meaningful:
 
 ```
-+ - * / %
++ - * // %
 > < >= <= == !=
-, = :
+, = : ;
 [ ] { } ( )
 ! $ " ' #
 ```
@@ -47,54 +47,69 @@ Following punctuations are meaningful:
 	| "Path" | "Array" | "Map"  | "ExitCode" | "FD"
 ```
 
-### 2.4 Character
-
-```
-<line break> = [^\] '\n'
-<whitespace> = ' ' | '\t'
-```
-
-##### 2.4.1 Raw character
-
-Raw characters and tokens are only used in special contexts where getting rid of the "lexical restriction" conforms better to the tradition of shell and is more intuitive and convenient for language users.
-
-```
-<raw char>    = <normal char> | <escape char>
-<normal char> = [^<whitespace>"\]
-<escape char> = '\' ( ' ' | '"' | '$' | '{' | '}' | '\')
-
-<raw token> = <raw char>*
-```
-
-##### 2.4.2 Character inside string
-
-_TODO: string escaped characters may be incomplete_
-
-```
-<string char>
-	= <string normal char> | <string escaped char>
-<string normal char>
-	= <normal char>
-	| <whitespace>
-<string escaped char>
-	= <escape char>
-	| '\' ( 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' )
-```
-
-### 2.5 Interpolation
+### 2.4 Interpolation
 
 _TODO: Explain interpolation in later section and add a link here_
 
-In lexical analysis, interpolations create a new context and suspend the previous recognizing sequence, typically used in string literal (see 2.6.3), path literal (see 2.6.4) and other syntax structures.
+Interpolation is a lexical construct that embed expression in some special contexts (typically string interpolation). If  `identifier` is provided after `$` , lexer suspend the enclosing context and eagerly recognize the first possible identifier.
 
 ```
-<interpolation> = '${' ... '}'
+<interpolation> = '$' ( '{' ... '}' | <identifier> )
+<interpolate char> = '$ | '{' | '}'
 ```
 
 Interpolation can be recognized recursively. e.g.
 
 ```
 ${ ... "${ ... }" ... }
+"${ ... \" ${ ... } \" ... }"
+```
+
+### 2.5 Character
+
+```
+<line break> = '\n'
+<whitespace> = ' ' | '\t'
+```
+
+#### 2.5.1 Character Escaping
+
+Special characters inside string-like token can be expressed by escaping character, by putting a `\\` before a character to escape it. There are different meaningful escaped character in different context (specified below).  **Escaping a character that doesn't have special meaning in current context preserves the original character.** In some contexts there are characters that have to be escaped to avoid lexical ambiguity.
+
+_TODO: string escaped characters may be incomplete_
+
+```
+<tradition special> =
+	'\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
+```
+
+
+#### 2.5.2 Raw Mode
+
+The raw mode of lexer is turned on in special contexts (typically when [invoking shell command](#3.1.4.2 Invoking Command)) where getting rid of the "lexical restriction" conforms better to the tradition of shell and is more intuitive and convenient for users.
+
+```
+<raw token>    = <raw char>*
+<raw char>     = [^<raw restrict>] | <raw escape>
+<raw restrict> = ' ' | ';' | '"' | "'" | '\'
+<raw escape>   = '\' (<restrict char> | <interpolate char>)
+```
+
+#### 2.5.3 Character inside `String` literal
+
+```
+<string char> = [^<string restrict>] | <string escape>
+<string escape>
+	= '\' ( <string restrict> | <interpolate char>)
+	| <tradition special>
+<string restrict> = '"'
+```
+
+#### 2.5.4 Character inside `Char` literal
+
+```
+<char char> = [^<char restrict>] | <tradition special>
+<char restrict> = "'"
 ```
 
 ### 2.6 Literals
@@ -118,7 +133,7 @@ _TODO: integer literal of various radix support_
 #### 2.6.3 Character
 
 ```
-<char literal> = "'" <string char> "'"
+<char literal> = "'" <char char> "'"
 ```
 
 #### 2.6.4 String
@@ -131,7 +146,7 @@ _TODO: integer literal of various radix support_
 
 ```
 <path literal> = <path start> ( <raw char> | <interpolation> )*
-<path start>   = "./" | "../" | "/"
+<path start>   = "./" | "../" | "/" | "~"
 ```
 
 ### 2.7 Misc
@@ -233,7 +248,13 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.4.2 Invoking Command
 
 ```
-<command> = '!' ( <interpolation> | <raw token> | <string literal> )*
+<command> = '!' <comamnd param>* <command end>
+<command param>
+	= <interpolation>
+	| <raw token>
+	| <string literal>
+	| <char literal>
+<command end> = <line break> | ';'
 ```
 
 ##### 3.1.4.4 Redirection
@@ -346,7 +367,7 @@ And all statements within the same innermost block must have same level of inden
 
 The `if` and its matching `else` must be in same level of indentation, if two or more unmatched `if`s are in the same indentation level, next `else` will match the closest `if`.
 
-#### 3.2.5 swich
+#### 3.2.5 switch
 
 ```
 <switch>  = "switch" <expression> <case>+ <default>?
