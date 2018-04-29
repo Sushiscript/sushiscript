@@ -9,3 +9,7 @@ gtest:shared=True
 [generators]
 cmake
 ycm
+
+[imports]
+bin, *.dll -> ./bin
+lib, *.dylib -> ./bin
