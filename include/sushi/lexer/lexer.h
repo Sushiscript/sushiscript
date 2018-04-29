@@ -58,6 +58,7 @@ class SourceStream : public LookaheadStream<char> {
 } // namespace detail
 
 class Lexer : public detail::LookaheadStream<Token> {
+  public:
     Lexer(std::istream &is, TokenLocation start) : input_(is, start) {}
 
     void Raw(bool b) {
@@ -92,7 +93,7 @@ class Lexer : public detail::LookaheadStream<Token> {
     Token LineBreak() {
         // assert(*input_.Lookahead() == '\n')
         start_of_line_ = true;
-        SkipAndMake(Token::Type::kLineBreak);
+        return SkipAndMake(Token::Type::kLineBreak);
     }
 
     boost::optional<Token> TryLineBreak() {
@@ -102,7 +103,7 @@ class Lexer : public detail::LookaheadStream<Token> {
     }
     bool TryLineComment() {
         auto oc = input_.Lookahead();
-        if (oc == '#') {
+        if (oc and *oc == '#') {
             input_.SkipWhile([](char c) { return c != '\n'; });
             return true;
         }
@@ -164,7 +165,7 @@ class Lexer : public detail::LookaheadStream<Token> {
         input_.Next();
         std::string data;
         for (boost::optional<char> oc;
-             oc = Character(detail::StringConfig());) {
+             (oc = Character(detail::StringConfig()));) {
             data.push_back(*oc);
         }
         auto tail = input_.Next();
@@ -191,7 +192,7 @@ class Lexer : public detail::LookaheadStream<Token> {
     Token RawToken() {
         auto token = RecordLocation();
         std::string tok;
-        for (boost::optional<char> oc; oc = Character(detail::RawConfig());) {
+        for (boost::optional<char> oc; (oc = Character(detail::RawConfig()));) {
             tok.push_back(*oc);
         }
         if (tok.empty())
@@ -213,7 +214,7 @@ class Lexer : public detail::LookaheadStream<Token> {
             return token(Token::Type::kPathLit, path);
         }
         path.push_back(*input_.Next());
-        for (boost::optional<char> oc; oc = Character(detail::RawConfig());) {
+        for (boost::optional<char> oc; (oc = Character(detail::RawConfig()));) {
             path.push_back(*oc);
         }
         return token(Token::Type::kPathLit, path);

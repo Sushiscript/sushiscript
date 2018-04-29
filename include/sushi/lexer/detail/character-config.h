@@ -48,11 +48,11 @@ struct CharacterConfig {
 
 struct StringConfig : CharacterConfig {
   private:
-    const std::string &RestrictedList(char c) const override {
+    const std::string &RestrictedList() const override {
         static std::string l = "\"";
         return l;
     }
-    const std::unordered_map &EscapeMap() const override {
+    const std::unordered_map<char, char> &EscapeMap() const override {
         static std::unordered_map<char, char> m = {TRADITION_ESCAPE,
                                                    INTERPOLATE_ESCAPE};
         return m;

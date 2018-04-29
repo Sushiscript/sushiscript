@@ -104,6 +104,80 @@ struct Token {
         kInvalidChar,
         kErrorCode
     };
+    static std::string TypeToString(Type t) {
+        switch (t) {
+        case Type::kIdent: return "identifier";
+        case Type::kOr: return "or";
+        case Type::kNot: return "not";
+        case Type::kAnd: return "and";
+        case Type::kDefine: return "define";
+        case Type::kReturn: return "return";
+        case Type::kExport: return "export";
+        case Type::kIf: return "if";
+        case Type::kElse: return "else";
+        case Type::kSwitch: return "switch";
+        case Type::kCase: return "case";
+        case Type::kDefault: return "default";
+        case Type::kFor: return "for";
+        case Type::kIn: return "in";
+        case Type::kBreak: return "break";
+        case Type::kContinue: return "continue";
+        case Type::kRedirect: return "redirect";
+        case Type::kFrom: return "from";
+        case Type::kTo: return "to";
+        case Type::kHere: return "here";
+        case Type::kInt: return "Int";
+        case Type::kBool: return "Bool";
+        case Type::kUnit: return "Unit";
+        case Type::kChar: return "Char";
+        case Type::kString: return "String";
+        case Type::kPath: return "Path";
+        case Type::kArray: return "Array";
+        case Type::kMap: return "Map";
+        case Type::kExitCode: return "ExitCode";
+        case Type::kFd: return "Fd";
+        case Type::kStdin: return "stdin";
+        case Type::kStdout: return "stdout";
+        case Type::kStderr: return "stderr";
+        case Type::kUnitLit: return "unit";
+        case Type::kTrue: return "true";
+        case Type::kFalse: return "false";
+        case Type::kPlus: return "+";
+        case Type::kMinus: return "-";
+        case Type::kStar: return "*";
+        case Type::kDivide: return "//";
+        case Type::kPercent: return "%";
+        case Type::kLAngle: return "<";
+        case Type::kRAngle: return ">";
+        case Type::kGreaterEq: return ">=";
+        case Type::kLessEq: return "<=";
+        case Type::kDoubleEq: return "==";
+        case Type::kNotEqual: return "!=";
+        case Type::kComma: return ",";
+        case Type::kSingleEq: return "=";
+        case Type::kColon: return ":";
+        case Type::kSemicolon: return ";";
+        case Type::kExclamation: return "!";
+        case Type::kDollar: return "$";
+        case Type::kLParen: return "(";
+        case Type::kRParen: return ")";
+        case Type::kLBracket: return "[";
+        case Type::kRBracket: return "]";
+        case Type::kLBrace: return "{";
+        case Type::kRBrace: return "}";
+        case Type::kInterStart: return "${";
+        case Type::kCharLit: return "CharLit";
+        case Type::kStringLit: return "StrLit";
+        case Type::kPathLit: return "PathLit";
+        case Type::kIntLit: return "IntLit";
+        case Type::kRawString: return "RawStr";
+        case Type::kIndent: return "Indent";
+        case Type::kLineBreak: return "\\n";
+        case Type::kOtherChar: return "Unknown";
+        case Type::kInvalidChar: return "Invalid";
+        case Type::kErrorCode: return "ErrCode";
+        }
+    }
     static const std::unordered_map<std::string, Token::Type> &IdentifierMap() {
         static std::unordered_map<std::string, Token::Type> ident_map{
             {"or", Type::kOr},
@@ -155,14 +229,14 @@ struct Token {
     }
     static const std::unordered_map<char, Token::Type> &SinglePunctuationMap() {
         static std::unordered_map<char, Token::Type> single_punct_map{
-            {'+', Type::kPlus}, {'-', Type::kMinus},
-            {'*', Type::kStar}, {'%', Type::kPercent},
-            {'<', Type::kLAngle}, {'>', Type::kRAngle},
-            {',', Type::kComma}, {':', Type::kColon},
+            {'+', Type::kPlus},      {'-', Type::kMinus},
+            {'*', Type::kStar},      {'%', Type::kPercent},
+            {'<', Type::kLAngle},    {'>', Type::kRAngle},
+            {',', Type::kComma},     {':', Type::kColon},
             {';', Type::kSemicolon}, {'!', Type::kExclamation},
-            {'$', Type::kDollar}, {'(', Type::kLParen},
-            {')', Type::kRParen}, {'[', Type::kLBracket},
-            {']', Type::kRBracket}, {'{', Type::kLBrace},
+            {'$', Type::kDollar},    {'(', Type::kLParen},
+            {')', Type::kRParen},    {'[', Type::kLBracket},
+            {']', Type::kRBracket},  {'{', Type::kLBrace},
             {'}', Type::kRBrace}};
         return single_punct_map;
     }
@@ -175,12 +249,22 @@ struct Token {
         return Token{iter->second, loc, 0};
     }
 
+    static bool WeakEqual(const Token &t1, const Token &t2) {
+        return t1.type == t2.type and t1.content == t2.content;
+    }
+
     using Data = boost::variant<int, std::string>;
 
     Token::Type type;
     TokenLocation location;
     Data content;
 };
+
+std::ostream &operator<<(std::ostream &os, lexer::Token tok) {
+    os << "{`" << lexer::Token::TypeToString(tok.type) << "`, " << tok.content
+       << '}';
+    return os;
+}
 
 } // namespace lexer
 
