@@ -9,6 +9,8 @@
 #include <vector>
 
 namespace sushi {
+namespace lexer {
+namespace detail {
 
 template <typename T>
 class LookaheadStream {
@@ -41,10 +43,12 @@ class LookaheadStream {
     Chunk TakeWhile(P p) {
         Chunk chunk;
         for (;;) {
-            auto next = Next();
+            auto next = Lookahead();
             if (not next or not p(*next)) {
                 break;
             }
+            chunk.push_back(*next);
+            Next();
         }
         return chunk;
     }
@@ -91,6 +95,8 @@ class LookaheadStream {
     std::deque<T> cache_;
 };
 
+} // namespace detail
+} // namespace lexer
 } // namespace sushi
 
 #endif // SUSHI_LEXER_LOOKAHEAD_STREAM_H_

@@ -21,8 +21,8 @@ namespace monadic_optional {
 
 template <
     typename T, typename F,
-    typename = std::enable_if_t<std::is_convertible<
-        decltype(std::declval<F>()()), boost::optional<T>>::value>>
+    std::enable_if_t<std::is_convertible<
+        decltype(std::declval<F>()()), boost::optional<T>>::value, int> = 0>
 boost::optional<T> operator|(boost::optional<T> opt, F f) {
     if (not opt) {
         return f();
@@ -37,6 +37,12 @@ boost::optional<std::result_of_t<F(T)>> operator>(boost::optional<T> opt, F f) {
     }
     return f(std::move(*opt));
 }
+
+template <typename T, typename F, typename Result = std::result_of_t<F(T)>, std::enable_if_t <detail::IsOptional<Result>::value, int> = 0>
+Result operator>>(boost::optional<T> opt, F f) {
+    if (not opt) return boost::none;
+    return f(std::move(*opt));
+};
 
 } // namespace monadic_optional
 

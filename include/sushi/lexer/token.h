@@ -7,12 +7,15 @@
 #include <unordered_map>
 
 namespace sushi {
+namespace lexer {
 
 struct Token {
 
     enum class Type {
         kIdent,
+
         // keywords
+
         kOr,
         kNot,
         kAnd,
@@ -32,7 +35,9 @@ struct Token {
         kFrom,
         kTo,
         kHere,
+
         // built-in types
+
         kInt,
         kBool,
         kUnit,
@@ -43,14 +48,18 @@ struct Token {
         kMap,
         kExitCode,
         kFd,
+
         // named literals
+
         kStdin,
         kStdout,
         kStderr,
         kUnitLit,
         kTrue,
         kFalse,
+
         // punctuations
+
         kPlus,        // +
         kMinus,       // -
         kStar,        // *
@@ -74,18 +83,25 @@ struct Token {
         kRBracket,    // ]
         kLBrace,      // {
         kRBrace,      // }
+        kInterStart,  // ${
 
         // literals
+
         kCharLit,
         kStringLit,
         kPathLit,
         kIntLit,
         kRawString,
+
         // special
+
         kIndent,
         kLineBreak,
+
         // error
+
         kOtherChar,
+        kInvalidChar,
         kErrorCode
     };
     static const std::unordered_map<std::string, Token::Type> &IdentifierMap() {
@@ -139,14 +155,14 @@ struct Token {
     }
     static const std::unordered_map<char, Token::Type> &SinglePunctuationMap() {
         static std::unordered_map<char, Token::Type> single_punct_map{
-            {'+', Type::kPlus},      {'-', Type::kMinus},
-            {'*', Type::kStar},      {'%', Type::kPercent},
-            {'<', Type::kLAngle},    {'>', Type::kRAngle},
-            {',', Type::kComma},     {':', Type::kColon},
+            {'+', Type::kPlus}, {'-', Type::kMinus},
+            {'*', Type::kStar}, {'%', Type::kPercent},
+            {'<', Type::kLAngle}, {'>', Type::kRAngle},
+            {',', Type::kComma}, {':', Type::kColon},
             {';', Type::kSemicolon}, {'!', Type::kExclamation},
-            {'$', Type::kDollar},    {'(', Type::kLParen},
-            {')', Type::kRParen},    {'[', Type::kLBracket},
-            {']', Type::kRBracket},  {'{', Type::kLBrace},
+            {'$', Type::kDollar}, {'(', Type::kLParen},
+            {')', Type::kRParen}, {'[', Type::kLBracket},
+            {']', Type::kRBracket}, {'{', Type::kLBrace},
             {'}', Type::kRBrace}};
         return single_punct_map;
     }
@@ -165,6 +181,8 @@ struct Token {
     TokenLocation location;
     Data content;
 };
+
+} // namespace lexer
 
 } // namespace sushi
 
