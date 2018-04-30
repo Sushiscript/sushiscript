@@ -1,14 +1,13 @@
 #ifndef SUSHI_LEXER_LEXER_H_
 #define SUSHI_LEXER_LEXER_H_
 
+#include "./detail/character-config.h"
+#include "./detail/lookahead-stream.h"
 #include "./error.h"
-#include "./token-location.h"
 #include "./token.h"
-#include "boost/optional.hpp"
-#include "sushi/lexer/detail/character-config.h"
-#include "sushi/lexer/detail/lookahead-stream.h"
 #include "sushi/util/optional.h"
 #include <cctype>
+#include <iostream>
 #include <istream>
 #include <string>
 #include <utility>
@@ -206,6 +205,7 @@ class Lexer : public detail::LookaheadStream<Token> {
         std::string path;
         if (*input_.Lookahead() == '~') {
             path.push_back('~');
+            input_.Next();
         } else {
             path += input_.TakeWhile([](char c) { return c == '.'; });
         }
@@ -271,6 +271,8 @@ class Lexer : public detail::LookaheadStream<Token> {
         if (lookahead == '"') return StringLiteral();
         if (lookahead == '\'') return CharLiteral();
         if (lookahead == ';') return SkipAndMake(Token::Type::kSemicolon);
+        if (lookahead == '.' or lookahead == '/' or lookahead == '~')
+            return PathLiteral();
         return RawToken();
     }
     boost::optional<Token> StartOfLine() {
@@ -303,7 +305,7 @@ class Lexer : public detail::LookaheadStream<Token> {
         if (not input_.Lookahead()) {
             return boost::none;
         }
-        return raw_mode_ ? NormalMode() : RawMode();
+        return raw_mode_ ? RawMode() : NormalMode();
     }
     detail::SourceStream input_;
     bool start_of_line_ = true;

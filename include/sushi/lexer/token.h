@@ -34,6 +34,7 @@ struct Token {
         kRedirect,
         kFrom,
         kTo,
+        kAppend,
         kHere,
 
         // built-in types
@@ -125,6 +126,7 @@ struct Token {
         case Type::kRedirect: return "redirect";
         case Type::kFrom: return "from";
         case Type::kTo: return "to";
+        case Type::kAppend: return "append";
         case Type::kHere: return "here";
         case Type::kInt: return "Int";
         case Type::kBool: return "Bool";
@@ -198,6 +200,7 @@ struct Token {
             {"redirect", Type::kRedirect},
             {"from", Type::kFrom},
             {"to", Type::kTo},
+            {"append", Type::kAppend},
             {"here", Type::kHere},
             {"Int", Type::kInt},
             {"Bool", Type::kBool},
@@ -214,7 +217,7 @@ struct Token {
             {"stderr", Type::kStderr},
             {"true", Type::kTrue},
             {"false", Type::kFalse},
-            {"unit", Type::kUnit}};
+            {"unit", Type::kUnitLit}};
         return ident_map;
     }
     static const std::unordered_map<std::string, Token::Type> &
@@ -237,7 +240,7 @@ struct Token {
             {'$', Type::kDollar},    {'(', Type::kLParen},
             {')', Type::kRParen},    {'[', Type::kLBracket},
             {']', Type::kRBracket},  {'{', Type::kLBrace},
-            {'}', Type::kRBrace}};
+            {'}', Type::kRBrace},    {'=', Type::kSingleEq}};
         return single_punct_map;
     }
 
@@ -258,7 +261,7 @@ struct Token {
     Token::Type type;
     TokenLocation location;
     Data content;
-};
+}; // namespace lexer
 
 std::ostream &operator<<(std::ostream &os, lexer::Token tok) {
     os << "{`" << lexer::Token::TypeToString(tok.type) << "`, " << tok.content
