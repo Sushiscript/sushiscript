@@ -256,6 +256,10 @@ struct Token {
         return t1.type == t2.type and t1.content == t2.content;
     }
 
+    bool operator==(const Token& rhs) const {
+        return WeakEqual(*this, rhs) and location == rhs.location;
+    }
+
     using Data = boost::variant<int, std::string>;
 
     Token::Type type;

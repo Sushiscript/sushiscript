@@ -16,7 +16,6 @@ TEST(SingleTokenTest, TestInteger) {
     NoIndentStrIsToks("1234   ", TK(kIntLit, 1234));
 }
 
-
 TEST(SingleTokenTest, TestRawToken) {
     RawStrIsTokens("1", TK(kRawString, "1"));
     RawStrIsTokens("a", TK(kRawString, "a"));
@@ -25,6 +24,18 @@ TEST(SingleTokenTest, TestRawToken) {
     RawStrIsTokens("\\;", TK(kRawString, ";"));
     RawStrIsTokens("\\;\\?", TK(kRawString, ";?"));
     RawStrIsTokens("\\ ", TK(kRawString, " "));
+    RawStrIsTokens("h\\a\\ haha ", TK(kRawString, "ha haha"));
+    RawStrIsTokens("h\\a\\ haha ", TK(kRawString, "ha haha"));
+    std::string inter_test{'i', lexer::kInterDollar, lexer::kInterLBrace, 'i',
+                           lexer::kInterRBrace};
+    RawStrIsTokens(R"(i${i})", TK(kRawString, inter_test));
+    RawStrIsTokens(R"(\$\{i\})", TK(kRawString, "${i}"));
+}
+
+TEST(SingleTokenTest, TestRawMode) {
+    RawStrIsTokens("${", TK(kInterStart, 0));
+    RawStrIsTokens("$id", TK(kIdent, "id"));
+    RawStrIsTokens("$_id", TK(kIdent, "_id"));
 }
 
 TEST(SingleTokenTest, TestPath) {
@@ -37,6 +48,7 @@ TEST(SingleTokenTest, TestPath) {
     NoIndentStrIsToks("../", TK(kPathLit, "../"));
     NoIndentStrIsToks("../hello/world", TK(kPathLit, "../hello/world"));
     NoIndentStrIsToks("~/hello/world", TK(kPathLit, "~/hello/world"));
+    NoIndentStrIsToks("~/hello\\ world", TK(kPathLit, "~/hello world"));
     NoIndentStrIsToks("../    ", TK(kPathLit, "../"));
 }
 
@@ -102,4 +114,26 @@ TEST(SingleTokenTest, TestKeywords) {
     NoIndentStrIsToks("stdin", TK(kStdin, 0));
     NoIndentStrIsToks("stdout", TK(kStdout, 0));
     NoIndentStrIsToks("stderr", TK(kStderr, 0));
+}
+
+TEST(SingleTokenTest, TestCharLiteral) {
+    NoIndentStrIsToks("'a'", TK(kCharLit, 'a'));
+    NoIndentStrIsToks("'\\n'", TK(kCharLit, '\n'));
+    NoIndentStrIsToks("'\\''", TK(kCharLit, '\''));
+    NoIndentStrIsToks("'\\\\'", TK(kCharLit, '\\'));
+    NoIndentStrIsToks("'?'", TK(kCharLit, '?'));
+    NoIndentStrIsToks("'\\!'", TK(kCharLit, '!'));
+    NoIndentStrIsToks("'\\.'        ", TK(kCharLit, '.'));
+}
+
+TEST(SingleTokenTest, TestStringLiteral) {
+    NoIndentStrIsToks(R"("")", TK(kStringLit, ""));
+    NoIndentStrIsToks(R"("haha")", TK(kStringLit, "haha"));
+    NoIndentStrIsToks(R"("ha\nha")", TK(kStringLit, "ha\nha"));
+    NoIndentStrIsToks(R"("ha\tha")", TK(kStringLit, "ha\tha"));
+    NoIndentStrIsToks(R"("say\"hello\"")", TK(kStringLit, "say\"hello\""));
+    std::string inter_test{lexer::kInterDollar, lexer::kInterLBrace, 'i',
+                           lexer::kInterRBrace};
+    NoIndentStrIsToks(R"("${i}")", TK(kStringLit, inter_test));
+    NoIndentStrIsToks(R"("\$\{i\}")", TK(kStringLit, "${i}"));
 }

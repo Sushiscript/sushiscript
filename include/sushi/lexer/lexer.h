@@ -154,9 +154,9 @@ class Lexer : public detail::LookaheadStream<Token> {
                     };
                 };
             }
-            if (cc.Restrict(c1)) return boost::none;
-            input_.Skip(1);
-            return c1;
+            auto oc = cc.Unescape(c1);
+            if (oc) input_.Skip(1);
+            return oc;
         };
     }
     Token StringLiteral() {

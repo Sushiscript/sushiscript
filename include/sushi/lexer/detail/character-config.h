@@ -23,7 +23,7 @@ namespace detail {
         'v', '\v'                                                              \
     }
 
-#define INTERPOLATE_ESCAPE                                                     \
+#define INTERPOLATE_SPECIAL                                                    \
     {'{', SpecialChar::kInterLBrace}, {'}', SpecialChar::kInterRBrace}, {      \
         '$', SpecialChar::kInterDollar                                         \
     }
@@ -35,7 +35,12 @@ struct CharacterConfig {
     bool Prohibit(char c) const {
         return not isprint(c);
     }
-    virtual boost::optional<char> Escape(char c) const {
+    boost::optional<char> Unescape(char c) const {
+        if (Restrict(c) or Prohibit(c)) return boost::none;
+        auto it = UnescapeSpecial().find(c);
+        return it == end(UnescapeSpecial()) ? c : it->second;
+    }
+    boost::optional<char> Escape(char c) const {
         if (Prohibit(c)) return boost::none;
         auto it = EscapeMap().find(c);
         return it == end(EscapeMap()) ? c : it->second;
@@ -44,6 +49,7 @@ struct CharacterConfig {
   private:
     virtual const std::string &RestrictedList() const = 0;
     virtual const std::unordered_map<char, char> &EscapeMap() const = 0;
+    virtual const std::unordered_map<char, char> &UnescapeSpecial() const = 0;
 };
 
 struct StringConfig : CharacterConfig {
@@ -53,8 +59,11 @@ struct StringConfig : CharacterConfig {
         return l;
     }
     const std::unordered_map<char, char> &EscapeMap() const override {
-        static std::unordered_map<char, char> m = {TRADITION_ESCAPE,
-                                                   INTERPOLATE_ESCAPE};
+        static std::unordered_map<char, char> m = {TRADITION_ESCAPE};
+        return m;
+    };
+    const std::unordered_map<char, char> &UnescapeSpecial() const override {
+        static std::unordered_map<char, char> m = {INTERPOLATE_SPECIAL};
         return m;
     };
 };
@@ -69,6 +78,10 @@ struct CharConfig : CharacterConfig {
         static std::unordered_map<char, char> m = {TRADITION_ESCAPE};
         return m;
     }
+    const std::unordered_map<char, char> &UnescapeSpecial() const override {
+        static std::unordered_map<char, char> m;
+        return m;
+    };
 };
 
 struct RawConfig : CharacterConfig {
@@ -78,9 +91,13 @@ struct RawConfig : CharacterConfig {
         return l;
     }
     const std::unordered_map<char, char> &EscapeMap() const override {
-        static std::unordered_map<char, char> m = {INTERPOLATE_ESCAPE};
+        static std::unordered_map<char, char> m = {};
         return m;
     }
+    const std::unordered_map<char, char> &UnescapeSpecial() const override {
+        static std::unordered_map<char, char> m = {INTERPOLATE_SPECIAL};
+        return m;
+    };
 };
 
 } // namespace detail

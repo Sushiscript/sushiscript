@@ -29,10 +29,12 @@ inline Tokens CollectAll(lexer::Lexer &l) {
     return toks;
 }
 
-inline bool AllWeakEqual(const Tokens &t1, const Tokens &t2) {
+template <bool Strong = false>
+bool AllEqual(const Tokens &t1, const Tokens &t2) {
     if (t1.size() != t2.size()) return false;
     for (int i = 0; i < t1.size(); ++i) {
-        if (not lexer::Token::WeakEqual(t1[i], t2[i])) return false;
+        bool eq = Strong ? t1[i] == t2[i] : Token::WeakEqual(t1[i], t2[i]);
+        if (not eq) return false;
     }
     return true;
 }
@@ -44,26 +46,33 @@ inline Tokens FromString(const std::string &s, bool raw_mode = false) {
     return CollectAll(lex);
 }
 
-#define TK(type, data)                                                         \
+#define TKL(type, data, line, col)                                             \
     lexer::Token {                                                             \
-        lexer::Token::Type::type, {"", 1, 1}, data                             \
+        lexer::Token::Type::type, {"", line, col}, data                        \
     }
 
-template <bool Raw = false, typename... Args>
+#define TK(type, data) TKL(type, data, 1, 1)
+
+template <bool Raw = false, bool Strong = false, typename... Args>
 void StringIsTokens(const std::string &s, Args... tokens) {
     Tokens expected{tokens...};
     Tokens test = FromString(s, Raw);
-    EXPECT_PRED2(AllWeakEqual, test, expected);
+    EXPECT_PRED2(AllEqual<Strong>, test, expected);
 }
 
-template <typename... Args>
+template <bool Raw = false, typename ... Args>
+void ExactStrIsToks(const std::string& s, Args... tokens) {
+    StringIsTokens<Raw, true>(s, tokens...);
+}
+
+template <bool Strong = false, typename... Args>
 void NoIndentStrIsToks(const std::string &s, Args... tokens) {
-    StringIsTokens(s, TK(kIndent, 0), tokens...);
+    StringIsTokens<false, Strong>(s, TK(kIndent, 0), tokens...);
 }
 
-template <typename... Args>
+template <bool Strong = false, typename... Args>
 void RawStrIsTokens(const std::string &s, Args... tokens) {
-    StringIsTokens<true>(s, tokens...);
+    StringIsTokens<true, Strong>(s, tokens...);
 }
 
 } // namespace test
