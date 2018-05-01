@@ -46,12 +46,14 @@ inline Tokens FromString(const std::string &s, bool raw_mode = false) {
     return CollectAll(lex);
 }
 
-#define TKL(type, data, line, col)                                             \
+#define TDL(type, data, line, col)                                             \
     lexer::Token {                                                             \
         lexer::Token::Type::type, {"", line, col}, data                        \
     }
 
-#define TK(type, data) TKL(type, data, 1, 1)
+#define TD(type, data) TDL(type, data, 1, 1)
+#define TK(type) TD(type, 0)
+#define TL(type, line, col) TDL(type, 0, line, col)
 
 template <bool Raw = false, bool Strong = false, typename... Args>
 void StringIsTokens(const std::string &s, Args... tokens) {
@@ -67,7 +69,7 @@ void ExactStrIsToks(const std::string& s, Args... tokens) {
 
 template <bool Strong = false, typename... Args>
 void NoIndentStrIsToks(const std::string &s, Args... tokens) {
-    StringIsTokens<false, Strong>(s, TK(kIndent, 0), tokens...);
+    StringIsTokens<false, Strong>(s, TK(kIndent), tokens...);
 }
 
 template <bool Strong = false, typename... Args>

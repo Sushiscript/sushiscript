@@ -122,15 +122,14 @@ class Lexer : public detail::LookaheadStream<Token> {
         if (iter == end(Token::DoublePunctuationMap())) {
             return boost::none;
         }
-        return SkipAndMake(iter->second, 2, op);
+        return SkipAndMake(iter->second, 2);
     }
     boost::optional<Token> TrySingleOperator() {
         auto iter = Token::SinglePunctuationMap().find(*input_.Lookahead());
         if (iter == end(Token::SinglePunctuationMap())) {
             return boost::none;
         }
-        return SkipAndMake(
-            iter->second, 1, std::string(1, *input_.Lookahead()));
+        return SkipAndMake(iter->second, 1);
     }
     boost::optional<Token> TryPunctuation() {
         using namespace sushi::util::monadic_optional;

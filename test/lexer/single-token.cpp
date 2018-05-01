@@ -3,137 +3,137 @@
 using namespace sushi::lexer::test;
 
 TEST(SingleTokenTest, TestIdentifier) {
-    NoIndentStrIsToks("i", TK(kIdent, "i"));
-    NoIndentStrIsToks("_hi", TK(kIdent, "_hi"));
-    NoIndentStrIsToks("_123", TK(kIdent, "_123"));
-    NoIndentStrIsToks("bla    ", TK(kIdent, "bla"));
+    NoIndentStrIsToks("i", TD(kIdent, "i"));
+    NoIndentStrIsToks("_hi", TD(kIdent, "_hi"));
+    NoIndentStrIsToks("_123", TD(kIdent, "_123"));
+    NoIndentStrIsToks("bla    ", TD(kIdent, "bla"));
 }
 
 TEST(SingleTokenTest, TestInteger) {
-    NoIndentStrIsToks("0", TK(kIntLit, 0));
-    NoIndentStrIsToks("123", TK(kIntLit, 123));
-    NoIndentStrIsToks("000001", TK(kIntLit, 1));
-    NoIndentStrIsToks("1234   ", TK(kIntLit, 1234));
+    NoIndentStrIsToks("0", TD(kIntLit, 0));
+    NoIndentStrIsToks("123", TD(kIntLit, 123));
+    NoIndentStrIsToks("000001", TD(kIntLit, 1));
+    NoIndentStrIsToks("1234   ", TD(kIntLit, 1234));
 }
 
 TEST(SingleTokenTest, TestRawToken) {
-    RawStrIsTokens("1", TK(kRawString, "1"));
-    RawStrIsTokens("a", TK(kRawString, "a"));
-    RawStrIsTokens("?", TK(kRawString, "?"));
-    RawStrIsTokens("\\n", TK(kRawString, "n"));
-    RawStrIsTokens("\\;", TK(kRawString, ";"));
-    RawStrIsTokens("\\;\\?", TK(kRawString, ";?"));
-    RawStrIsTokens("\\ ", TK(kRawString, " "));
-    RawStrIsTokens("h\\a\\ haha ", TK(kRawString, "ha haha"));
-    RawStrIsTokens("h\\a\\ haha ", TK(kRawString, "ha haha"));
+    RawStrIsTokens("1", TD(kRawString, "1"));
+    RawStrIsTokens("a", TD(kRawString, "a"));
+    RawStrIsTokens("?", TD(kRawString, "?"));
+    RawStrIsTokens("\\n", TD(kRawString, "n"));
+    RawStrIsTokens("\\;", TD(kRawString, ";"));
+    RawStrIsTokens("\\;\\?", TD(kRawString, ";?"));
+    RawStrIsTokens("\\ ", TD(kRawString, " "));
+    RawStrIsTokens("h\\a\\ haha ", TD(kRawString, "ha haha"));
+    RawStrIsTokens("h\\a\\ haha ", TD(kRawString, "ha haha"));
     std::string inter_test{'i', lexer::kInterDollar, lexer::kInterLBrace, 'i',
                            lexer::kInterRBrace};
-    RawStrIsTokens(R"(i${i})", TK(kRawString, inter_test));
-    RawStrIsTokens(R"(\$\{i\})", TK(kRawString, "${i}"));
+    RawStrIsTokens(R"(i${i})", TD(kRawString, inter_test));
+    RawStrIsTokens(R"(\$\{i\})", TD(kRawString, "${i}"));
 }
 
 TEST(SingleTokenTest, TestRawMode) {
-    RawStrIsTokens("${", TK(kInterStart, 0));
-    RawStrIsTokens("$id", TK(kIdent, "id"));
-    RawStrIsTokens("$_id", TK(kIdent, "_id"));
+    RawStrIsTokens("${", TD(kInterStart, 0));
+    RawStrIsTokens("$id", TD(kIdent, "id"));
+    RawStrIsTokens("$_id", TD(kIdent, "_id"));
 }
 
 TEST(SingleTokenTest, TestPath) {
-    NoIndentStrIsToks(".", TK(kPathLit, "."));
-    NoIndentStrIsToks("/", TK(kPathLit, "/"));
-    NoIndentStrIsToks("..", TK(kPathLit, ".."));
-    NoIndentStrIsToks("....", TK(kPathLit, "...."));
-    NoIndentStrIsToks("~", TK(kPathLit, "~"));
-    NoIndentStrIsToks("~/", TK(kPathLit, "~/"));
-    NoIndentStrIsToks("../", TK(kPathLit, "../"));
-    NoIndentStrIsToks("../hello/world", TK(kPathLit, "../hello/world"));
-    NoIndentStrIsToks("~/hello/world", TK(kPathLit, "~/hello/world"));
-    NoIndentStrIsToks("~/hello\\ world", TK(kPathLit, "~/hello world"));
-    NoIndentStrIsToks("../    ", TK(kPathLit, "../"));
+    NoIndentStrIsToks(".", TD(kPathLit, "."));
+    NoIndentStrIsToks("/", TD(kPathLit, "/"));
+    NoIndentStrIsToks("..", TD(kPathLit, ".."));
+    NoIndentStrIsToks("....", TD(kPathLit, "...."));
+    NoIndentStrIsToks("~", TD(kPathLit, "~"));
+    NoIndentStrIsToks("~/", TD(kPathLit, "~/"));
+    NoIndentStrIsToks("../", TD(kPathLit, "../"));
+    NoIndentStrIsToks("../hello/world", TD(kPathLit, "../hello/world"));
+    NoIndentStrIsToks("~/hello/world", TD(kPathLit, "~/hello/world"));
+    NoIndentStrIsToks("~/hello\\ world", TD(kPathLit, "~/hello world"));
+    NoIndentStrIsToks("../    ", TD(kPathLit, "../"));
 }
 
 TEST(SingleTokenTest, TestPunctuation) {
-    NoIndentStrIsToks("+", TK(kPlus, "+"));
-    NoIndentStrIsToks("-", TK(kMinus, "-"));
-    NoIndentStrIsToks("*", TK(kStar, "*"));
-    NoIndentStrIsToks("//", TK(kDivide, "//"));
-    NoIndentStrIsToks("%", TK(kPercent, "%"));
-    NoIndentStrIsToks("<", TK(kLAngle, "<"));
-    NoIndentStrIsToks(">", TK(kRAngle, ">"));
-    NoIndentStrIsToks("<=", TK(kLessEq, "<="));
-    NoIndentStrIsToks(">=", TK(kGreaterEq, ">="));
-    NoIndentStrIsToks("==", TK(kDoubleEq, "=="));
-    NoIndentStrIsToks("!=", TK(kNotEqual, "!="));
-    NoIndentStrIsToks(",", TK(kComma, ","));
-    NoIndentStrIsToks("=", TK(kSingleEq, "="));
-    NoIndentStrIsToks(":", TK(kColon, ":"));
-    NoIndentStrIsToks(";", TK(kSemicolon, ";"));
-    NoIndentStrIsToks("[", TK(kLBracket, "["));
-    NoIndentStrIsToks("]", TK(kRBracket, "]"));
-    NoIndentStrIsToks("{", TK(kLBrace, "{"));
-    NoIndentStrIsToks("}", TK(kRBrace, "}"));
-    NoIndentStrIsToks("(", TK(kLParen, "("));
-    NoIndentStrIsToks(")", TK(kRParen, ")"));
-    NoIndentStrIsToks("!", TK(kExclamation, "!"));
-    NoIndentStrIsToks("$", TK(kDollar, "$"));
+    NoIndentStrIsToks("+", TK(kPlus));
+    NoIndentStrIsToks("-", TK(kMinus));
+    NoIndentStrIsToks("*", TK(kStar));
+    NoIndentStrIsToks("//", TK(kDivide));
+    NoIndentStrIsToks("%", TK(kPercent));
+    NoIndentStrIsToks("<", TK(kLAngle));
+    NoIndentStrIsToks(">", TK(kRAngle));
+    NoIndentStrIsToks("<=", TK(kLessEq));
+    NoIndentStrIsToks(">=", TK(kGreaterEq));
+    NoIndentStrIsToks("==", TK(kDoubleEq));
+    NoIndentStrIsToks("!=", TK(kNotEqual));
+    NoIndentStrIsToks(",", TK(kComma));
+    NoIndentStrIsToks("=", TK(kSingleEq));
+    NoIndentStrIsToks(":", TK(kColon));
+    NoIndentStrIsToks(";", TK(kSemicolon));
+    NoIndentStrIsToks("[", TK(kLBracket));
+    NoIndentStrIsToks("]", TK(kRBracket));
+    NoIndentStrIsToks("{", TK(kLBrace));
+    NoIndentStrIsToks("}", TK(kRBrace));
+    NoIndentStrIsToks("(", TK(kLParen));
+    NoIndentStrIsToks(")", TK(kRParen));
+    NoIndentStrIsToks("!", TK(kExclamation));
+    NoIndentStrIsToks("$", TK(kDollar));
 }
 
 TEST(SingleTokenTest, TestKeywords) {
-    NoIndentStrIsToks("or", TK(kOr, 0));
-    NoIndentStrIsToks("and", TK(kAnd, 0));
-    NoIndentStrIsToks("define", TK(kDefine, 0));
-    NoIndentStrIsToks("return", TK(kReturn, 0));
-    NoIndentStrIsToks("export", TK(kExport, 0));
-    NoIndentStrIsToks("if", TK(kIf, 0));
-    NoIndentStrIsToks("else", TK(kElse, 0));
-    NoIndentStrIsToks("switch", TK(kSwitch, 0));
-    NoIndentStrIsToks("case", TK(kCase, 0));
-    NoIndentStrIsToks("default", TK(kDefault, 0));
-    NoIndentStrIsToks("for", TK(kFor, 0));
-    NoIndentStrIsToks("in", TK(kIn, 0));
-    NoIndentStrIsToks("break", TK(kBreak, 0));
-    NoIndentStrIsToks("continue", TK(kContinue, 0));
-    NoIndentStrIsToks("redirect", TK(kRedirect, 0));
-    NoIndentStrIsToks("from", TK(kFrom, 0));
-    NoIndentStrIsToks("to", TK(kTo, 0));
-    NoIndentStrIsToks("append", TK(kAppend, 0));
-    NoIndentStrIsToks("here", TK(kHere, 0));
-    NoIndentStrIsToks("Int", TK(kInt, 0));
-    NoIndentStrIsToks("Bool", TK(kBool, 0));
-    NoIndentStrIsToks("Unit", TK(kUnit, 0));
-    NoIndentStrIsToks("String", TK(kString, 0));
-    NoIndentStrIsToks("Char", TK(kChar, 0));
-    NoIndentStrIsToks("Path", TK(kPath, 0));
-    NoIndentStrIsToks("Array", TK(kArray, 0));
-    NoIndentStrIsToks("Map", TK(kMap, 0));
-    NoIndentStrIsToks("ExitCode", TK(kExitCode, 0));
-    NoIndentStrIsToks("FD", TK(kFd, 0));
-    NoIndentStrIsToks("true", TK(kTrue, 0));
-    NoIndentStrIsToks("false", TK(kFalse, 0));
-    NoIndentStrIsToks("unit", TK(kUnitLit, 0));
-    NoIndentStrIsToks("stdin", TK(kStdin, 0));
-    NoIndentStrIsToks("stdout", TK(kStdout, 0));
-    NoIndentStrIsToks("stderr", TK(kStderr, 0));
+    NoIndentStrIsToks("or", TK(kOr));
+    NoIndentStrIsToks("and", TK(kAnd));
+    NoIndentStrIsToks("define", TK(kDefine));
+    NoIndentStrIsToks("return", TK(kReturn));
+    NoIndentStrIsToks("export", TK(kExport));
+    NoIndentStrIsToks("if", TK(kIf));
+    NoIndentStrIsToks("else", TK(kElse));
+    NoIndentStrIsToks("switch", TK(kSwitch));
+    NoIndentStrIsToks("case", TK(kCase));
+    NoIndentStrIsToks("default", TK(kDefault));
+    NoIndentStrIsToks("for", TK(kFor));
+    NoIndentStrIsToks("in", TK(kIn));
+    NoIndentStrIsToks("break", TK(kBreak));
+    NoIndentStrIsToks("continue", TK(kContinue));
+    NoIndentStrIsToks("redirect", TK(kRedirect));
+    NoIndentStrIsToks("from", TK(kFrom));
+    NoIndentStrIsToks("to", TK(kTo));
+    NoIndentStrIsToks("append", TK(kAppend));
+    NoIndentStrIsToks("here", TK(kHere));
+    NoIndentStrIsToks("Int", TK(kInt));
+    NoIndentStrIsToks("Bool", TK(kBool));
+    NoIndentStrIsToks("Unit", TK(kUnit));
+    NoIndentStrIsToks("String", TK(kString));
+    NoIndentStrIsToks("Char", TK(kChar));
+    NoIndentStrIsToks("Path", TK(kPath));
+    NoIndentStrIsToks("Array", TK(kArray));
+    NoIndentStrIsToks("Map", TK(kMap));
+    NoIndentStrIsToks("ExitCode", TK(kExitCode));
+    NoIndentStrIsToks("FD", TK(kFd));
+    NoIndentStrIsToks("true", TK(kTrue));
+    NoIndentStrIsToks("false", TK(kFalse));
+    NoIndentStrIsToks("unit", TK(kUnitLit));
+    NoIndentStrIsToks("stdin", TK(kStdin));
+    NoIndentStrIsToks("stdout", TK(kStdout));
+    NoIndentStrIsToks("stderr", TK(kStderr));
 }
 
 TEST(SingleTokenTest, TestCharLiteral) {
-    NoIndentStrIsToks("'a'", TK(kCharLit, 'a'));
-    NoIndentStrIsToks("'\\n'", TK(kCharLit, '\n'));
-    NoIndentStrIsToks("'\\''", TK(kCharLit, '\''));
-    NoIndentStrIsToks("'\\\\'", TK(kCharLit, '\\'));
-    NoIndentStrIsToks("'?'", TK(kCharLit, '?'));
-    NoIndentStrIsToks("'\\!'", TK(kCharLit, '!'));
-    NoIndentStrIsToks("'\\.'        ", TK(kCharLit, '.'));
+    NoIndentStrIsToks("'a'", TD(kCharLit, 'a'));
+    NoIndentStrIsToks("'\\n'", TD(kCharLit, '\n'));
+    NoIndentStrIsToks("'\\''", TD(kCharLit, '\''));
+    NoIndentStrIsToks("'\\\\'", TD(kCharLit, '\\'));
+    NoIndentStrIsToks("'?'", TD(kCharLit, '?'));
+    NoIndentStrIsToks("'\\!'", TD(kCharLit, '!'));
+    NoIndentStrIsToks("'\\.'        ", TD(kCharLit, '.'));
 }
 
 TEST(SingleTokenTest, TestStringLiteral) {
-    NoIndentStrIsToks(R"("")", TK(kStringLit, ""));
-    NoIndentStrIsToks(R"("haha")", TK(kStringLit, "haha"));
-    NoIndentStrIsToks(R"("ha\nha")", TK(kStringLit, "ha\nha"));
-    NoIndentStrIsToks(R"("ha\tha")", TK(kStringLit, "ha\tha"));
-    NoIndentStrIsToks(R"("say\"hello\"")", TK(kStringLit, "say\"hello\""));
+    NoIndentStrIsToks(R"("")", TD(kStringLit, ""));
+    NoIndentStrIsToks(R"("haha")", TD(kStringLit, "haha"));
+    NoIndentStrIsToks(R"("ha\nha")", TD(kStringLit, "ha\nha"));
+    NoIndentStrIsToks(R"("ha\tha")", TD(kStringLit, "ha\tha"));
+    NoIndentStrIsToks(R"("say\"hello\"")", TD(kStringLit, "say\"hello\""));
     std::string inter_test{lexer::kInterDollar, lexer::kInterLBrace, 'i',
                            lexer::kInterRBrace};
-    NoIndentStrIsToks(R"("${i}")", TK(kStringLit, inter_test));
-    NoIndentStrIsToks(R"("\$\{i\}")", TK(kStringLit, "${i}"));
+    NoIndentStrIsToks(R"("${i}")", TD(kStringLit, inter_test));
+    NoIndentStrIsToks(R"("\$\{i\}")", TD(kStringLit, "${i}"));
 }
