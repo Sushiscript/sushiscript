@@ -54,6 +54,9 @@ inline Tokens FromString(const std::string &s, bool raw_mode = false) {
 #define TD(type, data) TDL(type, data, 1, 1)
 #define TK(type) TD(type, 0)
 #define TL(type, line, col) TDL(type, 0, line, col)
+#define TEL(err, line, col)                                                    \
+    TDL(kErrorCode, static_cast<int>(sushi::lexer::Error::err), line, col)
+#define TE(err) TEL(err, 1, 1);
 
 template <bool Raw = false, bool Strong = false, typename... Args>
 void StringIsTokens(const std::string &s, Args... tokens) {
@@ -63,18 +66,18 @@ void StringIsTokens(const std::string &s, Args... tokens) {
     EXPECT_PRED2(AllEqual<Strong>, test, expected);
 }
 template <bool Raw = false, bool Strong = false>
-void StringIsTokens(const std::string &s, const Tokens& expected) {
+void StringIsTokens(const std::string &s, const Tokens &expected) {
     Tokens test = FromString(s, Raw);
     EXPECT_PRED2(AllEqual<Strong>, test, expected);
 }
 
-template <bool Raw = false, typename ... Args>
-void ExactStrIsToks(const std::string& s, Args... tokens) {
+template <bool Raw = false, typename... Args>
+void ExactStrIsToks(const std::string &s, Args... tokens) {
     StringIsTokens<Raw, true>(s, tokens...);
 }
 
 template <bool Raw = false>
-void ExactStrIsToks(const std::string& s, const Tokens& toks) {
+void ExactStrIsToks(const std::string &s, const Tokens &toks) {
     StringIsTokens<Raw, true>(s, toks);
 }
 
@@ -84,7 +87,7 @@ void NoIndentStrIsToks(const std::string &s, Args... tokens) {
 }
 
 template <bool Strong = false>
-void NoIndentStrIsToks(const std::string &s, const Tokens& tokens) {
+void NoIndentStrIsToks(const std::string &s, const Tokens &tokens) {
     StringIsTokens<false, Strong>(s, TK(kIndent), tokens);
 }
 
@@ -93,7 +96,7 @@ void RawStrIsTokens(const std::string &s, Args... tokens) {
     StringIsTokens<true, Strong>(s, tokens...);
 }
 template <bool Strong = false>
-void RawStrIsTokens(const std::string &s, const Tokens& tokens) {
+void RawStrIsTokens(const std::string &s, const Tokens &tokens) {
     StringIsTokens<true, Strong>(s, tokens);
 }
 

@@ -157,41 +157,43 @@ class Lexer : public detail::LookaheadStream<Token> {
             return oc;
         };
     }
+    std::string String(const detail::CharacterConfig &cc) {
+        std::string s;
+        for (boost::optional<char> n; (n = Character(cc));) s.push_back(*n);
+        return s;
+    }
     Token StringLiteral() {
         auto token = RecordLocation();
         input_.Next();
-        std::string data;
-        for (boost::optional<char> oc;
-             (oc = Character(detail::StringConfig()));) {
-            data.push_back(*oc);
-        }
-        auto tail = input_.Next();
+        std::string data = String(detail::StringConfig());
+        auto tail = input_.Lookahead();
         if (not tail or *tail != '"') {
             return token(
                 Token::Type::kErrorCode,
-                static_cast<int>(Error::kInvalidStringLit));
+                static_cast<int>(Error::kUnclosedStringQuote));
         }
+        input_.Next();
         return token(Token::Type::kStringLit, data);
     }
 
     Token CharLiteral() {
         auto token = RecordLocation();
         input_.Next();
-        auto oc = Character(detail::CharConfig());
-        auto tail = input_.Next();
-        if (not oc or not tail or *tail != '\'') {
+        std::string s = String(detail::CharConfig());
+        auto tail = input_.Lookahead();
+        if (not tail or *tail != '\'') {
             return token(
                 Token::Type::kErrorCode,
-                static_cast<int>(Error::kInvalidCharLit));
+                static_cast<int>(Error::kUnclosedCharQuote));
         }
-        return token(Token::Type::kCharLit, static_cast<int>(*oc));
+        input_.Next();
+        if (s.size() == 1) return token(Token::Type::kCharLit, s.front());
+        return token(
+            Token::Type::kErrorCode, static_cast<int>(Error::kInvalidChar));
     }
     Token RawToken() {
         auto token = RecordLocation();
-        std::string tok;
-        for (boost::optional<char> oc; (oc = Character(detail::RawConfig()));) {
-            tok.push_back(*oc);
-        }
+        std::string tok = String(detail::RawConfig());
         if (tok.empty())
             return token(
                 Token::Type::kErrorCode,
@@ -207,14 +209,14 @@ class Lexer : public detail::LookaheadStream<Token> {
         } else {
             path += input_.TakeWhile([](char c) { return c == '.'; });
         }
-        auto next = input_.Lookahead();
-        if (not next or *next != '/') {
-            return token(Token::Type::kPathLit, path);
+        auto slash = RecordLocation();
+        std::string rest = String(detail::RawConfig());
+        if (not rest.empty() and rest.front() != '/') {
+            return slash(
+                Token::Type::kErrorCode,
+                static_cast<int>(Error::kPathExpectSlash));
         }
-        path.push_back(*input_.Next());
-        for (boost::optional<char> oc; (oc = Character(detail::RawConfig()));) {
-            path.push_back(*oc);
-        }
+        path += rest;
         return token(Token::Type::kPathLit, path);
     }
     Token IntLiteral() {

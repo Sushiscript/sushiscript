@@ -5,8 +5,9 @@ namespace sushi {
 namespace lexer {
 
 enum class Error {
-    kInvalidStringLit,
-    kInvalidCharLit,
+    kUnclosedStringQuote,
+    kInvalidChar,
+    kUnclosedCharQuote,
     kPathExpectSlash,
     kExpectRawToken,
     kSingleDollar

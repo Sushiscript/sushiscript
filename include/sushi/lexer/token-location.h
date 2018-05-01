@@ -41,7 +41,7 @@ struct TokenLocation {
 
     void NewLine() {
         ++line;
-        column = 0;
+        column = 1;
     }
 };
 
