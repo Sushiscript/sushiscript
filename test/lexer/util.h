@@ -57,6 +57,7 @@ inline Tokens FromString(const std::string &s, bool raw_mode = false) {
 
 template <bool Raw = false, bool Strong = false, typename... Args>
 void StringIsTokens(const std::string &s, Args... tokens) {
+    SCOPED_TRACE(s);
     Tokens expected{tokens...};
     Tokens test = FromString(s, Raw);
     EXPECT_PRED2(AllEqual<Strong>, test, expected);

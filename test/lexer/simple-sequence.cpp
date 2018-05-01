@@ -43,4 +43,47 @@ TEST(SimpleSequence, TestWhitespaces) {
 }
 
 TEST(SimpleSequence, TestLocation) {
+    NoIndentStrIsToks<true>("ident", TDL(kIdent, "ident", 1, 1));
+    ExactStrIsToks(
+        "\nident", TDL(kIndent, 0, 2, 1), TDL(kIdent, "ident", 2, 1));
+    ExactStrIsToks(
+        "  ident", TDL(kIndent, 2, 1, 1), TDL(kIdent, "ident", 1, 3));
+    ExactStrIsToks(
+        "\n  ident", TDL(kIndent, 2, 2, 1), TDL(kIdent, "ident", 2, 3));
+    ExactStrIsToks(
+        "\n  ident", TDL(kIndent, 2, 2, 1), TDL(kIdent, "ident", 2, 3));
+    ExactStrIsToks(
+        "\n  \n  \n  ident", TDL(kIndent, 2, 4, 1), TDL(kIdent, "ident", 4, 3));
+    NoIndentStrIsToks<true>(
+        "ident 123 true ./w", TDL(kIdent, "ident", 1, 1),
+        TDL(kIntLit, 123, 1, 7), TL(kTrue, 1, 11), TDL(kPathLit, "./w", 1, 16));
+    NoIndentStrIsToks<true>(
+        "== != < >", TL(kDoubleEq, 1, 1), TL(kNotEqual, 1, 4),
+        TL(kLAngle, 1, 7), TL(kRAngle, 1, 9));
+    NoIndentStrIsToks<true>(
+        R"("hello", 'w', orld)", TDL(kStringLit, "hello", 1, 1),
+        TL(kComma, 1, 8), TDL(kCharLit, 'w', 1, 10), TL(kComma, 1, 13),
+        TDL(kIdent, "orld", 1, 15));
+    RawStrIsTokens(
+        "some/raw/string ../and/path", TDL(kRawString, "some/raw/string", 1, 1),
+        TDL(kPathLit, "../and/path", 1, 17));
+    RawStrIsTokens(
+        "$IDENT ${", TDL(kIdent, "IDENT", 1, 2), TL(kInterStart, 1, 9));
+}
+
+TEST(SimpleSequence, TestConnected) {
+    NoIndentStrIsToks(
+        "1<2==true", TD(kIntLit, 1), TK(kLAngle), TD(kIntLit, 2), TK(kDoubleEq),
+        TK(kTrue));
+    NoIndentStrIsToks(
+        "===>====", TK(kDoubleEq), TK(kSingleEq), TK(kGreaterEq), TK(kDoubleEq),
+        TK(kSingleEq));
+    NoIndentStrIsToks("line\\\njoin", TD(kIdent, "line"), TD(kIdent, "join"));
+    NoIndentStrIsToks(
+        R"(./path/and"string")", TD(kPathLit, "./path/and"),
+        TD(kStringLit, "string"));
+    NoIndentStrIsToks(
+        "./path/and'c'", TD(kPathLit, "./path/and"), TD(kCharLit, 'c'));
+    NoIndentStrIsToks(
+        "./path/and#comment", TD(kPathLit, "./path/and"));
 }
