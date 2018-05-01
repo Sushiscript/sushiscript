@@ -267,9 +267,9 @@ struct Token {
     Data content;
 }; // namespace lexer
 
-std::ostream &operator<<(std::ostream &os, lexer::Token tok) {
-    os << "{`" << lexer::Token::TypeToString(tok.type) << "`, " << tok.content
-       << '}';
+inline std::ostream &operator<<(std::ostream &os, lexer::Token tok) {
+    os << "`" << lexer::Token::TypeToString(tok.type) << ", " << tok.content
+       << ", (" << tok.location.line << ", " << tok.location.column << ")`";
     return os;
 }
 

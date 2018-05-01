@@ -17,7 +17,7 @@ namespace lexer {
 
 namespace detail {
 
-bool IsIdentHead(char c) {
+inline bool IsIdentHead(char c) {
     return static_cast<bool>(isalpha(c)) or c == '_';
 }
 
@@ -80,14 +80,13 @@ class Lexer : public detail::LookaheadStream<Token> {
         return Token{t, std::move(location), std::move(d)};
     }
     Token Indentation() {
-        int num_of_space = 0;
         auto token = RecordLocation();
-        for (auto n = input_.Lookahead(); n and *n == ' ';) input_.Next();
+        std::string indent = input_.TakeWhile([](char c) { return c == ' '; });
         if (TryJoinLine() or static_cast<bool>(TryLineBreak())) {
             return Indentation();
         }
         start_of_line_ = false;
-        return token(Token::Type::kIndent, num_of_space);
+        return token(Token::Type::kIndent, indent.size());
     }
     Token LineBreak() {
         // assert(*input_.Lookahead() == '\n')
@@ -136,7 +135,7 @@ class Lexer : public detail::LookaheadStream<Token> {
         return TryDoubleOperator() | [this]() { return TrySingleOperator(); };
     }
     void SkipSpaces() {
-        input_.SkipWhile([](char c) { return isspace(c); });
+        input_.SkipWhile([](char c) { return c == ' '; });
         if (TryJoinLine()) {
             SkipSpaces();
         }
@@ -276,6 +275,7 @@ class Lexer : public detail::LookaheadStream<Token> {
     }
     boost::optional<Token> StartOfLine() {
         auto indent = Indentation();
+        if (not input_.Lookahead()) return boost::none;
         if (TryLineComment()) {
             LineBreak();
             return Consume();
@@ -286,8 +286,8 @@ class Lexer : public detail::LookaheadStream<Token> {
         if (start_of_line_) return StartOfLine();
 
         SkipSpaces();
-        if (not input_.Lookahead()) return boost::none;
         TryLineComment();
+        if (not input_.Lookahead()) return boost::none;
         if (auto lb = TryLineBreak()) return *lb;
 
         return NormalLookaheadDispatch();
@@ -295,8 +295,8 @@ class Lexer : public detail::LookaheadStream<Token> {
     boost::optional<Token> RawMode() {
         SkipSpaces();
 
-        if (not input_.Lookahead()) return boost::none;
         TryLineComment();
+        if (not input_.Lookahead()) return boost::none;
         if (auto lb = TryLineBreak()) return *lb;
         return RawLookaheadDispatch();
     }

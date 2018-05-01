@@ -61,10 +61,20 @@ void StringIsTokens(const std::string &s, Args... tokens) {
     Tokens test = FromString(s, Raw);
     EXPECT_PRED2(AllEqual<Strong>, test, expected);
 }
+template <bool Raw = false, bool Strong = false>
+void StringIsTokens(const std::string &s, const Tokens& expected) {
+    Tokens test = FromString(s, Raw);
+    EXPECT_PRED2(AllEqual<Strong>, test, expected);
+}
 
 template <bool Raw = false, typename ... Args>
 void ExactStrIsToks(const std::string& s, Args... tokens) {
     StringIsTokens<Raw, true>(s, tokens...);
+}
+
+template <bool Raw = false>
+void ExactStrIsToks(const std::string& s, const Tokens& toks) {
+    StringIsTokens<Raw, true>(s, toks);
 }
 
 template <bool Strong = false, typename... Args>
@@ -72,9 +82,18 @@ void NoIndentStrIsToks(const std::string &s, Args... tokens) {
     StringIsTokens<false, Strong>(s, TK(kIndent), tokens...);
 }
 
+template <bool Strong = false>
+void NoIndentStrIsToks(const std::string &s, const Tokens& tokens) {
+    StringIsTokens<false, Strong>(s, TK(kIndent), tokens);
+}
+
 template <bool Strong = false, typename... Args>
 void RawStrIsTokens(const std::string &s, Args... tokens) {
     StringIsTokens<true, Strong>(s, tokens...);
+}
+template <bool Strong = false>
+void RawStrIsTokens(const std::string &s, const Tokens& tokens) {
+    StringIsTokens<true, Strong>(s, tokens);
 }
 
 } // namespace test
