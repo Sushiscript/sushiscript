@@ -1,9 +1,15 @@
 [requires]
 boost/1.66.0@conan/stable
+gtest/1.8.0@conan/stable
 
 [options]
 boost:shared=True
+gtest:shared=True
 
 [generators]
 cmake
 ycm
+
+[imports]
+bin, *.dll -> ./bin
+lib, *.dylib -> ./bin
