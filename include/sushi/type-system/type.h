@@ -19,6 +19,8 @@ using TypeVisitor =
 // highly simplified version of type that currently support only built-in types
 struct Type {
     SUSHI_VISITABLE(TypeVisitor)
+
+    virtual ~Type() = default;
 };
 
 struct BuiltInAtom : Type {

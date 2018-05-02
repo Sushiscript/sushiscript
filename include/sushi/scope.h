@@ -54,7 +54,7 @@ class Scope {
         if (bindings_.count(identifier)) {
             return false;
         }
-        bindings_[identifier] = std::move(t);
+        bindings_.emplace(identifier, std::move(t));
         return true;
     }
 
