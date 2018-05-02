@@ -81,18 +81,4 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     SUSHI_VISITING(ast::Expression, expression);
 };
 
-class CodeGenerator {
-  public:
-    std::string GenCode(
-        const ast::Program & program,
-        const Environment & environment) {
-        std::string ret;
-        for (auto &statement : program.statements) {
-            CodeGenStmtVisitor visitor(environment, program);
-            statement->AcceptVisitor(visitor);
-            ret += visitor.code + "\n";
-        }
-    }
-};
-
 }  // namespace sushi
