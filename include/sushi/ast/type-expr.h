@@ -20,6 +20,8 @@ using TypeExprVisitor = sushi::util::DefineVisitor<TypeLit, ArrayType, MapType>;
 
 struct TypeExpr {
     SUSHI_VISITABLE(TypeExprVisitor);
+
+    virtual ~TypeExpr() = default;
 };
 
 struct TypeLit : TypeExpr {
