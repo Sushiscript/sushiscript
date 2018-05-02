@@ -1,8 +1,8 @@
 #ifndef SUSHI_LEXER_LOOKAHEAD_STREAM_H_
 #define SUSHI_LEXER_LOOKAHEAD_STREAM_H_
 
-#include "sushi/util/meta.h"
 #include "boost/optional.hpp"
+#include "sushi/util/meta.h"
 #include <deque>
 #include <string>
 #include <type_traits>
@@ -42,7 +42,7 @@ class LookaheadStream {
     template <typename P>
     Chunk TakeWhile(P p) {
         Chunk chunk;
-        for (boost::optional<T> next; (next = Lookahead()) and p(*next); ) {
+        for (boost::optional<T> next; (next = Lookahead()) and p(*next);) {
             chunk.push_back(*next);
             Next();
         }
@@ -84,6 +84,8 @@ class LookaheadStream {
             Next();
         }
     }
+
+    virtual ~LookaheadStream() = default;
 
   private:
     virtual boost::optional<T> Consume() = 0;

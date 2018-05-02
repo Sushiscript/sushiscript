@@ -3,6 +3,8 @@
 
 #include "sushi/lexer/lexer.h"
 #include "sushi/lexer/token.h"
+#include "sushi/lexer/error.h"
+#include "sushi/lexer/detail/character-config.h"
 #include "gtest/gtest.h"
 #include <iostream>
 #include <sstream>
@@ -42,7 +44,9 @@ bool AllEqual(const Tokens &t1, const Tokens &t2) {
 inline Tokens FromString(const std::string &s, bool raw_mode = false) {
     std::istringstream iss(s);
     auto lex = FromStream(iss);
-    lex.Raw(raw_mode);
+    if (raw_mode) {
+        lex.NewContext(RawContext::Factory);
+    }
     return CollectAll(lex);
 }
 
