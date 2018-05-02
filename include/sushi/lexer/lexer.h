@@ -25,10 +25,19 @@ class Lexer : public detail::LookaheadStream<Token> {
         return true;
     }
     boost::optional<Token> Consume() override {
-        return contexts_.top()->Lex();
+        auto result = contexts_.top()->Lex();
+        ExecuteAction(result.action);
+        if (not result.token and result.action) return Consume();
+        return std::move(result.token);
     }
 
   private:
+    void ExecuteAction(boost::optional<Context::Factory *> action) {
+        if (not action) return;
+        if (*action == nullptr) DestoryContext();
+        NewContext(*action);
+    }
+
     detail::SourceStream input_;
     detail::LexerState state_;
     std::stack<std::unique_ptr<Context>> contexts_;

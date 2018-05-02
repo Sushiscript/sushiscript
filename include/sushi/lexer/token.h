@@ -90,9 +90,12 @@ struct Token {
 
         kCharLit,
         kStringLit,
+        kStringLitSeg, // string lit segment
         kPathLit,
+        kPathLitSeg,   // path lit segment
         kIntLit,
         kRawString,
+        kRawStringSeg, // raw string segment
 
         // special
 
@@ -170,9 +173,12 @@ struct Token {
         case Type::kInterStart: return "${";
         case Type::kCharLit: return "CharLit";
         case Type::kStringLit: return "StrLit";
+        case Type::kStringLitSeg: return "StrLitSeg";
         case Type::kPathLit: return "PathLit";
+        case Type::kPathLitSeg: return "PathLitSeg";
         case Type::kIntLit: return "IntLit";
         case Type::kRawString: return "RawStr";
+        case Type::kRawStringSeg: return "RawStrSeg";
         case Type::kIndent: return "Indent";
         case Type::kLineBreak: return "\\n";
         case Type::kOtherChar: return "Unknown";
@@ -256,7 +262,7 @@ struct Token {
         return t1.type == t2.type and t1.content == t2.content;
     }
 
-    bool operator==(const Token& rhs) const {
+    bool operator==(const Token &rhs) const {
         return WeakEqual(*this, rhs) and location == rhs.location;
     }
 

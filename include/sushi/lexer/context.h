@@ -14,55 +14,75 @@ class Context {
     using Pointer = std::unique_ptr<Context>;
     using Factory = Pointer(detail::LexerState &);
 
+    struct LexResult {
+        LexResult() = default;
+        LexResult(boost::optional<Token> token, Factory *action)
+            : token(std::move(token)), action(action) {}
+
+        LexResult(Token token) : token(token) {}
+        LexResult(boost::optional<Token> token) : token(std::move(token)) {}
+        LexResult(boost::none_t none) {}
+
+        boost::optional<Token> token;
+        boost::optional<Factory *> action;
+    };
+
+    template <typename C>
+    static LexResult Transfer() {
+        static_assert(
+            std::is_base_of<Context, C>::value, "Must transfer to a context");
+        return LexResult(boost::none, C::Factory);
+    }
+
+    template <typename C>
+    static LexResult SkipTransfer(detail::LexerState &s, int n = 1) {
+        s.input.Skip(n);
+        return Transfer<C>();
+    }
+
+    static LexResult EmitAndExit(Token token) {
+        return LexResult(token, nullptr);
+    }
+
     Context(detail::LexerState &state) : state(state) {}
-    virtual boost::optional<Token> Lex() = 0;
+    virtual LexResult Lex() = 0;
     virtual ~Context() = default;
 
     detail::LexerState &state;
 };
 
+#define LEX_CONTEXT(ContextName)                                               \
+  public:                                                                      \
+    ContextName(detail::LexerState &state) : Context(state) {}                 \
+    static std::unique_ptr<Context> Factory(detail::LexerState &state) {       \
+        return std::make_unique<ContextName>(state);                           \
+    }                                                                          \
+    Context::LexResult Lex() override;
+
 class NormalContext : public Context {
-  public:
-    NormalContext(detail::LexerState &state) : Context(state) {}
+    LEX_CONTEXT(NormalContext)
 
-    static std::unique_ptr<Context> Factory(detail::LexerState &state) {
-        return std::make_unique<NormalContext>(state);
-    }
-
-    boost::optional<Token> Lex() override;
+  private:
+    Context::LexResult StartOfLine();
 };
 
 class RawContext : public Context {
-  public:
-    RawContext(detail::LexerState &state) : Context(state) {}
-
-    static std::unique_ptr<Context> Factory(detail::LexerState &state) {
-        return std::make_unique<RawContext>(state);
-    }
-
-    boost::optional<Token> Lex() override;
+    LEX_CONTEXT(RawContext)
 };
 
-class StringLiteralContext : public Context {
-  public:
-    StringLiteralContext(detail::LexerState &state) : Context(state) {}
-
-    static std::unique_ptr<Context> Factory(detail::LexerState &state) {
-        return std::make_unique<StringLiteralContext>(state);
-    }
-
-    boost::optional<Token> Lex() override;
+class StringLitContext : public Context {
+    LEX_CONTEXT(StringLitContext)
 };
 
-class RawLiteralContext : public Context {
-  public:
-    RawLiteralContext(detail::LexerState &state) : Context(state) {}
-    static std::unique_ptr<Context> Factory(detail::LexerState &state) {
-        return std::make_unique<RawLiteralContext>(state);
-    }
-
-    boost::optional<Token> Lex() override;
+class RawTokenContext : public Context {
+    LEX_CONTEXT(RawTokenContext)
 };
+
+class PathLitContext : public Context {
+    LEX_CONTEXT(PathLitContext)
+};
+
+#undef LEX_CONTEXT
 
 } // namespace lexer
 } // namespace sushi
