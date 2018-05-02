@@ -9,8 +9,9 @@ std::string CodeGenerator::GenCode(
     for (auto &statement : program.statements) {
         CodeGenStmtVisitor visitor(environment, program);
         statement->AcceptVisitor(visitor);
-        ret += visitor.code + "\n";
+        ret += visitor.code;
     }
+    return ret;
 }
 
 };
