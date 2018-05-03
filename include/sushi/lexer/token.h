@@ -3,6 +3,7 @@
 
 #include "./token-location.h"
 #include "boost/variant.hpp"
+#include "./error.h"
 #include <string>
 #include <unordered_map>
 
@@ -260,6 +261,10 @@ struct Token {
 
     static bool WeakEqual(const Token &t1, const Token &t2) {
         return t1.type == t2.type and t1.content == t2.content;
+    }
+
+    static Token Error(TokenLocation l, lexer::Error e) {
+        return {Type::kErrorCode, l, static_cast<int>(e)};
     }
 
     bool operator==(const Token &rhs) const {
