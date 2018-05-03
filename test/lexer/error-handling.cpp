@@ -4,22 +4,28 @@ using namespace sushi::lexer::test;
 using sushi::lexer::Error;
 
 TEST(ErrorHandling, TestUnknownChar) {
-    NoIndentStrIsToks("\tident", TD(kOtherChar, '\t'), TD(kIdent, "ident"));
+    NoIndentStrIsToks("\tident", TD(kUnknownChar, '\t'), TD(kIdent, "ident"));
     StringIsTokens(
-        "  \t  ident", TD(kIndent, 2), TD(kOtherChar, '\t'),
+        "  \t  ident", TD(kIndent, 2), TD(kUnknownChar, '\t'),
         TD(kIdent, "ident"));
     NoIndentStrIsToks(
-        "ide\tnt", TD(kIdent, "ide"), TD(kOtherChar, '\t'), TD(kIdent, "nt"));
+        "ide\tnt", TD(kIdent, "ide"), TD(kUnknownChar, '\t'), TD(kIdent, "nt"));
 }
 
 TEST(ErrorHandling, TestUnclosedString) {
     NoIndentStrIsToks<true>(
-        R"("unclosed string)", TEL(kUnclosedStringQuote, 1, 1));
+        R"("unclosed string)", TL(kStringLit, 1, 1),
+        TDL(kSegment, "unclosed string", 1, 2),
+        TEL(kUnclosedStringQuote, 1, 17));
     NoIndentStrIsToks<true>(
-        "\"cannot close in next line\n\"", TEL(kUnclosedStringQuote, 1, 1),
-        TK(kLineBreak), TDL(kIndent, 0, 2, 1), TEL(kUnclosedStringQuote, 2, 1));
+        "\"cannot close in next line\n\"", TL(kStringLit, 1, 1),
+        TDL(kSegment, "cannot close in next line", 1, 2),
+        TEL(kUnclosedStringQuote, 1, 27), TL(kLineBreak, 1, 27),
+        TDL(kIndent, 0, 2, 1), TL(kStringLit, 2, 1),
+        TEL(kUnclosedStringQuote, 2, 2));
     NoIndentStrIsToks<true>(
-        "\"error\nrecovery", TEL(kUnclosedStringQuote, 1, 1), TK(kLineBreak),
+        "\"error\nrecovery", TL(kStringLit, 1, 1), TDL(kSegment, "error", 1, 2),
+        TEL(kUnclosedStringQuote, 1, 7), TL(kLineBreak, 1, 7),
         TDL(kIndent, 0, 2, 1), TDL(kIdent, "recovery", 2, 1));
 }
 
@@ -39,14 +45,19 @@ TEST(ErrorHandling, TestInvalidChar) {
 }
 
 TEST(ErrorHandling, TestExpectSlash) {
-    NoIndentStrIsToks<true>("..hahaha", TEL(kPathExpectSlash, 1, 3));
-    NoIndentStrIsToks<true>("~hahaha", TEL(kPathExpectSlash, 1, 2));
-    NoIndentStrIsToks<true>("~~hahaha", TEL(kPathExpectSlash, 1, 2));
-    NoIndentStrIsToks<true>(".hahaha", TEL(kPathExpectSlash, 1, 2));
-}
-
-TEST(ErrorHandling, TestSingleDollar) {
-    RawStrIsTokens<true>("$", TEL(kSingleDollar, 1, 1));
-    RawStrIsTokens<true>(
-        "$ ident", TEL(kSingleDollar, 1, 1), TDL(kRawString, "ident", 1, 3));
+    NoIndentStrIsToks<true>(
+        "..hahaha", TL(kPathLit, 1, 1), TEL(kPathExpectSlash, 1, 3),
+        TL(kInterDone, 1, 9));
+    NoIndentStrIsToks<true>(
+        "~hahaha", TL(kPathLit, 1, 1), TEL(kPathExpectSlash, 1, 2),
+        TL(kInterDone, 1, 8));
+    NoIndentStrIsToks<true>(
+        "~~hahaha", TL(kPathLit, 1, 1), TEL(kPathExpectSlash, 1, 2),
+        TL(kInterDone, 1, 9));
+    NoIndentStrIsToks<true>(
+        ".hahaha", TL(kPathLit, 1, 1), TEL(kPathExpectSlash, 1, 2),
+        TL(kInterDone, 1, 8));
+    NoIndentStrIsToks<true>(
+        ".${", TL(kPathLit, 1, 1), TEL(kPathExpectSlash, 1, 2),
+        TL(kInterStart, 1, 2));
 }

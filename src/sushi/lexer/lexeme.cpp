@@ -145,7 +145,7 @@ Token Identifier(LexerState &s) {
 
 Token UnknownCharacter(LexerState &s) {
     char c = *s.input.Lookahead();
-    return SkipAndMake(s, Token::Type::kOtherChar, 1, c);
+    return SkipAndMake(s, Token::Type::kUnknownChar, 1, c);
 }
 
 } // namespace detail

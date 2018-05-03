@@ -16,41 +16,6 @@ TEST(SingleTokenTest, TestInteger) {
     NoIndentStrIsToks("1234   ", TD(kIntLit, 1234));
 }
 
-TEST(SingleTokenTest, TestRawToken) {
-    RawStrIsTokens("1", TD(kRawString, "1"));
-    RawStrIsTokens("a", TD(kRawString, "a"));
-    RawStrIsTokens("?", TD(kRawString, "?"));
-    RawStrIsTokens("\\n", TD(kRawString, "n"));
-    RawStrIsTokens("\\;", TD(kRawString, ";"));
-    RawStrIsTokens("\\;\\?", TD(kRawString, ";?"));
-    RawStrIsTokens("\\ ", TD(kRawString, " "));
-    RawStrIsTokens("h\\a\\ haha ", TD(kRawString, "ha haha"));
-    RawStrIsTokens("h\\a\\ haha ", TD(kRawString, "ha haha"));
-    RawStrIsTokens(R"(i\${i})", TD(kRawString, "i${i}"));
-    RawStrIsTokens(R"(i{i})", TD(kRawString, "i{i}"));
-    RawStrIsTokens(R"(\$\{i\})", TD(kRawString, "${i}"));
-}
-
-TEST(SingleTokenTest, TestRawMode) {
-    RawStrIsTokens("${", TD(kInterStart, 0));
-    RawStrIsTokens("$id", TD(kIdent, "id"));
-    RawStrIsTokens("$_id", TD(kIdent, "_id"));
-}
-
-TEST(SingleTokenTest, TestPath) {
-    NoIndentStrIsToks(".", TD(kPathLit, "."));
-    NoIndentStrIsToks("/", TD(kPathLit, "/"));
-    NoIndentStrIsToks("..", TD(kPathLit, ".."));
-    NoIndentStrIsToks("....", TD(kPathLit, "...."));
-    NoIndentStrIsToks("~", TD(kPathLit, "~"));
-    NoIndentStrIsToks("~/", TD(kPathLit, "~/"));
-    NoIndentStrIsToks("../", TD(kPathLit, "../"));
-    NoIndentStrIsToks("../hello/world", TD(kPathLit, "../hello/world"));
-    NoIndentStrIsToks("~/hello/world", TD(kPathLit, "~/hello/world"));
-    NoIndentStrIsToks("~/hello\\ world", TD(kPathLit, "~/hello world"));
-    NoIndentStrIsToks("../    ", TD(kPathLit, "../"));
-}
-
 TEST(SingleTokenTest, TestPunctuation) {
     NoIndentStrIsToks("+", TK(kPlus));
     NoIndentStrIsToks("-", TK(kMinus));
@@ -123,14 +88,4 @@ TEST(SingleTokenTest, TestCharLiteral) {
     NoIndentStrIsToks("'?'", TD(kCharLit, '?'));
     NoIndentStrIsToks("'\\!'", TD(kCharLit, '!'));
     NoIndentStrIsToks("'\\.'        ", TD(kCharLit, '.'));
-}
-
-TEST(SingleTokenTest, TestStringLiteral) {
-    NoIndentStrIsToks(R"("")", TD(kStringLit, ""));
-    NoIndentStrIsToks(R"("haha")", TD(kStringLit, "haha"));
-    NoIndentStrIsToks(R"("ha\nha")", TD(kStringLit, "ha\nha"));
-    NoIndentStrIsToks(R"("ha\tha")", TD(kStringLit, "ha\tha"));
-    NoIndentStrIsToks(R"("say\"hello\"")", TD(kStringLit, "say\"hello\""));
-    NoIndentStrIsToks(R"("\${i}")", TD(kStringLit, "${i}"));
-    NoIndentStrIsToks(R"("\$\{i\}")", TD(kStringLit, "${i}"));
 }

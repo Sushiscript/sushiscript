@@ -34,20 +34,32 @@ class Context {
     };
 
     template <typename C>
-    static LexResult Transfer() {
+    static LexResult Enter() {
         static_assert(
-            std::is_base_of<Context, C>::value, "Must transfer to a context");
+            std::is_base_of<Context, C>::value, "Must Enter to a context");
         return LexResult(boost::none, C::Factory);
     }
 
     template <typename C>
-    static LexResult SkipTransfer(detail::LexerState &s, int n = 1) {
+    static LexResult SkipEnter(detail::LexerState &s, int n = 1) {
         s.input.Skip(n);
-        return Transfer<C>();
+        return Enter<C>();
     }
 
-    static LexResult EmitAndExit(Token token) {
-        return LexResult(token, nullptr);
+    static LexResult EmitExit(Token token) {
+        return LexResult(std::move(token), nullptr);
+    }
+
+    template <typename C>
+    static LexResult EmitEnter(Token token) {
+        return LexResult(std::move(token), C::Factory);
+    }
+
+    template <typename C>
+    static LexResult
+    SkipEmitEnter(detail::LexerState &s, Token token, int n = 1) {
+        s.input.Skip(n);
+        return EmitEnter<C>(token);
     }
 
     Context(detail::LexerState &state) : state(state) {}
@@ -81,100 +93,73 @@ class RawContext : public Context {
 
 namespace detail {
 
-template <typename CharCfg, Token::Type Seg, Token::Type Done>
+enum class SegmentReason { kFalseStop, kRestrict, kInterpolation, kEof };
+
+template <typename CharCfg>
 struct InterpolateConfig {
     using CharacterConfig = CharCfg;
 
-    static constexpr Token::Type kDone = Done;
-    static constexpr Token::Type kSeg = Seg;
-
-    using Super = InterpolateConfig<CharacterConfig, kSeg, kDone>;
-
-    Context::LexResult Segment(std::string data, TokenLocation l) {
-        return Context::LexResult(
-            Token{Seg, std::move(l), std::move(data)}, NormalContext::Factory);
-    }
+    using Super = InterpolateConfig<CharacterConfig>;
 
     Context::LexResult
-    Finish(LexerState &s, std::string data, TokenLocation l) {
-        return Context::EmitAndExit({Done, std::move(l), std::move(data)});
+    Segment(std::string data, TokenLocation l, SegmentReason) {
+        return Token{Token::Type::kSegment, std::move(l), std::move(data)};
+    }
+
+    Context::LexResult Finish(LexerState &s, TokenLocation l) {
+        return Context::EmitExit({Token::Type::kInterDone, std::move(l), 0});
     }
 };
 
-struct StrInterCfg
-    : InterpolateConfig<
-          StringConfig, Token::Type::kStringLitSeg, Token::Type::kStringLit> {
-
-    Context::LexResult
-    Finish(LexerState &s, std::string data, TokenLocation l) {
+struct StrInterCfg : InterpolateConfig<StringConfig> {
+    Context::LexResult Finish(LexerState &s, TokenLocation l) {
         auto tail = s.input.Lookahead();
         if (not tail or *tail != '"') {
-            return Context::EmitAndExit(
+            return Context::EmitExit(
                 Token::Error(std::move(l), Error::kUnclosedStringQuote));
         }
         s.input.Next();
-        return Super::Finish(s, std::move(data), std::move(l));
+        return Super::Finish(s, std::move(l));
     }
 };
 
-using RawInterCfg = InterpolateConfig<
-    RawConfig, Token::Type::kRawStringSeg, Token::Type::kRawString>;
+using RawInterCfg = InterpolateConfig<RawConfig>;
 
-struct PathInterCfg
-    : InterpolateConfig<
-          RawConfig, Token::Type::kPathLitSeg, Token::Type::kPathLit> {
-
-    Context::LexResult Segment(std::string data, TokenLocation l) {
-        if (start) {
-            start = false;
-            if (auto slash_p = MissingSlash(data)) {
-                return {MissingSlashError(*slash_p, std::move(l)),
-                        NormalContext::Factory};
-            }
-        }
-        return Super::Segment(std::move(data), std::move(l));
-    }
-
+struct PathInterCfg : InterpolateConfig<RawConfig> {
     Context::LexResult
-    Finish(LexerState &s, std::string data, TokenLocation l) {
-        if (start) {
-            if (auto slash_p = MissingSlash(data)) {
-                return {MissingSlashError(*slash_p, std::move(l)), nullptr};
-            }
+    Segment(std::string data, TokenLocation l, SegmentReason r) {
+        if (not start) return Super::Segment(std::move(data), std::move(l), r);
+        start = false;
+        int offset = ExpectSlash(data);
+        if ((offset >= data.size() and (r == SegmentReason::kFalseStop or
+                                       r == SegmentReason::kInterpolation)) or
+            (offset < data.size() and data[offset] != '/')) {
+            TokenLocation errl{l.src_path, l.line, l.column + offset};
+            return Token::Error(std::move(errl), Error::kPathExpectSlash);
         }
-        return Super::Finish(s, std::move(data), std::move(l));
+        return Super::Segment(std::move(data), std::move(l), r);
     }
 
   private:
-    boost::optional<int> MissingSlash(std::string data) {
-        if (data.front() == '~') {
-            if (data.size() > 1 and data[1] != '/') return 1;
-            return boost::none;
-        }
+    int ExpectSlash(std::string data) {
+        if (data.front() == '~') return 1;
         auto pos = data.find_first_not_of('.');
-        if (pos != std::string::npos and data[pos] != '/') return pos;
-        return boost::none;
-    }
-    Token MissingSlashError(int p, TokenLocation l) {
-        return Token::Error(
-            {l.src_path, l.line, l.column + p}, Error::kPathExpectSlash);
+        if (pos == std::string::npos) return data.size();
+        return pos;
     }
     bool start = true;
 };
 
-constexpr char kInterStartSeq[] = "${";
-
 template <typename InterConfig>
 class InterpolateContext : public Context {
   public:
-
     InterpolateContext(detail::LexerState &state)
         : Context(state), cc(MakeConfig()){};
 
     LEX_CONTEXT_FACTORY(InterpolateContext<InterConfig>)
 
     static std::unique_ptr<CharacterConfig> MakeConfig() {
-        std::string new_list{1, kInterStartSeq[0]};
+        std::string new_list{1, '$'};
         return std::make_unique<CustomConfig>(
             std::make_unique<typename InterConfig::CharacterConfig>(),
             new_list);
@@ -183,24 +168,38 @@ class InterpolateContext : public Context {
     Context::LexResult Lex() override {
         auto &input = state.input;
         auto l = input.NextLocation();
-        size_t inter_start_len = sushi::util::ArrayLength(kInterStartSeq);
-
         std::string data;
+        SegmentReason reason = SegmentReason::kFalseStop;
         for (;;) {
             data += detail::String(state, *cc);
-            auto n1 = input.Lookahead();
-            if (not n1 or *n1 != kInterStartSeq[0]) // restricted by cc
-                return ic.Finish(state, std::move(data), std::move(l));
-            auto actual = input.LookaheadMany(inter_start_len);
-            if (actual == kInterStartSeq) {
-                input.Skip(inter_start_len);
-                return ic.Segment(std::move(data), std::move(l));
-            }
-            data += *input.Next(); // skip the false interpolation head
+            reason = CheckStopReason();
+            if (reason != SegmentReason::kFalseStop) break;
+            ConsumeSingleDollar(data);
         }
+        if (not data.empty())
+            return ic.Segment(std::move(data), std::move(l), reason);
+        if (reason == SegmentReason::kInterpolation)
+            return Context::EmitEnter<NormalContext>(
+                SkipAndMake(state, Token::Type::kInterStart, 2));
+        // reason == kRestrict or reason == kEof
+        return ic.Finish(state, l);
     }
 
   private:
+    void ConsumeSingleDollar(std::string &s) {
+        auto oc = state.input.Lookahead();
+        if (oc and *oc == '$') s.push_back(*state.input.Next());
+    }
+
+    SegmentReason CheckStopReason() {
+        auto oc = state.input.Lookahead();
+        if (not oc) return SegmentReason::kEof;
+        if (*oc != '$') return SegmentReason::kRestrict;
+        if (state.input.LookaheadMany(2) == "${")
+            return SegmentReason::kInterpolation;
+        return SegmentReason::kFalseStop;
+    }
+
     std::unique_ptr<CharacterConfig> cc;
     InterConfig ic;
 };

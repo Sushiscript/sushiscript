@@ -9,8 +9,9 @@ TEST(SimpleSequence, TestLineBreak) {
         "ident, \n", TD(kIdent, "ident"), TK(kComma), TK(kLineBreak));
     RawStrIsTokens("\n", TK(kLineBreak));
     RawStrIsTokens(
-        "some/raw/token and \n", TD(kRawString, "some/raw/token"),
-        TD(kRawString, "and"), TK(kLineBreak));
+        "some/raw/token and \n", TK(kRawString), TD(kSegment, "some/raw/token"),
+        TK(kInterDone), TK(kRawString), TD(kSegment, "and"), TK(kInterDone),
+        TK(kLineBreak));
 }
 
 TEST(SimpleSequence, TestComment) {
@@ -55,20 +56,14 @@ TEST(SimpleSequence, TestLocation) {
     ExactStrIsToks(
         "\n  \n  \n  ident", TDL(kIndent, 2, 4, 1), TDL(kIdent, "ident", 4, 3));
     NoIndentStrIsToks<true>(
-        "ident 123 true ./w", TDL(kIdent, "ident", 1, 1),
-        TDL(kIntLit, 123, 1, 7), TL(kTrue, 1, 11), TDL(kPathLit, "./w", 1, 16));
+        "ident 123 true", TDL(kIdent, "ident", 1, 1), TDL(kIntLit, 123, 1, 7),
+        TL(kTrue, 1, 11));
     NoIndentStrIsToks<true>(
         "== != < >", TL(kDoubleEq, 1, 1), TL(kNotEqual, 1, 4),
         TL(kLAngle, 1, 7), TL(kRAngle, 1, 9));
-    NoIndentStrIsToks<true>(
-        R"("hello", 'w', orld)", TDL(kStringLit, "hello", 1, 1),
-        TL(kComma, 1, 8), TDL(kCharLit, 'w', 1, 10), TL(kComma, 1, 13),
-        TDL(kIdent, "orld", 1, 15));
     RawStrIsTokens(
-        "some/raw/string ../and/path", TDL(kRawString, "some/raw/string", 1, 1),
-        TDL(kPathLit, "../and/path", 1, 17));
-    RawStrIsTokens(
-        "$IDENT ${", TDL(kIdent, "IDENT", 1, 2), TL(kInterStart, 1, 9));
+        "$IDENT  ${", TL(kRawString, 1, 1), TDL(kSegment, "IDENT", 1, 1),
+        TL(kInterDone, 1, 6), TL(kInterStart, 1, 9));
 }
 
 TEST(SimpleSequence, TestConnected) {
@@ -80,10 +75,12 @@ TEST(SimpleSequence, TestConnected) {
         TK(kSingleEq));
     NoIndentStrIsToks("line\\\njoin", TD(kIdent, "line"), TD(kIdent, "join"));
     NoIndentStrIsToks(
-        R"(./path/and"string")", TD(kPathLit, "./path/and"),
-        TD(kStringLit, "string"));
+        R"(./path/and"string")", TK(kPathLit), TD(kSegment, "./path/and"),
+        TK(kInterDone), TK(kStringLit), TD(kSegment, "string"), TK(kInterDone));
     NoIndentStrIsToks(
-        "./path/and'c'", TD(kPathLit, "./path/and"), TD(kCharLit, 'c'));
+        "./path/and'c'", TK(kPathLit), TD(kSegment, "./path/and"),
+        TK(kInterDone), TD(kCharLit, 'c'));
     NoIndentStrIsToks(
-        "./path/and#comment", TD(kPathLit, "./path/and"));
+        "./path/and#comment", TK(kPathLit), TD(kSegment, "./path/and"),
+        TK(kInterDone));
 }

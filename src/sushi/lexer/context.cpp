@@ -15,54 +15,39 @@ using namespace detail;
 
 namespace {
 
-namespace unsafe {
-
-LexResult StartInterpolation(LexerState &s) {
-    auto token = RecordLocation(s);
-    auto &input = s.input;
-    input.Next();
-    auto oc = input.Lookahead();
-    if (not oc)
-        return token(
-            Token::Type::kErrorCode, static_cast<int>(Error::kSingleDollar));
-    if (isindenthead(*oc)) return Identifier(s);
-    if (*oc == '{') {
-        input.Next();
-        return LexResult(
-            token(Token::Type::kInterStart, 0), NormalContext::Factory);
-    }
-    if (isspace(*oc))
-        return token(
-            Token::Type::kErrorCode, static_cast<int>(Error::kSingleDollar));
-    return SkipAndMake(s, Token::Type::kInvalidChar, 1, int(*oc));
-}
-
-} // namespace unsafe
-
 LexResult NormalDispatch(LexerState &s) {
     char lookahead = *s.input.Lookahead();
     // if (lookahead == '"') return unsafe::StringLiteral(s);
     if (lookahead == '\n') return UnsafeLineBreak(s);
-    if (lookahead == '"') return Context::SkipTransfer<StringLitContext>(s);
+    if (lookahead == '"')
+        return Context::EmitEnter<StringLitContext>(
+            SkipAndMake(s, Token::Type::kStringLit));
     if (lookahead == '\'') return CharLiteral(s);
     if (isdigit(lookahead)) return IntLiteral(s);
     if (isindenthead(lookahead)) return Identifier(s);
     if (boost::optional<Token> punct = Punctuation(s)) return *punct;
     if (lookahead == '.' or lookahead == '/' or lookahead == '~')
-        return Context::Transfer<PathLitContext>();
+        return Context::EmitEnter<PathLitContext>(
+            Token{Token::Type::kPathLit, s.input.NextLocation(), 0});
     return UnknownCharacter(s);
 }
 
 Context::LexResult RawDispatch(LexerState &s) {
+    auto token = RecordLocation(s);
     char lookahead = *s.input.Lookahead();
     if (lookahead == '\n') return UnsafeLineBreak(s);
-    if (lookahead == '$') return unsafe::StartInterpolation(s);
-    if (lookahead == '"') return Context::Transfer<StringLitContext>();
+    if (lookahead == '"')
+        return Context::EmitEnter<StringLitContext>(
+            SkipAndMake(s, Token::Type::kStringLit));
     if (lookahead == '\'') return CharLiteral(s);
     if (lookahead == ';') return SkipAndMake(s, Token::Type::kSemicolon);
     if (lookahead == '.' or lookahead == '/' or lookahead == '~')
-        return Context::Transfer<PathLitContext>();
-    return Context::Transfer<RawTokenContext>();
+        return Context::EmitEnter<PathLitContext>(
+            token(Token::Type::kPathLit, 0));
+    if (RawConfig().Prohibit(lookahead))
+        return SkipAndMake(s, Token::Type::kUnknownChar, 1, lookahead);
+    return Context::EmitEnter<RawTokenContext>(
+        token(Token::Type::kRawString, 0));
 }
 
 } // namespace
@@ -86,6 +71,7 @@ LexResult NormalContext::Lex() {
 }
 
 LexResult RawContext::Lex() {
+    state.line_start = false;
     SkipSpaces(state);
     TryLineComment(state);
     if (not state.input.Lookahead()) return none;

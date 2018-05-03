@@ -9,8 +9,7 @@ enum class Error {
     kInvalidChar,
     kUnclosedCharQuote,
     kPathExpectSlash,
-    kExpectRawToken,
-    kSingleDollar
+    kExpectRawToken
 };
 
 } // namespace lexer

@@ -85,18 +85,19 @@ struct Token {
         kRBracket,    // ]
         kLBrace,      // {
         kRBrace,      // }
-        kInterStart,  // ${
 
         // literals
 
         kCharLit,
         kStringLit,
-        kStringLitSeg, // string lit segment
         kPathLit,
-        kPathLitSeg,   // path lit segment
         kIntLit,
         kRawString,
-        kRawStringSeg, // raw string segment
+
+        // interpolation
+        kSegment,
+        kInterStart,
+        kInterDone,
 
         // special
 
@@ -105,7 +106,7 @@ struct Token {
 
         // error
 
-        kOtherChar,
+        kUnknownChar,
         kInvalidChar,
         kErrorCode
     };
@@ -171,18 +172,17 @@ struct Token {
         case Type::kRBracket: return "]";
         case Type::kLBrace: return "{";
         case Type::kRBrace: return "}";
-        case Type::kInterStart: return "${";
+        case Type::kSegment: return "Segment";
+        case Type::kInterStart: return "InterStart";
+        case Type::kInterDone: return "InterDone";
         case Type::kCharLit: return "CharLit";
         case Type::kStringLit: return "StrLit";
-        case Type::kStringLitSeg: return "StrLitSeg";
         case Type::kPathLit: return "PathLit";
-        case Type::kPathLitSeg: return "PathLitSeg";
         case Type::kIntLit: return "IntLit";
         case Type::kRawString: return "RawStr";
-        case Type::kRawStringSeg: return "RawStrSeg";
         case Type::kIndent: return "Indent";
         case Type::kLineBreak: return "\\n";
-        case Type::kOtherChar: return "Unknown";
+        case Type::kUnknownChar: return "Unknown";
         case Type::kInvalidChar: return "Invalid";
         case Type::kErrorCode: return "ErrCode";
         }
