@@ -5,8 +5,8 @@
 #include "./detail/lexeme.h"
 #include "./detail/lexer-state.h"
 #include "./token.h"
-#include "sushi/util/meta.h"
 #include "boost/optional.hpp"
+#include "sushi/util/meta.h"
 #include <memory>
 
 namespace sushi {
@@ -101,7 +101,7 @@ struct InterpolateConfig {
     }
 };
 
-class StrInterCfg
+struct StrInterCfg
     : InterpolateConfig<
           StringConfig, Token::Type::kStringLitSeg, Token::Type::kStringLit> {
 
@@ -157,16 +157,16 @@ struct PathInterCfg
     }
     Token MissingSlashError(int p, TokenLocation l) {
         return Token::Error(
-            {l.src_path, l.line, l.column + p},
-            static_cast<int>(Error::kPathExpectSlash));
+            {l.src_path, l.line, l.column + p}, Error::kPathExpectSlash);
     }
     bool start = true;
 };
 
+constexpr char kInterStartSeq[] = "${";
+
 template <typename InterConfig>
 class InterpolateContext : public Context {
   public:
-    static constexpr char kInterStartSeq[] = "${";
 
     InterpolateContext(detail::LexerState &state)
         : Context(state), cc(MakeConfig()){};
@@ -176,7 +176,8 @@ class InterpolateContext : public Context {
     static std::unique_ptr<CharacterConfig> MakeConfig() {
         std::string new_list{1, kInterStartSeq[0]};
         return std::make_unique<CustomConfig>(
-            std::make_unique<InterConfig::CharacterConfig>(), new_list);
+            std::make_unique<typename InterConfig::CharacterConfig>(),
+            new_list);
     }
 
     Context::LexResult Lex() override {
@@ -186,9 +187,9 @@ class InterpolateContext : public Context {
 
         std::string data;
         for (;;) {
-            data += detail::String(state, cc);
+            data += detail::String(state, *cc);
             auto n1 = input.Lookahead();
-            if (n1 != kInterStartSeq[0]) // restricted by cc
+            if (not n1 or *n1 != kInterStartSeq[0]) // restricted by cc
                 return ic.Finish(state, std::move(data), std::move(l));
             auto actual = input.LookaheadMany(inter_start_len);
             if (actual == kInterStartSeq) {
@@ -206,9 +207,12 @@ class InterpolateContext : public Context {
 
 } // namespace detail
 
-using StringLitContext = detail::InterpolateContext<detail::StrInterCfg>;
-using PathLitContext = detail::InterpolateContext<detail::PathInterCfg>;
-using RawTokenContext = detail::InterpolateContext<detail::RawInterCfg>;
+using StringLitContext =
+    detail::InterpolateContext<typename detail::StrInterCfg>;
+using PathLitContext =
+    detail::InterpolateContext<typename detail::PathInterCfg>;
+using RawTokenContext =
+    detail::InterpolateContext<typename detail::RawInterCfg>;
 
 #undef LEX_CONTEXT
 #undef LEX_CONTEXT_FACTORY

@@ -31,7 +31,7 @@ boost::optional<Token> TryLineBreak(LexerState &s);
 
 bool TryLineComment(LexerState &s);
 
-boost::optional<Token> TryPunctuation(LexerState &s);
+boost::optional<Token> Punctuation(LexerState &s);
 
 void SkipSpaces(LexerState &s);
 

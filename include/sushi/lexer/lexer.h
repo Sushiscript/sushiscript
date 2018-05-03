@@ -35,7 +35,7 @@ class Lexer : public detail::LookaheadStream<Token> {
     void ExecuteAction(boost::optional<Context::Factory *> action) {
         if (not action) return;
         if (*action == nullptr) DestoryContext();
-        NewContext(*action);
+        else NewContext(*action);
     }
 
     detail::SourceStream input_;

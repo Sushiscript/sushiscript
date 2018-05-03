@@ -26,9 +26,8 @@ TEST(SingleTokenTest, TestRawToken) {
     RawStrIsTokens("\\ ", TD(kRawString, " "));
     RawStrIsTokens("h\\a\\ haha ", TD(kRawString, "ha haha"));
     RawStrIsTokens("h\\a\\ haha ", TD(kRawString, "ha haha"));
-    std::string inter_test{'i', lexer::kInterDollar, lexer::kInterLBrace, 'i',
-                           lexer::kInterRBrace};
-    RawStrIsTokens(R"(i${i})", TD(kRawString, inter_test));
+    RawStrIsTokens(R"(i\${i})", TD(kRawString, "i${i}"));
+    RawStrIsTokens(R"(i{i})", TD(kRawString, "i{i}"));
     RawStrIsTokens(R"(\$\{i\})", TD(kRawString, "${i}"));
 }
 
@@ -132,8 +131,6 @@ TEST(SingleTokenTest, TestStringLiteral) {
     NoIndentStrIsToks(R"("ha\nha")", TD(kStringLit, "ha\nha"));
     NoIndentStrIsToks(R"("ha\tha")", TD(kStringLit, "ha\tha"));
     NoIndentStrIsToks(R"("say\"hello\"")", TD(kStringLit, "say\"hello\""));
-    std::string inter_test{lexer::kInterDollar, lexer::kInterLBrace, 'i',
-                           lexer::kInterRBrace};
-    NoIndentStrIsToks(R"("${i}")", TD(kStringLit, inter_test));
+    NoIndentStrIsToks(R"("\${i}")", TD(kStringLit, "${i}"));
     NoIndentStrIsToks(R"("\$\{i\}")", TD(kStringLit, "${i}"));
 }

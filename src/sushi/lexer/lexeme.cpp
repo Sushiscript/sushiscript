@@ -11,6 +11,7 @@ namespace detail {
 
 namespace {
 
+
 optional<Token> TryDoubleOperator(LexerState &s) {
     std::string op = s.input.LookaheadMany(2);
     if (op.size() < 2) return none;
@@ -28,6 +29,12 @@ optional<Token> TrySingleOperator(LexerState &s) {
     return SkipAndMake(s, iter->second, 1);
 }
 
+}
+
+Token SkipAndMake(LexerState &s, Token::Type t, int n, Token::Data d) {
+    auto l = s.input.NextLocation();
+    s.input.Skip(n);
+    return {t, std::move(l), std::move(d)};
 }
 
 bool TryJoinLine(LexerState &s) {
