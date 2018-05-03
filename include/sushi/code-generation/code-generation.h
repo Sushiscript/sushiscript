@@ -68,17 +68,17 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         CodeGenExprVisitor expr_visitor;
         if_stmt.condition->AcceptVisitor(expr_visitor);
         if (if_stmt.false_body == nullptr) {
-            auto trueStr = code_gen.GenCode(*if_stmt.true_body, environment);
+            auto true_str = code_gen.GenCode(*if_stmt.true_body, environment);
             code = (boost::format(kIfStmtTemplate)
                     % expr_visitor.expr_str
-                    % trueStr).str();
+                    % true_str).str();
         } else {
-            auto trueStr = code_gen.GenCode(*if_stmt.true_body, environment);
-            auto falseStr = code_gen.GenCode(*if_stmt.false_body, environment);
+            auto true_str = code_gen.GenCode(*if_stmt.true_body, environment);
+            auto false_str = code_gen.GenCode(*if_stmt.false_body, environment);
             code = (boost::format(kIfStmtFullTemplate)
                     % expr_visitor.expr_str
-                    % trueStr
-                    % falseStr).str();
+                    % true_str
+                    % false_str).str();
         }
     }
     SUSHI_VISITING(ast::ReturnStmt, return_stmt);
