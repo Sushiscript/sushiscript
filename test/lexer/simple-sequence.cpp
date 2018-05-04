@@ -62,8 +62,8 @@ TEST(SimpleSequence, TestLocation) {
         "== != < >", TL(kDoubleEq, 1, 1), TL(kNotEqual, 1, 4),
         TL(kLAngle, 1, 7), TL(kRAngle, 1, 9));
     RawStrIsTokens(
-        "$IDENT  ${", TL(kRawString, 1, 1), TDL(kSegment, "IDENT", 1, 1),
-        TL(kInterDone, 1, 6), TL(kInterStart, 1, 9));
+        "$IDENT  ${", TL(kRawString, 1, 1), TDL(kSegment, "$IDENT", 1, 1),
+        TL(kInterDone, 1, 7), TL(kRawString, 1, 9), TL(kInterStart, 1, 9));
 }
 
 TEST(SimpleSequence, TestConnected) {
