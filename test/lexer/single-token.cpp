@@ -39,6 +39,7 @@ TEST(SingleTokenTest, TestPunctuation) {
     NoIndentStrIsToks("(", TK(kLParen));
     NoIndentStrIsToks(")", TK(kRParen));
     NoIndentStrIsToks("!", TK(kExclamation));
+    NoIndentStrIsToks("|", TK(kPipe));
     NoIndentStrIsToks("$", TK(kDollar));
 }
 

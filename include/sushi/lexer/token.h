@@ -1,9 +1,9 @@
 #ifndef SUSHI_LEXER_TOKEN_H_
 #define SUSHI_LEXER_TOKEN_H_
 
+#include "./error.h"
 #include "./token-location.h"
 #include "boost/variant.hpp"
-#include "./error.h"
 #include <string>
 #include <unordered_map>
 
@@ -78,6 +78,7 @@ struct Token {
         kColon,       // :
         kSemicolon,   // ;
         kExclamation, // !
+        kPipe,        // |
         kDollar,      // $
         kLParen,      // (
         kRParen,      // )
@@ -165,6 +166,7 @@ struct Token {
         case Type::kColon: return ":";
         case Type::kSemicolon: return ";";
         case Type::kExclamation: return "!";
+        case Type::kPipe: return "|";
         case Type::kDollar: return "$";
         case Type::kLParen: return "(";
         case Type::kRParen: return ")";
@@ -244,10 +246,11 @@ struct Token {
             {'<', Type::kLAngle},    {'>', Type::kRAngle},
             {',', Type::kComma},     {':', Type::kColon},
             {';', Type::kSemicolon}, {'!', Type::kExclamation},
-            {'$', Type::kDollar},    {'(', Type::kLParen},
-            {')', Type::kRParen},    {'[', Type::kLBracket},
-            {']', Type::kRBracket},  {'{', Type::kLBrace},
-            {'}', Type::kRBrace},    {'=', Type::kSingleEq}};
+            {'|', Type::kPipe},      {'$', Type::kDollar},
+            {'(', Type::kLParen},    {')', Type::kRParen},
+            {'[', Type::kLBracket},  {']', Type::kRBracket},
+            {'{', Type::kLBrace},    {'}', Type::kRBrace},
+            {'=', Type::kSingleEq}};
         return single_punct_map;
     }
 
