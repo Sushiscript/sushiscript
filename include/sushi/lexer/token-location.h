@@ -20,7 +20,7 @@ struct TokenLocation {
     }
     bool operator==(const TokenLocation &rhs) const {
         return std::tie(line, column, src_path) ==
-               std::tie(line, column, src_path);
+               std::tie(rhs.line, rhs.column, rhs.src_path);
     }
     bool operator!=(const TokenLocation &rhs) const {
         return not(*this == rhs);
@@ -41,7 +41,7 @@ struct TokenLocation {
 
     void NewLine() {
         ++line;
-        column = 0;
+        column = 1;
     }
 };
 

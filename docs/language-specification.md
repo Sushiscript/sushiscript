@@ -92,7 +92,7 @@ The raw mode of lexer is turned on in special contexts (typically when [invoking
 <raw token>    = <raw char>*
 <raw char>     = [^<raw restrict>] | <raw escape>
 <raw restrict> = ' ' | ';' | '"' | "'" | '\'
-<raw escape>   = '\' (<restrict char> | <interpolate char>)
+<raw escape>   = '\' (<raw restrict> | <interpolate char>)
 ```
 
 #### 2.5.3 Character inside `String` literal
