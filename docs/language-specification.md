@@ -411,7 +411,9 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 ### 4.1 Introduction
 
 The type system provide abstraction over many operating system concepts such as "Path" in filesystem and  the exit status of a process and distinguish one of those concepts from another on the aspect of language although their low level representations may be the same.
+
 `sushiscript` is designed to be a staticly and strongly typed language. "Static" means that the type checking process on the type correctness of program is performed at compile time by the _type checker_. And "strong" means that there are few implicit conversions between different types are tried by type checker when the actual type of an expression and expected type are not exactly the same. (there are some, though).
+
 The type system also has a strong connection with the syntax structure, every expression has a unambiguous type that depend on the context. And most `<expression>`s  appeared in the syntax structure means "expression of some certain types", expressions that aren't in the list of that "certain types" are rejected even if they are valid in syntax. And the requirements of types often distinguish different semantics of syntax structure.
 
 ### 4.2 Notations and Terms
@@ -456,7 +458,7 @@ The  _well-typed_ expression is recursively defined as follow:
 
 - A literal of simple type is a well-typed expression
 - An defined identifier is a well-typed expression
-- Other expressions are well typed if all direct sub-expressions are well typed, and their types together satisfy the [_typing rules_](#4.4 Typing Rule) of that composite expression.
+- Other expressions are well typed if all direct sub-expressions are well typed, and their types together satisfy the _typing rules_(explained later) of that composite expression.
 
 #### 4.3.2 Type Requirement
 
@@ -542,7 +544,7 @@ When `<E'>` is deduced with actual type `TA`, it instantiates the `T'` to `TA` i
 
 ### 4.6 User-defined Types
 
-_Not (being planned to) implement yet_
+_Not (planned to) implement yet_
 
 ### 4.7 Typing Rules in `sushiscript`
 
