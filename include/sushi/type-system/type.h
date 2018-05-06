@@ -33,6 +33,7 @@ struct BuiltInAtom : Type {
         kFd,
         kExitCode,
         kPath,
+        kRelPath,
         kString,
         kChar
     };

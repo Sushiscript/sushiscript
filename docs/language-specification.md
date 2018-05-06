@@ -43,8 +43,8 @@ Following punctuations are meaningful:
 
 ```
 <built-in type>
-	= "Int"  | "Bool"  | "Unit" | "String"   | "Char"
-	| "Path" | "Array" | "Map"  | "ExitCode" | "FD"
+	= "Unit" | "Bool"    | "Char"  | "Int" | "String"
+	| "Path" | "RelPath" | "Array" | "Map" | "ExitCode" | "FD"
 ```
 
 ### 2.4 Interpolation
@@ -142,8 +142,9 @@ _TODO: integer literal of various radix support_
 #### 2.6.5 Path
 
 ```
-<path literal> = <path start> ("/" ( <raw char> | <interpolation> )* )?
-<path start>   = "." | ".." | "~"
+<path literal> = "~" ('/' <path tail>)? | '/' <path tail>?
+<relpath literal> = '.'+ ('/' <path tail>)?
+<path tail>    = (<raw char> | <interpolation>)*
 ```
 
 ### 2.7 Misc
@@ -178,9 +179,9 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 <literal>
 	= <int literal>    | <bool literal>
 	| <unit literal>   | <fd literal>
-	| <string literal> | <path literal>
+	| <char literal>   | <string literal>
+	| <path literal>   | <relpath literal>
 	| <array literal>  | <map literal>
-	| <char literal>
 ```
 
 ##### 3.1.1.1 Array Literal
@@ -225,7 +226,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 | `== ` `!=`        | left          | 1          |
 | `>` `<` `>=` `<=` | left          | 2          |
 | `+` `-`           | left          | 3          |
-| `*` `/` `%`       | left          | 4          |
+| `*` `//` `%`       | left          | 4          |
 
 ##### 3.1.3.3 Unary Operator
 
@@ -342,7 +343,7 @@ And all statements within the same innermost block must have same level of inden
 #### 3.2.2 Assignment
 
 ```
-<assignment> = <identifier> '=' <expression>
+<assignment> = (<identifier> | <indexing>) '=' <expression>
 ```
 
 #### 3.2.3 return
@@ -458,7 +459,7 @@ The  _well-typed_ expression is recursively defined as follow:
 
 - A literal of simple type is a well-typed expression
 - An defined identifier is a well-typed expression
-- Other expressions are well typed if all direct sub-expressions are well typed, and their types together satisfy the _typing rules_(explained later) of that composite expression.
+- Other expressions are well typed if all direct sub-expressions are well typed, and their types together satisfy one of the _typing rules_(explained later) of that composite expression.
 
 #### 4.3.2 Type Requirement
 
@@ -523,11 +524,12 @@ When `<E'>` is deduced with actual type `TA`, it instantiates the `T'` to `TA` i
 #### 4.5.1 Simple Types
 
 - `Unit`: "Trivial" type with only one value (`unit`)
-- `Int`: Signed integer  _todo: specify the range of Int_
 - `Bool`:  Boolean types with only two different values (`true` and `false`)
 - `Char`: Character _todo: specify the range of Char_
+- `Int`: Signed integer  _todo: specify the range of Int_
 - `String`: Character sequence.
-- `Path`: Path may or may not pointing to a valid file in file system.
+- `Path`: Absolute path that may or may not pointing to a valid file
+- `RelPath`: Relative path that may or may not pointing to a valid file
 - `ExitCode`: Exit status of a process or command.
 - `FD`: File descriptor is the logical handle of a opened file.
 
@@ -539,8 +541,9 @@ When `<E'>` is deduced with actual type `TA`, it instantiates the `T'` to `TA` i
 
 #### 4.5.3 Implicit Conversion
 
-- `ExitCode` is _implicitly convertible_ to `Bool`, with non-zero `ExitCode` to `false` (exit with error), zero `ExitCode` to `true` (success).
-- `ExitCode` is _implicitly convertible_ to `Int`, converting the exit status code to the integer of same value.
+- `ExitCode` to `Bool`, non-zero `ExitCode` to `false` (exit with error), zero `ExitCode` to `true` (success).
+- `ExitCode` to `Int`, converting the exit status code to the integer of same value.
+- `RelPath` to `Path`, the relative path is applied to the current working directory.
 
 ### 4.6 User-defined Types
 
@@ -554,7 +557,7 @@ _Not (planned to) implement yet_
 <array literal : Array T> = [<T>, <T>, ...] | []
 ```
 
-Array Literal is of type `Array T` when all of it's element are well typed and of same type `T`.
+Array Literal is of type `Array T` when all of it's element are well-typed and of same type `T`.
 
 #### 4.7.2 Map Literal
 
@@ -562,7 +565,7 @@ Array Literal is of type `Array T` when all of it's element are well typed and o
 <map literal : Map K V> = {<K> : <V>, <K> : <V>, ...} | {}
 ```
 
-Map Literal is of type `Map K V` when all of it's keys and values are well typed and all keys are of the same type `K`, all values are of the same type `V`.
+Map Literal is of type `Map K V` when all of it's keys and values are well-typed and all keys are of the same type `K`, all values are of the same type `V`.
 
 #### 4.7.3 Special Satisfaction Condition for Empty Array and Map
 
@@ -605,44 +608,191 @@ Empty array and map literals satisfy all requirement whose required types contai
 <map merge : Map K V>    = <Map K V> + <Map K V>
 ```
 
-- `<int plus>` performs integer addition
-- `<string concat>` concatenates two strings producing a new string
-- `<array concat>` concatenates two array of same element type producing a new array
-- `<map merge>` combines two maps, with keys on the right overwrite the value of the same key on the left.
+- `<int plus>` integer addition.
+- `<string concat>` concatenating two strings producing a new string.
+- `<array concat>` concatenating  two array of same element type producing a new array.
+- `<map merge>` combining two maps, with keys on the right overwrite the value of the same key on the left.
 
 ##### `-`
 
+```
+<int minus : Int> = <Int> - <Int>
+```
+
+- `<int minus>` integer subtraction
+
 ##### `*`
+
+```
+<int mult   : Int>    = <Int> * <Int>
+<string dup : String> = <String> * <Int>
+```
+
+- `<int mult>` integer multiplication.
+- `<string dup>` duplicate the string multiple times.
 
 ##### `//`
 
+```
+<int div : Int> = <Int> // <Int>
+<path join : Path> = <Path | RelPath> // <RelPath>
+```
+
+- `<int div>` integer division.
+- `<path concat>` applying the right-hand relative path to the left-hand path.
+
 ##### `%`
+
+```
+<int mod : Int> = <Int> % <Int>
+```
+
+- `<int mod>` modulo operation
 
 ##### `==` `!=`
 
+```
+<equal compare : Bool> = <EqualComparable> (== | !=) <EqualComparable>
+```
+
+Following types are allow to instantiate `EqualComparable`
+
+- `Unit` two units are always equal
+- `Bool` boolean equality (`true == true, false == false`)
+- `Char` character equality
+- `Int` integer equality
+- `String` string case sensitive equality
+- `Path` determine whether two paths pointing to the same filesystem location
+- `ExitCode` just integer equality
+- `FD` just integer equality
+- `Array EqualComparable` element-wise array equality, two arrays are equal if all elements at the same index of two arrays are equal.
+
 ##### `>` `<`
+
+```
+<order compare : Bool> = <OrderComparable> (> | <) <OrderComparable>
+```
+
+Following types are allow to instantiate `OrderComparable`
+
+- `Char` ascii (~~unicode~~) value compare
+- `Int` integer comparison
+- `String` lexical order comparison
 
 ##### `>=` `<=`
 
+```
+<equal order compare : Bool> = <EqualOrderComparable> (>= | <=) <EqualOrderComparable>
+```
+
+Types that can instantiate both `EqualComparable` and `OrderComparable` can instantiate `EqualOrderComparable`
+
+- `a <= b` is always equivalent to `a < b or a == b`
+- `a >= b` is always equivalent to `a > b or a == b`
+
 ##### `or` `and`
+
+```
+<logical operation : Bool> = <Bool> (or | and) <Bool>
+```
+
+- `a or b == false` if and only if `a == false and b == false`
+- `a and b == true` if and only if `a == true and b == true`
 
 #### 4.7.6 Indexing
 
+```
+<array index : T> = <Array T> [ <Int> ]
+<map index : V> = <Map K V> [ <K> ]
+```
+
+- `<array index>` array indexing, index counts from `0`
+- `<map index>` retrieving the mapped value by the key
+
+_todo: what happens when out of range?_
+
 #### 4.7.7 Function Call
+
+```
+<function call : Ret> = <Function Ret P1 P2 ...> <P1> <P2> ...
+```
+
+- `<call>` calling a defined function and retriving the return value of function
 
 #### 4.7.8 Redirection
 
-#### 4.7.9 Definition
+```
+<redirect to here : String> = (<function call : Ret> | command) redirect to here
+<redirect output> = redirect to <Path | FD>
+<redirect input>  = redirect from <Path>
+```
+
+- `<redirect to here>` if the redirected command if a function call, the original return value of function is discarded(_todo: to be discussed_). The value of whole command expression is the output of the command as a string
+- `<redirect output>` redirecting the output to the file pointing to by `Path` or another file discriptor
+- `<redirect input>` redirecting the content of the file pointed by `Path` to the input file descriptor
+
+#### 4.7.9 Variable Definition
+
+```
+<variable def> = define ident : type "=" <expr : T>
+```
+
+- if type of `ident` is explicitly stated, the statement generates type requirement on `<expr>` with required type represented by `type`, lets say `T'`, and make `ident` an well-typed expression of type `T'` in the following program.
+- otherwise, if `expr` is an well-typed expression, then `ident` is an well-typed expression of type `T` in the following program.
 
 #### 4.7.10 Assignment
 
-#### 4.7.11 Return
+```
+<ident assign>    = <ident : T> = <expr : T>
+<array index set> = <ident : Array T> [ <Int> ] = <T>
+<map value set>   = <ident : Map K V> [ <K> ] = <V>
+```
+
+- `<ident assign>` assigning the value of `<expr>` to a identifier of type `T`
+- `<array index set>` set the value of an array at integer index
+- `<map value set>` set the value of an specific key, overwrite previous value if the value is set before.
+
+#### 4.7.11 Function Definition and Return
+
+```
+<function def> = define func (p1 : type1, p2 : type2, ...) : type = ...
+<return> = return <expr : T>
+```
+
+- If return type of `func` is explicitly stated, the definition statement generates type requirements on all the `return` statement inside the body of the function with what's represented by type expression `type`. If all requirements are satisfied, `func` is an well-typed expression in the following program.
+- Otherwise, the first `return` statement with no recursive call to `func` (calling `func` is not a sub-expression of `expr`) instantiate the type parameter `T` and generate type requirements on the expression of other return statements accordingly. Only if: **a.** Such `return` statement is found; **b.** All type requirements generated by this `return` statement are satisfied; then `func` becomes a well-typed expression in the following program.
+
 
 #### 4.7.12 If
 
+```
+<if> = if <Bool>: ...
+       else if <Bool>: ...
+```
+
+The type of ondition expression of `if` statement is required to be `Bool`.
+
 #### 4.7.13 Switch
 
-#### 4.7.14 Loop
+```
+<switch> = switch <T>
+		   case <T | Function Bool T>: ...
+```
+
+The required types of expression following `case` are:
+
+- `T` requires `T` to be also `EqualComparable`(see `==`), and if two values are equal according to the equality comparison, the branch is chosen.
+- `Function Bool T` calls the function with the switching value, if the function returns `true`, this branch is chosen.
+
+#### 4.7.14 For
+
+```
+<normal for> = for <Bool>: ...
+<range for> = for ident in <Array T>: ...
+```
+
+- `<normal for>` checks the loop condition before every iteration, if the expression evaluates to `true`, loop body is entered, the loop body is skipped otherwise.
+- `<range for>` requires the range expression has an `Array T`, and the `ident` becomes an well-typed expression inside the loop body of type `T`.
 
 ## 5. Semantic
 
