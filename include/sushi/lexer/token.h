@@ -274,6 +274,13 @@ struct Token {
         return WeakEqual(*this, rhs) and location == rhs.location;
     }
 
+    int IntData() {
+        return boost::get<int>(content);
+    }
+    std::string StrData() {
+        return boost::get<std::string>(content);
+    }
+
     using Data = boost::variant<int, std::string>;
 
     Token::Type type;

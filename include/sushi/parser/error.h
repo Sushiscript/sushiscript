@@ -8,7 +8,8 @@ namespace parser {
 
 struct Error {
     enum class Type {
-        kExpectToken
+        kExpectToken,
+        kUnexpectIndent,
     };
     lexer::Token position;
 };
