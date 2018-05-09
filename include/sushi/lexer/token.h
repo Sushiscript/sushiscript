@@ -274,10 +274,10 @@ struct Token {
         return WeakEqual(*this, rhs) and location == rhs.location;
     }
 
-    int IntData() {
+    int IntData() const {
         return boost::get<int>(content);
     }
-    std::string StrData() {
+    std::string StrData() const {
         return boost::get<std::string>(content);
     }
 

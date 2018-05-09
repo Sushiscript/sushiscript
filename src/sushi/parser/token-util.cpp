@@ -1,4 +1,4 @@
-#include "sushi/parser/token-util.h"
+#include "sushi/parser/detail/token-util.h"
 #include "sushi/ast/expression/binary-expr.h"
 #include "sushi/ast/expression/unary-expr.h"
 #include <algorithm>
@@ -6,6 +6,7 @@
 
 namespace sushi {
 namespace parser {
+namespace detail {
 
 using lexer::Token;
 using type::BuiltInAtom;
@@ -53,7 +54,7 @@ ast::BinaryExpr::Operator BinOpTokenToOperator(Token::Type t) {
     case TT(kPlus): return Op::kAdd;
     case TT(kMinus): return Op::kMinus;
     case TT(kLAngle): return Op::kLess;
-    case TT(kRAngle): return Op::Great;
+    case TT(kRAngle): return Op::kGreat;
     case TT(kLessEq): return Op::kLessEq;
     case TT(kGreaterEq): return Op::kGreatEq;
     case TT(kDoubleEq): return Op::kEqual;
@@ -116,7 +117,12 @@ bool IsError(Token::Type t) {
     TOKEN_IN(t, TT(kUnknownChar), TT(kInvalidChar), TT(kErrorCode));
 }
 
+bool IsSpace(Token::Type t) {
+    TOKEN_IN(t, TT(kIndent), TT(kLineBreak));
+}
+
 #undef TT
 
+} // namespace detail
 } // namespace parser
 } // namespace sushi

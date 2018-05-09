@@ -10,7 +10,9 @@ struct Error {
     enum class Type {
         kExpectToken,
         kUnexpectIndent,
+        kUnexpectToken
     };
+    Type type;
     lexer::Token position;
 };
 

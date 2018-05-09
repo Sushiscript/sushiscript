@@ -29,11 +29,26 @@ class Parser {
     }
 
   private:
+    template <typename T>
+    T WithBlock(int indent, T (Parser::*parse)()) {
+        indents_.push(indent);
+        auto ret = (this->*parse)();
+        indents_.pop();
+        return ret;
+    }
+
+
+    bool AssertLookahead(lexer::Token::Type t, bool skip_space = true);
+
+    bool AssertNext(lexer::Token::Type t, bool skip_space = true);
+
     ast::Program Program();
 
-    void DiscoverIndent();
+    ast::Program Block();
 
-    std::unique_ptr<ast::Statement> Line();
+    int DetermineBlockIndent();
+
+    boost::optional<std::unique_ptr<ast::Statement>> CurrentBlockStatement();
 
     std::unique_ptr<ast::Statement> Statement();
 
@@ -41,8 +56,8 @@ class Parser {
 
     std::unique_ptr<ast::Expression> AtomExpression();
 
-    nullptr_t EncounterError(Error::Type t, lexer::Token pos) {
-        current_errors_.emplace_back(t, std::move(pos));
+    nullptr_t RecordError(Error::Type t, lexer::Token pos) {
+        current_errors_.push_back({t, std::move(pos)});
         return nullptr;
     }
 
