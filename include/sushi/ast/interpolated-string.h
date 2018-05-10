@@ -44,6 +44,7 @@ class InterpolatedString {
         if (node_ != nullptr) {
             node_->Traverse(std::move(fs), std::move(fe));
         }
+
     }
 
   private:

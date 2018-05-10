@@ -39,9 +39,12 @@ struct CommandLike : Expression {
     SUSHI_ACCEPT_VISITOR_FROM(Expression)
     SUSHI_VISITABLE(CommandLikeVisitor)
 
-    CommandLike(std::vector<Redirection> redirs) : redirs(std::move(redirs)) {}
+    CommandLike(
+        std::vector<Redirection> redirs, std::unique_ptr<CommandLike> pipe_next)
+        : redirs(std::move(redirs)), pipe_next(std::move(pipe_next)) {}
 
     std::vector<Redirection> redirs;
+    std::unique_ptr<CommandLike> pipe_next;
 };
 
 struct FunctionCall : CommandLike {
@@ -49,9 +52,9 @@ struct FunctionCall : CommandLike {
 
     FunctionCall(
         Identifier func, std::vector<std::unique_ptr<Expression>> parameters,
-        std::vector<Redirection> redirs)
-        : CommandLike(std::move(redirs)), func(std::move(func)),
-          parameters(std::move(parameters)){};
+        std::vector<Redirection> redirs, std::unique_ptr<CommandLike> pipe_next)
+        : CommandLike(std::move(redirs), std::move(pipe_next)),
+          func(std::move(func)), parameters(std::move(parameters)){};
 
     Identifier func;
     std::vector<std::unique_ptr<Expression>> parameters;
@@ -65,9 +68,9 @@ struct Command : CommandLike {
 
     Command(
         std::string cmd_name, std::vector<CommandParam> parameters,
-        std::vector<Redirection> redirs)
-        : CommandLike(std::move(redirs)), cmd_name(std::move(cmd_name)),
-          parameters(std::move(parameters)) {}
+        std::vector<Redirection> redirs, std::unique_ptr<CommandLike> pipe_next)
+        : CommandLike(std::move(redirs), std::move(pipe_next)),
+          cmd_name(std::move(cmd_name)), parameters(std::move(parameters)) {}
 
     std::string cmd_name;
     std::vector<CommandParam> parameters;
