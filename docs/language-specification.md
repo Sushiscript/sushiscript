@@ -459,7 +459,7 @@ done
 local -i a=10
 # define s : String = "abc"
 local s="abc"
-# export ex : String = "def"
+# export define ex : String = "def"
 declare -gx ex="def"
 # define arr : Array Int = [1, 2, 3]
 local -ai arr=($((1)) $((2)) $((3)))
@@ -490,7 +490,7 @@ But for `export`, an `export` follows the function.
 ##### Example
 
 ```bash
-# define Add(a : Int, b : Int):
+# define Add(a : Int, b : Int) : Int =
 # 	return a + b
 Add() {
 	local -i a=$0
@@ -498,11 +498,12 @@ Add() {
 	echo -ne $((a + b))
 }
 
-# export Subtract(a : Int, b : Int):
+# export define Subtract(a : Int, b : Int) : Int =
 # 	return a - b
 Subtract() {
 	local -i a=$0
 	local -i b=$1
 	echo -ne $((a - b))
 }
+export -f Subtract
 ```
