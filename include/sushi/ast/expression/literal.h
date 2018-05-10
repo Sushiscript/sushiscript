@@ -15,11 +15,13 @@ struct UnitLit;
 struct FdLit;
 struct StringLit;
 struct PathLit;
+struct RelPathLit;
 struct ArrayLit;
 struct MapLit;
 
 using LiteralVisitor = sushi::util::DefineVisitor<
-    IntLit, BoolLit, UnitLit, FdLit, StringLit, PathLit, ArrayLit, MapLit>;
+    IntLit, BoolLit, UnitLit, FdLit, StringLit, PathLit, RelPathLit, ArrayLit,
+    MapLit>;
 
 struct Literal : Expression {
     SUSHI_ACCEPT_VISITOR_FROM(Expression)
@@ -68,6 +70,14 @@ struct PathLit : Literal {
     SUSHI_ACCEPT_VISITOR_FROM(Literal);
 
     PathLit(InterpolatedString value) : value(std::move(value)) {}
+
+    InterpolatedString value;
+};
+
+struct RelPathLit : Literal {
+    SUSHI_ACCEPT_VISITOR_FROM(Literal);
+
+    RelPathLit(InterpolatedString value) : value(std::move(value)) {}
 
     InterpolatedString value;
 };
