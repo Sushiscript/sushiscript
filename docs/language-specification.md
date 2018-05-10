@@ -415,3 +415,94 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ## 6. Translation
 
+### 6.0 Translation example
+
+```sushi
+for i in [1, 2, 3, 4, 5]:
+  ! ./random.out redirect to ./inputs/in$i
+  ! ./a.out redirect to ./outputs/out$i, from ./inputs/in$i
+```
+
+Traslate to -->
+
+```bash
+for i in ($((0)) $((1)) $((2)) $((3)) $((5))); do
+  ./random.out > ./inputs/in$i
+  ./a.out > ./outputs/out$i < ./inputs/in$i
+done
+```
+
+### 6.1 Definition
+
+|type     |declare option	|
+|:-------:|:-------------:|
+|Int 			|-i            	|
+|Bool			|								|
+|String		|								|
+|Path			|								|
+|Unit			| 							|
+|FD				|								|
+|ExitCode |								|
+|Array		|-a							|
+|Map			|-A							|
+|Function |-f							|
+
+#### Variable Definition
+
+`define` statement will be all translated into `local` statement
+`export` statement will be all translated into `declare` statement, with option `-gx`
+
+##### Example
+
+```bash
+# define a : Int = 10
+local -i a=10
+# define s : String = "abc"
+local s="abc"
+# export ex : String = "def"
+declare -gx ex="def"
+# define arr : Array Int = [1, 2, 3]
+local -ai arr=($((1)) $((2)) $((3)))
+# define map : Map String String = { "a": "abc", "b": "def" }
+local -A map=(
+	["a"]="abc"
+	["b"]="def
+)
+```
+
+#### Function Definition
+
+Both `define` and `export` statement will be translated into the following style
+
+```bash
+func_name() {
+	local first_para_name=$0
+	local second_para_name=$1
+	# func body
+	echo -ne "return_value"
+}
+```
+
+Return value will be "returned" by using `echo -ne`.
+
+But for `export`, an `export` follows the function.
+
+##### Example
+
+```bash
+# define Add(a : Int, b : Int):
+# 	return a + b
+Add() {
+	local -i a=$0
+	local -i b=$1
+	echo -ne $((a + b))
+}
+
+# export Subtract(a : Int, b : Int):
+# 	return a - b
+Subtract() {
+	local -i a=$0
+	local -i b=$1
+	echo -ne $((a - b))
+}
+```
