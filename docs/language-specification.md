@@ -187,7 +187,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.1.1 Array Literal
 
 ```
-<array literal> = '[' <array items>? ']'
+<array literal> = '{' <array items>? '}'
 <array items>   = <expression> (',' <expression>)*
 ```
 
@@ -202,8 +202,9 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 #### 3.1.2 Atom Expression
 
 ```
-<atom expr>  = <literal> | <identifier> | <paren expr>
+<atom expr>  = <literal> | <identifier> | <paren expr> | <atom expr> <index>
 <paren expr> = '(' <expression> ')'
+<index>      = '[' <expression> ']'
 ```
 
 #### 3.1.3 Operator Expression
@@ -272,14 +273,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 <pipeline> = '|' <procedure call>
 ```
 
-#### 3.1.5 Indexing
-
-```
-<indexing> = <expression> '[' <expression> ']'
-```
-
-
-#### 3.1.6 Expression
+#### 3.1.5 Expression
 
 ```
 <expression>
@@ -290,7 +284,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
   | <indexing>
 ```
 
-#### 3.1.7 Type Expression
+#### 3.1.6 Type Expression
 
 ```
 <type> = <simple type> | <array type> | <map type> | <function type>
@@ -315,6 +309,8 @@ If we say "`<statement>` introduces new block on `<program>`", all indentations 
 ```
 
 And all statements within the same innermost block must have same level of indentation.
+
+If there's no line break before `<program>`, the indentation level of that block is the column number of the first token in that `<program>` minus 1.
 
 #### 3.2.1 Definition
 
@@ -703,12 +699,14 @@ Types that can instantiate both `EqualComparable` and `OrderComparable` can inst
 #### 4.7.6 Indexing
 
 ```
-<array index : T> = <Array T> [ <Int> ]
-<map index : V> = <Map K V> [ <K> ]
+<array index  : T>    = <Array T> [ <Int> ]
+<map index    : V>    = <Map K V> [  <K>  ]
+<string index : Char> = <String>  [ <Int> ]
 ```
 
 - `<array index>` array indexing, index counts from `0`
 - `<map index>` retrieving the mapped value by the key
+- `<string index>` string indexing, index counts from `0`
 
 _todo: what happens when out of range?_
 
