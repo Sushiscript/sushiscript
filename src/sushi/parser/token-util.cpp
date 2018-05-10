@@ -110,7 +110,17 @@ BuiltInAtom::Type TypeTokenToType(Token::Type t) {
 }
 
 bool IsLiteral(Token::Type t) {
-    TOKEN_IN(t, TT(kCharLit), TT(kStringLit), TT(kPathLit), TT(kIntLit));
+    TOKEN_IN(
+        t, TT(kCharLit), TT(kStringLit), TT(kPathLit), TT(kIntLit), TT(kTrue),
+        TT(kFalse), TT(kUnitLit), TT(kStdin), TT(kStdout), TT(kStderr));
+}
+
+bool IsBoolLiteral(Token::Type t) {
+    TOKEN_IN(t, TT(kTrue), TT(kFalse));
+}
+
+bool IsFdLiteral(lexer::Token::Type t) {
+    TOKEN_IN(t, TT(kStdin), TT(kStdout), TT(kStderr));
 }
 
 bool IsError(Token::Type t) {
@@ -119,6 +129,10 @@ bool IsError(Token::Type t) {
 
 bool IsSpace(Token::Type t) {
     TOKEN_IN(t, TT(kIndent), TT(kLineBreak));
+}
+
+bool IsStatementEnd(Token::Type t) {
+    TOKEN_IN(t, TT(kSemicolon), TT(kLineBreak));
 }
 
 #undef TT

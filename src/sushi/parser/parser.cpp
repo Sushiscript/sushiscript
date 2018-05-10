@@ -3,9 +3,9 @@
 #include "boost/variant.hpp"
 #include "sushi/parser/detail/lexer-util.h"
 
+using std::unique_ptr;
 using boost::get;
 using boost::optional;
-using std::unique_ptr;
 
 namespace sushi {
 
@@ -15,25 +15,9 @@ namespace parser {
 
 using namespace detail;
 
-bool Parser::AssertLookahead(lexer::Token::Type t, bool skip_space) {
-    auto tok = Lookahead(lexer_, skip_space);
-    if (not tok or tok->type != t) {
-        auto loc = tok ? tok->location : TokenLocation::Eof();
-        RecordError(Error::Type::kExpectToken, {t, std::move(loc), 0});
-        return false;
-    }
-    return true;
-}
-
-bool Parser::AssertNext(lexer::Token::Type t, bool skip_space) {
-    auto result = AssertLookahead(t, skip_space);
-    Next(lexer_, skip_space);
-    return result;
-}
-
 ast::Program Parser::Program() {
     int indent = DetermineBlockIndent();
-    if (indent <= CurrentIndent()) {
+    if (indent <= s_.CurrentIndent()) {
         return {};
     }
     return WithBlock(indent, &Parser::Block);
@@ -51,7 +35,7 @@ ast::Program Parser::Block() {
     return p;
 }
 optional<unique_ptr<ast::Statement>> Parser::CurrentBlockStatement() {
-    auto lookahead = lexer_.Lookahead();
+    auto lookahead = Lookahead(s_.lexer, false);
     if (not lookahead)
         return boost::none;
     if (lookahead->type != Token::Type::kIndent)
@@ -59,19 +43,19 @@ optional<unique_ptr<ast::Statement>> Parser::CurrentBlockStatement() {
 
     // type != Type::kIndent
     int indent = lookahead->IntData();
-    if (indent < CurrentIndent())
+    if (indent < s_.CurrentIndent())
         return boost::none;
-    if (indent > CurrentIndent()) {
-        RecordError(Error::Type::kUnexpectIndent, lexer_.Next());
+    if (indent > s_.CurrentIndent()) {
+        s_.RecordError(Error::Type::kUnexpectIndent, *Next(s_.lexer, false));
         WithBlock(indent, &Parser::Statement);
-        return nullptr;
+        return boost::make_optional<unique_ptr<ast::Statement>>(nullptr);
     }
-    lexer_.Next();
+    Next(s_.lexer, false);
     return Statement();
 }
 
 int Parser::DetermineBlockIndent() {
-    auto lookahead = lexer_.Lookahead();
+    auto lookahead = Lookahead(s_.lexer, false);
     if (not lookahead) {
         return -1;
     }
@@ -82,6 +66,51 @@ int Parser::DetermineBlockIndent() {
 }
 
 unique_ptr<ast::Statement> Parser::Statement() {
+    auto lookahead = Lookahead(s_.lexer, false);
+    if (not lookahead)
+        return nullptr;
+    switch (lookahead->type) {
+    case Token::Type::kExport:
+    case Token::Type::kDefine: return Definition();
+    case Token::Type::kReturn: return Return();
+    case Token::Type::kIf: return If();
+    case Token::Type::kFor: return For();
+    case Token::Type::kSwitch: return Switch();
+    case Token::Type::kBreak: return Break();
+    case Token::Type::kContinue: return Continue();
+    default: return ExpressionOrAssignment();
+    }
+    return nullptr;
+}
+
+unique_ptr<ast::Statement> Parser::Definition() {
+    return nullptr;
+}
+
+unique_ptr<ast::ReturnStmt> Parser::Return() {
+    return nullptr;
+}
+unique_ptr<ast::IfStmt> Parser::If() {
+    return nullptr;
+}
+
+unique_ptr<ast::ForStmt> Parser::For() {
+    return nullptr;
+}
+
+unique_ptr<ast::SwitchStmt> Parser::Switch() {
+    return nullptr;
+}
+
+unique_ptr<ast::LoopControlStmt> Parser::Break() {
+    return nullptr;
+}
+
+unique_ptr<ast::LoopControlStmt> Parser::Continue() {
+    return nullptr;
+}
+
+unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
     return nullptr;
 }
 
@@ -89,7 +118,47 @@ unique_ptr<ast::Expression> Parser::Expression() {
     return nullptr;
 }
 
-unique_ptr<ast::Expression> Parser::AtomExpression() {
+unique_ptr<ast::Expression> Parser::StartWithIdentifier() {
+    return nullptr;
+}
+
+unique_ptr<ast::FunctionCall> Parser::FunctionCall() {
+    return nullptr;
+}
+
+unique_ptr<ast::Expression> Parser::UnaryOperation() {
+    return nullptr;
+}
+
+unique_ptr<ast::Indexing> Parser::Indexing() {
+    return nullptr;
+}
+
+unique_ptr<ast::Expression> Parser::AtomExpr() {
+    return nullptr;
+}
+
+unique_ptr<ast::Command> Parser::Command() {
+    return nullptr;
+}
+
+unique_ptr<ast::Literal> Parser::MapArrayLiteral() {
+    return nullptr;
+}
+
+unique_ptr<ast::TypeExpr> Parser::TypeExpression() {
+    return nullptr;
+}
+
+unique_ptr<ast::Literal> Parser::Literal() {
+    return nullptr;
+}
+
+unique_ptr<ast::StringLit> Parser::StringLiteral() {
+    return nullptr;
+}
+
+unique_ptr<ast::PathLit> Parser::PathLiteral() {
     return nullptr;
 }
 

@@ -20,7 +20,16 @@ type::BuiltInAtom::Type TypeTokenToType(lexer::Token::Type);
 
 bool IsLiteral(lexer::Token::Type);
 
+bool IsBoolLiteral(lexer::Token::Type);
+
+bool IsFdLiteral(lexer::Token::Type);
+
+bool IsError(lexer::Token::Type t);
+
 bool IsSpace(lexer::Token::Type);
+
+bool IsStatementEnd(lexer::Token::Type);
+
 
 } // namespace detail
 } // namespace parser

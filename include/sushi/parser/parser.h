@@ -4,6 +4,7 @@
 #include "sushi/ast.h"
 #include "sushi/lexer.h"
 #include "sushi/parser/error.h"
+#include "sushi/parser/detail/parser-state.h"
 
 #include <memory>
 #include <stack>
@@ -19,28 +20,21 @@ struct ParsingResult {
 
 class Parser {
   public:
-    Parser(lexer::Lexer lexer) : lexer_(std::move(lexer)) {
-        indents_.push(0);
-    }
+    Parser(lexer::Lexer lexer) : s_(std::move(lexer)) {}
 
     ParsingResult Parse() {
+        SUSHI_PARSER_NEW_BLOCK(s_, 0);
         auto p = Program();
-        return {std::move(p), std::move(current_errors_)};
+        return {std::move(p), std::move(s_.errors)};
     }
 
   private:
     template <typename T>
     T WithBlock(int indent, T (Parser::*parse)()) {
-        indents_.push(indent);
+        SUSHI_PARSER_NEW_BLOCK(s_, indent);
         auto ret = (this->*parse)();
-        indents_.pop();
         return ret;
     }
-
-
-    bool AssertLookahead(lexer::Token::Type t, bool skip_space = true);
-
-    bool AssertNext(lexer::Token::Type t, bool skip_space = true);
 
     ast::Program Program();
 
@@ -52,22 +46,48 @@ class Parser {
 
     std::unique_ptr<ast::Statement> Statement();
 
+    std::unique_ptr<ast::Statement> Definition();
+
+    std::unique_ptr<ast::ReturnStmt> Return();
+
+    std::unique_ptr<ast::IfStmt> If();
+
+    std::unique_ptr<ast::ForStmt> For();
+
+    std::unique_ptr<ast::SwitchStmt> Switch();
+
+    std::unique_ptr<ast::LoopControlStmt> Break();
+
+    std::unique_ptr<ast::LoopControlStmt> Continue();
+
+    std::unique_ptr<ast::Statement> ExpressionOrAssignment();
+
     std::unique_ptr<ast::Expression> Expression();
 
-    std::unique_ptr<ast::Expression> AtomExpression();
+    std::unique_ptr<ast::Expression> StartWithIdentifier();
 
-    nullptr_t RecordError(Error::Type t, lexer::Token pos) {
-        current_errors_.push_back({t, std::move(pos)});
-        return nullptr;
-    }
+    std::unique_ptr<ast::FunctionCall> FunctionCall();
 
-    int CurrentIndent() const {
-        return indents_.top();
-    }
+    std::unique_ptr<ast::Expression> UnaryOperation();
 
-    lexer::Lexer lexer_;
-    std::vector<Error> current_errors_;
-    std::stack<int> indents_;
+    std::unique_ptr<ast::Indexing> Indexing();
+
+    std::unique_ptr<ast::Expression> AtomExpr();
+
+    std::unique_ptr<ast::Command> Command();
+
+    std::unique_ptr<ast::Literal> MapArrayLiteral();
+
+    std::unique_ptr<ast::TypeExpr> TypeExpression();
+
+    std::unique_ptr<ast::Literal> Literal();
+
+    std::unique_ptr<ast::StringLit> StringLiteral();
+
+    std::unique_ptr<ast::PathLit> PathLiteral();
+
+    private:
+    detail::ParserState s_;
 };
 
 } // namespace parser
