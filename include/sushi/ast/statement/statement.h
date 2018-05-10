@@ -18,9 +18,10 @@ struct SwitchStmt;
 struct ForStmt;
 struct LoopControlStmt;
 struct Expression;
+struct Assignment;
 
 using StatementVisitor = sushi::util::DefineVisitor<
-    VariableDef, FunctionDef, IfStmt, ReturnStmt, SwitchStmt, ForStmt,
+    Assignment, VariableDef, FunctionDef, IfStmt, ReturnStmt, SwitchStmt, ForStmt,
     LoopControlStmt, Expression>;
 
 struct Statement {
