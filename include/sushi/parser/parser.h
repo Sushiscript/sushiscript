@@ -3,8 +3,8 @@
 
 #include "sushi/ast.h"
 #include "sushi/lexer.h"
-#include "sushi/parser/error.h"
 #include "sushi/parser/detail/parser-state.h"
+#include "sushi/parser/error.h"
 
 #include <memory>
 #include <stack>
@@ -64,13 +64,16 @@ class Parser {
 
     std::unique_ptr<ast::Expression> Expression();
 
+    std::unique_ptr<ast::Expression>
+    PrecedenceClimb(std::unique_ptr<ast::Expression> lhs, int min_prec);
+
     std::unique_ptr<ast::Expression> StartWithIdentifier();
 
     std::unique_ptr<ast::FunctionCall> FunctionCall();
 
     std::unique_ptr<ast::Expression> UnaryOperation();
 
-    std::unique_ptr<ast::Indexing> Indexing();
+    std::unique_ptr<ast::Indexing> Index();
 
     std::unique_ptr<ast::Expression> AtomExpr();
 
@@ -82,11 +85,22 @@ class Parser {
 
     std::unique_ptr<ast::Literal> Literal();
 
+    std::unique_ptr<ast::Expression> InterExpr();
+
+    bool InterpolateAction(
+        lexer::Token, bool exit_on_err, ast::InterpolatedString &, bool &err);
+
+    boost::optional<ast::InterpolatedString> Interpolatable(bool exit_on_err);
+
     std::unique_ptr<ast::StringLit> StringLiteral();
 
-    std::unique_ptr<ast::PathLit> PathLiteral();
+    std::unique_ptr<ast::Literal> PathLiteral();
 
-    private:
+    nullptr_t Recover(std::vector<lexer::Token::Type> stops);
+
+    boost::optional<lexer::Token::Type> SkipToken();
+
+  private:
     detail::ParserState s_;
 };
 
