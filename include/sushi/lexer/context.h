@@ -8,6 +8,7 @@
 #include "boost/optional.hpp"
 #include "sushi/util/meta.h"
 #include <memory>
+#include <utility>
 
 namespace sushi {
 namespace lexer {
@@ -128,11 +129,12 @@ using RawInterCfg = InterpolateConfig<RawConfig>;
 struct PathInterCfg : InterpolateConfig<RawConfig> {
     Context::LexResult
     Segment(std::string data, TokenLocation l, SegmentReason r) {
-        if (not start) return Super::Segment(std::move(data), std::move(l), r);
+        if (not start)
+            return Super::Segment(std::move(data), std::move(l), r);
         start = false;
         int offset = ExpectSlash(data);
         if ((offset >= data.size() and (r == SegmentReason::kFalseStop or
-                                       r == SegmentReason::kInterpolation)) or
+                                        r == SegmentReason::kInterpolation)) or
             (offset < data.size() and data[offset] != '/')) {
             TokenLocation errl{l.src_path, l.line, l.column + offset};
             return Token::Error(std::move(errl), Error::kPathExpectSlash);
@@ -142,9 +144,11 @@ struct PathInterCfg : InterpolateConfig<RawConfig> {
 
   private:
     int ExpectSlash(std::string data) {
-        if (data.front() == '~') return 1;
+        if (data.front() == '~')
+            return 1;
         auto pos = data.find_first_not_of('.');
-        if (pos == std::string::npos) return data.size();
+        if (pos == std::string::npos)
+            return data.size();
         return pos;
     }
     bool start = true;
@@ -168,14 +172,9 @@ class InterpolateContext : public Context {
     Context::LexResult Lex() override {
         auto &input = state.input;
         auto l = input.NextLocation();
-        std::string data;
-        SegmentReason reason = SegmentReason::kFalseStop;
-        for (;;) {
-            data += detail::String(state, *cc);
-            reason = CheckStopReason();
-            if (reason != SegmentReason::kFalseStop) break;
-            ConsumeSingleDollar(data);
-        }
+        auto p = ExtractSegment();
+        std::string data = p.first;
+        SegmentReason reason = p.second;
         if (not data.empty())
             return ic.Segment(std::move(data), std::move(l), reason);
         if (reason == SegmentReason::kInterpolation)
@@ -186,15 +185,31 @@ class InterpolateContext : public Context {
     }
 
   private:
+    std::pair<std::string, SegmentReason> ExtractSegment() {
+        std::string data;
+        SegmentReason reason = SegmentReason::kFalseStop;
+        for (;;) {
+            data += detail::String(state, *cc);
+            reason = CheckStopReason();
+            if (reason != SegmentReason::kFalseStop)
+                break;
+            ConsumeSingleDollar(data);
+        }
+        return {data, reason};
+    }
+
     void ConsumeSingleDollar(std::string &s) {
         auto oc = state.input.Lookahead();
-        if (oc and *oc == '$') s.push_back(*state.input.Next());
+        if (oc and *oc == '$')
+            s.push_back(*state.input.Next());
     }
 
     SegmentReason CheckStopReason() {
         auto oc = state.input.Lookahead();
-        if (not oc) return SegmentReason::kEof;
-        if (*oc != '$') return SegmentReason::kRestrict;
+        if (not oc)
+            return SegmentReason::kEof;
+        if (*oc != '$')
+            return SegmentReason::kRestrict;
         if (state.input.LookaheadMany(2) == "${")
             return SegmentReason::kInterpolation;
         return SegmentReason::kFalseStop;

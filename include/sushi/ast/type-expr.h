@@ -34,20 +34,20 @@ struct TypeLit : TypeExpr {
 struct ArrayType : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
-    ArrayType(std::unique_ptr<TypeExpr> element)
+    ArrayType(type::BuiltInAtom::Type element)
         : element(std::move(element)) {}
 
-    std::unique_ptr<TypeExpr> element;
+    type::BuiltInAtom::Type element;
 };
 
 struct MapType : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
-    MapType(type::BuiltInAtom::Type key, std::unique_ptr<TypeExpr> value)
-        : key(key), value(std::move(value)) {}
+    MapType(type::BuiltInAtom::Type key, type::BuiltInAtom::Type value)
+        : key(key), value(value) {}
 
     type::BuiltInAtom::Type key;
-    std::unique_ptr<TypeExpr> value;
+    type::BuiltInAtom::Type value;
 };
 
 } // namespace ast

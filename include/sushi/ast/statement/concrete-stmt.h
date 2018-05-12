@@ -11,6 +11,21 @@
 namespace sushi {
 namespace ast {
 
+struct Assignment : Statement {
+    SUSHI_ACCEPT_VISITOR_FROM(Statement)
+
+    Assignment(
+        Identifier ident, std::unique_ptr<Expression> index,
+        std::unique_ptr<Expression> value)
+        : ident(std::move(ident)), index(std::move(index)),
+          value(std::move(value)) {}
+
+    Identifier ident;
+    // index is nullptr in a normal assignment
+    std::unique_ptr<Expression> index;
+    std::unique_ptr<Expression> value;
+};
+
 struct VariableDef : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
@@ -37,13 +52,15 @@ struct FunctionDef : Statement {
 
     FunctionDef(
         bool is_export, const std::string &name, std::vector<Parameter> params,
-        std::unique_ptr<Program> body)
+        std::unique_ptr<TypeExpr> ret_type, std::unique_ptr<Program> body)
         : is_export(is_export), name(name), params(std::move(params)),
-          body(std::move(body)) {}
+          ret_type(std::move(ret_type)), body(std::move(body)) {}
 
     bool is_export;
     std::string name;
     std::vector<Parameter> params;
+    // ret_type can be nullptr
+    std::unique_ptr<TypeExpr> ret_type;
     std::unique_ptr<Program> body;
 };
 
@@ -65,6 +82,9 @@ struct IfStmt : Statement {
 struct ReturnStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
+    ReturnStmt(std::unique_ptr<Expression> value): value(value) {}
+
+    // value can be nullptr, default to be "unit"
     std::unique_ptr<Expression> value;
 };
 

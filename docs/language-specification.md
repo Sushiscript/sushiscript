@@ -43,26 +43,23 @@ Following punctuations are meaningful:
 
 ```
 <built-in type>
-  = "Int"  | "Bool"  | "Unit" | "String"   | "Char"
-  | "Path" | "Array" | "Map"  | "ExitCode" | "FD"
+	= "Unit" | "Bool"    | "Char"  | "Int" | "String"
+	| "Path" | "RelPath" | "Array" | "Map" | "ExitCode" | "FD"
 ```
 
 ### 2.4 Interpolation
 
-_TODO: Explain interpolation in later section and add a link here_
-
 Interpolation is a lexical construct that embed expression in some special contexts (typically string interpolation). If  `identifier` is provided after `$` , lexer suspend the enclosing context and eagerly recognize the first possible identifier.
 
 ```
-<interpolation> = '$' ( '{' ... '}' | <identifier> )
-<interpolate char> = '$ | '{' | '}'
+<interpolation> = "${" ... "}"
 ```
 
 Interpolation can be recognized recursively. e.g.
 
 ```
 ${ ... "${ ... }" ... }
-"${ ... \" ${ ... } \" ... }"
+"${ ... "${ ... }" ... }"
 ```
 
 ### 2.5 Character
@@ -145,8 +142,9 @@ _TODO: integer literal of various radix support_
 #### 2.6.5 Path
 
 ```
-<path literal> = <path start> ( <raw char> | <interpolation> )*
-<path start>   = "./" | "../" | "/" | "~"
+<path literal> = "~" ('/' <path tail>)? | '/' <path tail>?
+<relpath literal> = '.'+ ('/' <path tail>)?
+<path tail>    = (<raw char> | <interpolation>)*
 ```
 
 ### 2.7 Misc
@@ -169,7 +167,7 @@ Indent of length `N` is `N` consecutive white spaces at line start, no tab `\t` 
 
 #### 2.7.3 Line Joining
 
-When the last character of a line is `\`, **this backslash**, **next line break** and **indentation of next line** are ignored.
+When the last character of a line is `\`, **this backslash**, **next line break** and **indentation of next line** are ignored. And if the current line is empty, the only the indentation of next line will count.
 
 ## 3. Syntax Structure
 
@@ -179,11 +177,11 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 
 ```
 <literal>
-  = <int literal>    | <bool literal>
-  | <unit literal>   | <fd literal>
-  | <string literal> | <path literal>
-  | <array literal>  | <map literal>
-  | <char literal>
+	= <int literal>    | <bool literal>
+	| <unit literal>   | <fd literal>
+	| <char literal>   | <string literal>
+	| <path literal>   | <relpath literal>
+	| <array literal>  | <map literal>
 ```
 
 ##### 3.1.1.1 Array Literal
@@ -215,9 +213,9 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <binop expr> = <expression> <binary op> <expression>
 <binary op>
-  = '+'  | '-' | '*'  | '/'  | '%'
-  | '>'  | '<' | '>=' | '<=' | '==' | '!='
-  | "or" | "and"
+	= '+'  | '-' | '*'  | '//'  | '%'
+	| '>'  | '<' | '>=' | '<=' | '==' | '!='
+	| "or" | "and"
 ```
 
 ##### 3.1.3.2 Binary Operator Precedence Table
@@ -228,7 +226,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 | `== ` `!=`        | left          | 1          |
 | `>` `<` `>=` `<=` | left          | 2          |
 | `+` `-`           | left          | 3          |
-| `*` `/` `%`       | left          | 4          |
+| `*` `//` `%`       | left          | 4          |
 
 ##### 3.1.3.3 Unary Operator
 
@@ -295,14 +293,12 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 #### 3.1.7 Type Expression
 
 ```
-<type> = <simple type> | <complex type>
+<type> = <simple type> | <array type> | <map type>
 <simple type>
-  = "Int"  | "Bool" | "String"
-  | "Path" | "Unit" | "FD" | "ExitCode"
-<complex type> = <array type> | <map type>
-<array type>   = "Array" <atom type>
-<map type>     = "Map" <atom type> <atom type>
-<atom type>    = <simple type> | '(' <complex type> ')'
+	= "Int"  | "Bool" | "String"
+	| "Path" | "Unit" | "FD" | "ExitCode"
+<array type>   = "Array" <simple type>
+<map type>     = "Map" <simple type> <simple type>
 ```
 
 ### 3.2 Statement
@@ -345,7 +341,7 @@ And all statements within the same innermost block must have same level of inden
 #### 3.2.2 Assignment
 
 ```
-<assignment> = <identifier> '=' <expression>
+<assignment> = (<identifier> | <indexing>) '=' <expression>
 ```
 
 #### 3.2.3 return
@@ -412,6 +408,392 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ## 4. Type System
 
+### 4.1 Introduction
+
+The type system provide abstraction over many operating system concepts such as "Path" in filesystem and  the exit status of a process and distinguish one of those concepts from another on the aspect of language although their low level representations may be the same.
+
+`sushiscript` is designed to be a staticly and strongly typed language. "Static" means that the type checking process on the type correctness of program is performed at compile time by the _type checker_. And "strong" means that there are few implicit conversions between different types are tried by type checker when the actual type of an expression and expected type are not exactly the same. (there are some, though).
+
+The type system also has a strong connection with the syntax structure, every expression has a unambiguous type that depend on the context. And most `<expression>`s  appeared in the syntax structure means "expression of some certain types", expressions that aren't in the list of that "certain types" are rejected even if they are valid in syntax. And the requirements of types often distinguish different semantics of syntax structure.
+
+### 4.2 Notations and Terms
+
+#### 4.2.1 `<E>` and `<S>`
+
+We use `monospaced` string and angle bracket around them to represent some expandable syntactic rules. And `<E>` usually means some concrete `<expression>` and `<S>` usually means some concrete `<statement>`.
+
+#### 4.2.2 `<E : T>`
+
+When we add colon between the angle bracket like `<E : T>`. We means expression `<E>` has type `<T>`. It may be useful to explicity assign a type for the expression.
+
+#### 4.2.3 Simple Types
+
+Simple types (or atom types) are types that doesn't contains other types in itself.
+
+#### 4.2.4 Parameterized Type
+
+Parameterized type (as its name suggest) can be provided with type parameters to form (intuitively) different types with different parameters.
+
+#### 4.2.5 Instantiation / Instantiate
+
+An instantiation of a type parameter is the process where type parameter is replaced by a specific type when the actual type of the expression is known somehow from the context.
+
+#### 4.2.5 Direct Sub-expresion
+
+A expression `<E>` is a direct sub-expressions of a statement or an expression `<R>` if it's the first `<expression>` appeared in some path while walking down the parsing tree rooted at `<R>`.
+
+#### 4.2.6 Super-expression
+
+Opposite to "sub-expression", if `<E'>` is a sub-expression to `<E>`, then `<E>` is a super-expression of `<E'>`.
+
+#### 4.2.6 Implicitly Convertible
+
+Type `T` is_ implicitly convertible_ to type `T'` when there are built-in ~~or user-provided~~ ways to transform an object of type `T` to another object of type `T'`. And intuitively the process could be done implicitly, with no additional code written.
+
+### 4.3 Type Checking
+
+#### 4.3.1 Well-typed Expression
+
+The  _well-typed_ expression is recursively defined as follow:
+
+- A literal of simple type is a well-typed expression
+- An defined identifier is a well-typed expression
+- Other expressions are well typed if all direct sub-expressions are well typed, and their types together satisfy one of the _typing rules_(explained later) of that composite expression.
+
+#### 4.3.2 Type Requirement
+
+A composite expression `<E : T>` or a statement `<S>` may explicitly _requires_ some of their direct sub-expressions `<E'>` to have some certain possible types `T1', T2', ...` in their typing rules R. Then these variable together forms a type requirement, and `T1', T2', ...` are the  _required types_ by `<E : T>` or `<S>` on `<E'>` in that requirement.
+
+Sometimes the required types by `<E>` or `<S>` on `<E'>`may also depend on the types of other direct sub-expressions of `<E>` or `<S>` due to the typing rule.
+
+#### 4.3.3 Implicit Type Conversion
+
+With `<E'>` being an direct sub-expression of `<E : T>` or `<S>`, and its actual type being `T'`, an _implicit type conversion_(or _coersion_) happens when `T'` isn't one of the required types in the corresponding type requirement. And `T'` is _implicitly convertible_ to exactly one type `T''` in the required types. Then we say _`<E' : T'>` successfully implicitly convert to `T''` in the requirement_.
+
+If there're multiple implicitly convertible type in required types, then conversion is considered ambiguous, which results in a fail implict conversion.
+
+#### 4.3.4 Satisfaction Condition
+
+We say _`<E' : T'>` satisfy the requirement by `<E : T>` or `<S>` on `<E'>`_ if one of the followings is true:
+
+- `T'` is a same type as one of the required types by `<E>` or `<S>` on `<E'>`.
+- `<E' : T'>` successfully convert to `T` in the requirement.
+- ~~There's only one type in the required types, and `T'` unifies with that type. ~~
+
+#### 4.3.3 Type Correctness
+
+A _type correct program_(i.e. a program that pass the type checking process) means that type requirements recursively generate by **all** statements and composite expressions are _satisfied_ by their corresponding direct sub-expressions.
+
+### 4.4 Typing Rule
+
+Typing rules, as mentioned in sections above, are the most important source of type requirements. And they usually come along with the semantic of the program. So they would be introduced together.
+
+#### 4.4.1 Notation
+
+We use a notation connected intimately with the notation that expressed syntax structure:
+
+```
+<expression : T> = <[optional-name :] T1> other tokens <T2>
+# or
+<statement> = <[optional-name :] T1> other tokens <T2 | T3>
+```
+
+where those enclosing in angle bracket are direct sub-expressions of the expression or statement with an optional name and type `T1, T2, T3, ...`. `T1, T2, T3, ...` may be specific types or just type pameters, either way, types with same name are the same type in the notation. Other tokens are no-longer enclosing in double or single quotes for clarity.
+
+And what's on the left of the equal sign (`=`) of the rule is called the _head_ of the rule, the right is the _body_ of the rule.
+
+#### 4.4.2 Type Deduction
+
+Type deduction is performed **mostly bottom-up** and **always left-to-right** with respect to the abstract syntax tree. That is the type of the actual type of a super-expression is obtained by the type of  its sub-expressions and the applying typing rule.
+
+#### 4.4.3 Requirement Generation
+
+Whenever a type parameter in a rule is successfully deduced with a actual type `T`, all other type parameter with the same name (both in the _head_ and _body_) is instantiated with `T`.
+
+A specific type `<E' : T'>` in the _body_, whenever it is instantiated, add `T'` to the required types by `<E : T>` on `<E'>`.  For example:
+
+```
+<E : T> = <E' : T'> <E'' : T'>
+```
+
+When `<E'>` is deduced with actual type `TA`, it instantiates the `T'` to `TA` in `<E''>`, and add `TA1` to the required types of `<E''>`. Then when `<E''>` is deduced with `TA2`, `<E'' : TA2>` is checked against the _satisfaction_ condition of the requirement with required type `TA1`.
+
+### 4.5 Buit-in Types
+
+#### 4.5.1 Simple Types
+
+- `Unit`: "Trivial" type with only one value (`unit`)
+- `Bool`:  Boolean types with only two different values (`true` and `false`)
+- `Char`: Character _todo: specify the range of Char_
+- `Int`: Signed integer  _todo: specify the range of Int_
+- `String`: Character sequence.
+- `Path`: Absolute path that may or may not pointing to a valid file
+- `RelPath`: Relative path that may or may not pointing to a valid file
+- `ExitCode`: Exit status of a process or command.
+- `FD`: File descriptor is the logical handle of a opened file.
+
+#### 4.5.2 Parameterized Types
+
+- `Array [element]`: Linear sequence of values with type `[Element]`.
+- `Map [Key] [Value]`: Associative structure that map a values of type `[Key]` to values of type `[Value]`
+- `Function [Ret] [Param1] [Param2] ...`: Function with parameters of type `[Param1], [Param2]` and return type `[Ret]`.
+
+#### 4.5.3 Implicit Conversion
+
+- `ExitCode` to `Bool`, non-zero `ExitCode` to `false` (exit with error), zero `ExitCode` to `true` (success).
+- `ExitCode` to `Int`, converting the exit status code to the integer of same value.
+- `RelPath` to `Path`, the relative path is applied to the current working directory.
+
+### 4.6 User-defined Types
+
+_Not (planned to) implement yet_
+
+### 4.7 Typing Rules in `sushiscript`
+
+#### 4.7.1 Array Literal
+
+```
+<array literal : Array T> = [<T>, <T>, ...] | []
+```
+
+Array Literal is of type `Array T` when all of it's element are well-typed and of same type `T`.
+
+#### 4.7.2 Map Literal
+
+```
+<map literal : Map K V> = {<K> : <V>, <K> : <V>, ...} | {}
+```
+
+Map Literal is of type `Map K V` when all of it's keys and values are well-typed and all keys are of the same type `K`, all values are of the same type `V`.
+
+#### 4.7.3 Special Satisfaction Condition for Empty Array and Map
+
+Empty array and map literals satisfy all requirement whose required types contains an array or map with any type parameter combination.
+
+#### 4.7.4 Unary Operations
+
+##### `+`
+
+```
+<abs : Int> : + <Int>
+```
+
+`+` as a unary operator turns an integer to its absolute value.
+
+##### `-`
+
+```
+<negate : Int> = - <Int>
+```
+
+`-` as a unary operator turns an integer to its negative counter-part.
+
+##### `not`
+
+```
+<logical negate : Bool> = not <Bool>
+```
+
+`not` negate boolean value to another different one.
+
+#### 4.7.5 Binary Operations
+
+##### `+`
+
+```
+<int plus : Int>         = <Int>     + <Int>
+<string concat : String> = <String>  + <String>
+<array concat : Array T> = <Array T> + <Array T>
+<map merge : Map K V>    = <Map K V> + <Map K V>
+```
+
+- `<int plus>` integer addition.
+- `<string concat>` concatenating two strings producing a new string.
+- `<array concat>` concatenating  two array of same element type producing a new array.
+- `<map merge>` combining two maps, with keys on the right overwrite the value of the same key on the left.
+
+##### `-`
+
+```
+<int minus : Int> = <Int> - <Int>
+```
+
+- `<int minus>` integer subtraction
+
+##### `*`
+
+```
+<int mult   : Int>    = <Int> * <Int>
+<string dup : String> = <String> * <Int>
+```
+
+- `<int mult>` integer multiplication.
+- `<string dup>` duplicate the string multiple times.
+
+##### `//`
+
+```
+<int div : Int> = <Int> // <Int>
+<path join : Path> = <Path | RelPath> // <RelPath>
+```
+
+- `<int div>` integer division.
+- `<path concat>` applying the right-hand relative path to the left-hand path.
+
+##### `%`
+
+```
+<int mod : Int> = <Int> % <Int>
+```
+
+- `<int mod>` modulo operation
+
+##### `==` `!=`
+
+```
+<equal compare : Bool> = <EqualComparable> (== | !=) <EqualComparable>
+```
+
+Following types are allow to instantiate `EqualComparable`
+
+- `Unit` two units are always equal
+- `Bool` boolean equality (`true == true, false == false`)
+- `Char` character equality
+- `Int` integer equality
+- `String` string case sensitive equality
+- `Path` determine whether two paths pointing to the same filesystem location
+- `ExitCode` just integer equality
+- `FD` just integer equality
+- `Array EqualComparable` element-wise array equality, two arrays are equal if all elements at the same index of two arrays are equal.
+
+##### `>` `<`
+
+```
+<order compare : Bool> = <OrderComparable> (> | <) <OrderComparable>
+```
+
+Following types are allow to instantiate `OrderComparable`
+
+- `Char` ascii (~~unicode~~) value compare
+- `Int` integer comparison
+- `String` lexical order comparison
+
+##### `>=` `<=`
+
+```
+<equal order compare : Bool> = <EqualOrderComparable> (>= | <=) <EqualOrderComparable>
+```
+
+Types that can instantiate both `EqualComparable` and `OrderComparable` can instantiate `EqualOrderComparable`
+
+- `a <= b` is always equivalent to `a < b or a == b`
+- `a >= b` is always equivalent to `a > b or a == b`
+
+##### `or` `and`
+
+```
+<logical operation : Bool> = <Bool> (or | and) <Bool>
+```
+
+- `a or b == false` if and only if `a == false and b == false`
+- `a and b == true` if and only if `a == true and b == true`
+
+#### 4.7.6 Indexing
+
+```
+<array index : T> = <Array T> [ <Int> ]
+<map index : V> = <Map K V> [ <K> ]
+```
+
+- `<array index>` array indexing, index counts from `0`
+- `<map index>` retrieving the mapped value by the key
+
+_todo: what happens when out of range?_
+
+#### 4.7.7 Function Call
+
+```
+<function call : Ret> = <Function Ret P1 P2 ...> <P1> <P2> ...
+```
+
+- `<call>` calling a defined function and retriving the return value of function
+
+#### 4.7.8 Redirection
+
+```
+<redirect to here : String> = (<function call : Ret> | command) redirect to here
+<redirect output> = redirect to <Path | FD>
+<redirect input>  = redirect from <Path>
+```
+
+- `<redirect to here>` if the redirected command if a function call, the original return value of function is discarded(_todo: to be discussed_). The value of whole command expression is the output of the command as a string
+- `<redirect output>` redirecting the output to the file pointing to by `Path` or another file discriptor
+- `<redirect input>` redirecting the content of the file pointed by `Path` to the input file descriptor
+
+#### 4.7.9 Variable Definition
+
+```
+<variable def> = define ident : type "=" <expr : T>
+```
+
+- if type of `ident` is explicitly stated, the statement generates type requirement on `<expr>` with required type represented by `type`, lets say `T'`, and make `ident` an well-typed expression of type `T'` in the following program.
+- otherwise, if `expr` is an well-typed expression, then `ident` is an well-typed expression of type `T` in the following program.
+
+#### 4.7.10 Assignment
+
+```
+<ident assign>    = <ident : T> = <expr : T>
+<array index set> = <ident : Array T> [ <Int> ] = <T>
+<map value set>   = <ident : Map K V> [ <K> ] = <V>
+```
+
+- `<ident assign>` assigning the value of `<expr>` to a identifier of type `T`
+- `<array index set>` set the value of an array at integer index
+- `<map value set>` set the value of an specific key, overwrite previous value if the value is set before.
+
+#### 4.7.11 Function Definition and Return
+
+```
+<function def> = define func (p1 : type1, p2 : type2, ...) : type = ...
+<return> = return <expr : T>
+```
+
+- If return type of `func` is explicitly stated, the definition statement generates type requirements on all the `return` statement inside the body of the function with what's represented by type expression `type`. If all requirements are satisfied, `func` is an well-typed expression in the following program.
+- Otherwise, the first `return` statement with no recursive call to `func` (calling `func` is not a sub-expression of `expr`) instantiate the type parameter `T` and generate type requirements on the expression of other return statements accordingly. Only if: **a.** Such `return` statement is found; **b.** All type requirements generated by this `return` statement are satisfied; then `func` becomes a well-typed expression in the following program.
+- If `<expr>` in the return statement is omitted, `<expr>` is `unit` by default.
+
+
+#### 4.7.12 If
+
+```
+<if> = if <Bool>: ...
+       else if <Bool>: ...
+```
+
+The type of ondition expression of `if` statement is required to be `Bool`.
+
+#### 4.7.13 Switch
+
+```
+<switch> = switch <T>
+		   case <T | Function Bool T>: ...
+```
+
+The required types of expression following `case` are:
+
+- `T` requires `T` to be also `EqualComparable`(see `==`), and if two values are equal according to the equality comparison, the branch is chosen.
+- `Function Bool T` calls the function with the switching value, if the function returns `true`, this branch is chosen.
+
+#### 4.7.14 For
+
+```
+<normal for> = for <Bool>: ...
+<range for> = for ident in <Array T>: ...
+```
+
+- `<normal for>` checks the loop condition before every iteration, if the expression evaluates to `true`, loop body is entered, the loop body is skipped otherwise.
+- `<range for>` requires the range expression has an `Array T`, and the `ident` becomes an well-typed expression inside the loop body of type `T`.
+
 ## 5. Semantic
 
 ## 6. Translation
@@ -447,6 +829,7 @@ It might seem weird that all the codes translated are wrapped in a `main` functi
 |Bool       |                |
 |String     |                |
 |Path       |                |
+|RelPath    |                |
 |Unit       |                |
 |FD         |                |
 |ExitCode   |-i              |
