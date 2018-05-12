@@ -43,6 +43,8 @@ struct CommandLike : Expression {
         std::vector<Redirection> redirs, std::unique_ptr<CommandLike> pipe_next)
         : redirs(std::move(redirs)), pipe_next(std::move(pipe_next)) {}
 
+    virtual ~CommandLike() = default;
+
     std::vector<Redirection> redirs;
     std::unique_ptr<CommandLike> pipe_next;
 };

@@ -27,6 +27,8 @@ struct Literal : Expression {
     SUSHI_ACCEPT_VISITOR_FROM(Expression)
 
     SUSHI_VISITABLE(LiteralVisitor);
+
+    virtual ~Literal() = default;
 };
 
 struct IntLit : Literal {
