@@ -15,12 +15,9 @@ optional<const Token &> SkipSpaceLookahead(Lexer &lex, int n) {
     int c = 0;
     for (int i = 1;; ++i) {
         auto l = lex.Lookahead(i);
-        if (not l)
-            return boost::none;
-        if (IsSpace(l->type))
-            continue;
-        if (++c == n)
-            return l;
+        if (not l) return boost::none;
+        if (IsSpace(l->type)) continue;
+        if (++c == n) return l;
     }
 }
 
@@ -39,8 +36,14 @@ optional<Token> Next(Lexer &lex, bool skip_space) {
 
 optional<Token> Optional(Lexer &lex, Token::Type t, bool skip_space) {
     auto l = Lookahead(lex, skip_space);
-    if (l and l->type == t)
-        return Next(lex, skip_space);
+    if (l and l->type == t) return Next(lex, skip_space);
+    return none;
+}
+
+optional<lexer::Token>
+Optional(Lexer &lex, std::function<bool(Token::Type)> p, bool skip_space) {
+    auto l = Lookahead(lex, skip_space);
+    if (l and p(l->type)) return Next(lex, skip_space);
     return none;
 }
 

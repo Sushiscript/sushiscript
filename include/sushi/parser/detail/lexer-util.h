@@ -3,6 +3,7 @@
 
 #include "./token-util.h"
 #include "sushi/lexer/lexer.h"
+#include <functional>
 
 namespace sushi {
 namespace parser {
@@ -20,6 +21,10 @@ boost::optional<lexer::Token> Next(lexer::Lexer &, bool);
 
 boost::optional<lexer::Token>
 Optional(lexer::Lexer &lex, lexer::Token::Type t, bool skip_space = true);
+
+boost::optional<lexer::Token> Optional(
+    lexer::Lexer &lex, std::function<bool(lexer::Token::Type)> p,
+    bool skip_space = true);
 
 } // namespace detail
 } // namespace parser
