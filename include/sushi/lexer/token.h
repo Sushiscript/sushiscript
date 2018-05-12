@@ -245,12 +245,11 @@ struct Token {
             {'*', Type::kStar},      {'%', Type::kPercent},
             {'<', Type::kLAngle},    {'>', Type::kRAngle},
             {',', Type::kComma},     {':', Type::kColon},
-            {';', Type::kSemicolon}, {'!', Type::kExclamation},
-            {'|', Type::kPipe},      {'$', Type::kDollar},
-            {'(', Type::kLParen},    {')', Type::kRParen},
-            {'[', Type::kLBracket},  {']', Type::kRBracket},
-            {'{', Type::kLBrace},    {'}', Type::kRBrace},
-            {'=', Type::kSingleEq}};
+            {';', Type::kSemicolon}, {'|', Type::kPipe},
+            {'$', Type::kDollar},    {'(', Type::kLParen},
+            {')', Type::kRParen},    {'[', Type::kLBracket},
+            {']', Type::kRBracket},  {'{', Type::kLBrace},
+            {'}', Type::kRBrace},    {'=', Type::kSingleEq}};
         return single_punct_map;
     }
 
