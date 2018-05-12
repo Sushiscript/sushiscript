@@ -46,6 +46,7 @@ struct Token {
         kChar,
         kString,
         kPath,
+        kRelPath,
         kArray,
         kMap,
         kExitCode,
@@ -140,6 +141,7 @@ struct Token {
         case Type::kChar: return "Char";
         case Type::kString: return "String";
         case Type::kPath: return "Path";
+        case Type::kRelPath: return "RelPath";
         case Type::kArray: return "Array";
         case Type::kMap: return "Map";
         case Type::kExitCode: return "ExitCode";
@@ -217,6 +219,7 @@ struct Token {
             {"Char", Type::kChar},
             {"String", Type::kString},
             {"Path", Type::kPath},
+            {"RelPath", Type::kRelPath},
             {"Array", Type::kArray},
             {"Map", Type::kMap},
             {"ExitCode", Type::kExitCode},
