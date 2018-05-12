@@ -57,7 +57,6 @@ struct Token {
         kStdin,
         kStdout,
         kStderr,
-        kUnitLit,
         kTrue,
         kFalse,
 
@@ -137,7 +136,7 @@ struct Token {
         case Type::kHere: return "here";
         case Type::kInt: return "Int";
         case Type::kBool: return "Bool";
-        case Type::kUnit: return "Unit";
+        case Type::kUnit: return "()";
         case Type::kChar: return "Char";
         case Type::kString: return "String";
         case Type::kPath: return "Path";
@@ -149,7 +148,6 @@ struct Token {
         case Type::kStdin: return "stdin";
         case Type::kStdout: return "stdout";
         case Type::kStderr: return "stderr";
-        case Type::kUnitLit: return "unit";
         case Type::kTrue: return "true";
         case Type::kFalse: return "false";
         case Type::kPlus: return "+";
@@ -215,7 +213,6 @@ struct Token {
             {"here", Type::kHere},
             {"Int", Type::kInt},
             {"Bool", Type::kBool},
-            {"Unit", Type::kUnit},
             {"Char", Type::kChar},
             {"String", Type::kString},
             {"Path", Type::kPath},
@@ -228,18 +225,15 @@ struct Token {
             {"stdout", Type::kStdout},
             {"stderr", Type::kStderr},
             {"true", Type::kTrue},
-            {"false", Type::kFalse},
-            {"unit", Type::kUnitLit}};
+            {"false", Type::kFalse}};
         return ident_map;
     }
     static const std::unordered_map<std::string, Token::Type> &
     DoublePunctuationMap() {
         static std::unordered_map<std::string, Token::Type> double_punct_map{
-            {">=", Type::kGreaterEq},
-            {"<=", Type::kLessEq},
-            {"==", Type::kDoubleEq},
-            {"!=", Type::kNotEqual},
-            {"//", Type::kDivide}};
+            {">=", Type::kGreaterEq}, {"<=", Type::kLessEq},
+            {"==", Type::kDoubleEq},  {"!=", Type::kNotEqual},
+            {"//", Type::kDivide},    {"()", Type::kUnit}};
         return double_punct_map;
     }
     static const std::unordered_map<char, Token::Type> &SinglePunctuationMap() {
@@ -282,7 +276,7 @@ struct Token {
     Token::Type type;
     TokenLocation location;
     Data content;
-}; // namespace lexer
+};
 
 inline std::ostream &operator<<(std::ostream &os, lexer::Token tok) {
     os << "`" << lexer::Token::TypeToString(tok.type) << ", " << tok.content

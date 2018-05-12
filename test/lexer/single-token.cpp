@@ -44,6 +44,7 @@ TEST(SingleTokenTest, TestPunctuation) {
 }
 
 TEST(SingleTokenTest, TestKeywords) {
+    NoIndentStrIsToks("()", TK(kUnit));
     NoIndentStrIsToks("or", TK(kOr));
     NoIndentStrIsToks("and", TK(kAnd));
     NoIndentStrIsToks("define", TK(kDefine));
@@ -65,7 +66,6 @@ TEST(SingleTokenTest, TestKeywords) {
     NoIndentStrIsToks("here", TK(kHere));
     NoIndentStrIsToks("Int", TK(kInt));
     NoIndentStrIsToks("Bool", TK(kBool));
-    NoIndentStrIsToks("Unit", TK(kUnit));
     NoIndentStrIsToks("String", TK(kString));
     NoIndentStrIsToks("Char", TK(kChar));
     NoIndentStrIsToks("Path", TK(kPath));
@@ -76,7 +76,6 @@ TEST(SingleTokenTest, TestKeywords) {
     NoIndentStrIsToks("FD", TK(kFd));
     NoIndentStrIsToks("true", TK(kTrue));
     NoIndentStrIsToks("false", TK(kFalse));
-    NoIndentStrIsToks("unit", TK(kUnitLit));
     NoIndentStrIsToks("stdin", TK(kStdin));
     NoIndentStrIsToks("stdout", TK(kStdout));
     NoIndentStrIsToks("stderr", TK(kStderr));
