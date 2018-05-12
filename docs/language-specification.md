@@ -293,14 +293,12 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 #### 3.1.7 Type Expression
 
 ```
-<type> = <simple type> | <complex type>
+<type> = <simple type> | <array type> | <map type>
 <simple type>
 	= "Int"  | "Bool" | "String"
 	| "Path" | "Unit" | "FD" | "ExitCode"
-<complex type> = <array type> | <map type>
-<array type>   = "Array" <atom type>
-<map type>     = "Map" <atom type> <atom type>
-<atom type>    = <simple type> | '(' <complex type> ')'
+<array type>   = "Array" <simple type>
+<map type>     = "Map" <simple type> <simple type>
 ```
 
 ### 3.2 Statement

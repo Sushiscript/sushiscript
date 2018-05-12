@@ -46,19 +46,21 @@ struct BuiltInAtom : Type {
 struct Array : Type {
     SUSHI_ACCEPT_VISITOR_FROM(Type)
 
-    Array(std::unique_ptr<Type> element) : element(std::move(element)) {}
+    Array(BuiltInAtom::Type element) : element(element) {}
 
-    std::unique_ptr<Type> element;
+    // std::unique_ptr<Type> element;
+    BuiltInAtom::Type element;
 };
 
 struct Map : Type {
     SUSHI_ACCEPT_VISITOR_FROM(Type)
 
-    Map(BuiltInAtom::Type key, std::unique_ptr<Type> value)
-        : key(key), value(std::move(value)) {}
+    Map(BuiltInAtom::Type key, BuiltInAtom::Type value)
+        : key(key), value(value) {}
 
     BuiltInAtom::Type key;
-    std::unique_ptr<Type> value;
+    // std::unique_ptr<Type> value;
+    BuiltInAtom::Type value;
 };
 
 struct Function : Type {
