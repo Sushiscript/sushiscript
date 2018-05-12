@@ -9,6 +9,7 @@
 #include <memory>
 #include <stack>
 #include <vector>
+#include <functional>
 
 namespace sushi {
 namespace parser {
@@ -62,6 +63,8 @@ class Parser {
 
     std::unique_ptr<ast::Statement> ExpressionOrAssignment();
 
+    std::unique_ptr<ast::Expression> PrimaryExpr();
+
     std::unique_ptr<ast::Expression> Expression();
 
     std::unique_ptr<ast::Expression>
@@ -69,15 +72,21 @@ class Parser {
 
     std::unique_ptr<ast::Expression> StartWithIdentifier();
 
+    std::vector<ast::Redirection> Redirections();
+
+    std::unique_ptr<ast::CommandLike> CommandLike();
+
     std::unique_ptr<ast::FunctionCall> FunctionCall();
+
+    std::unique_ptr<ast::Command> Command();
 
     std::unique_ptr<ast::Expression> UnaryOperation();
 
-    std::unique_ptr<ast::Indexing> Index();
+    std::unique_ptr<ast::Expression> ParenExpr();
+
+    std::unique_ptr<ast::Expression> Index();
 
     std::unique_ptr<ast::Expression> AtomExpr();
-
-    std::unique_ptr<ast::Command> Command();
 
     std::unique_ptr<ast::Literal> MapArrayLiteral();
 
@@ -98,7 +107,16 @@ class Parser {
 
     nullptr_t Recover(std::vector<lexer::Token::Type> stops);
 
-    nullptr_t Recover(bool (*)(lexer::Token::Type));
+    nullptr_t Recover(std::function<bool(lexer::Token::Type)>);
+
+    nullptr_t RecoverFromStatement();
+
+    nullptr_t RecoverFromExpression(std::vector<lexer::Token::Type> = {});
+
+    bool OptionalStatementEnd();
+    bool AssertStatementEnd();
+
+    void SkipStatementEnd();
 
     boost::optional<lexer::Token::Type> SkipToken();
 
