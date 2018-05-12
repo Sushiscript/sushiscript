@@ -43,8 +43,8 @@ Following punctuations are meaningful:
 
 ```
 <built-in type>
-	= "Int"  | "Bool"  | "Unit" | "String"   | "Char"
-	| "Path" | "Array" | "Map"  | "ExitCode" | "FD"
+  = "Int"  | "Bool"  | "Unit" | "String"   | "Char"
+  | "Path" | "Array" | "Map"  | "ExitCode" | "FD"
 ```
 
 ### 2.4 Interpolation
@@ -80,7 +80,7 @@ _TODO: string escaped characters may be incomplete_
 
 ```
 <tradition special> =
-	'\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
+  '\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
 ```
 
 
@@ -100,8 +100,8 @@ The raw mode of lexer is turned on in special contexts (typically when [invoking
 ```
 <string char> = [^<string restrict>] | <string escape>
 <string escape>
-	= '\' ( <string restrict> | <interpolate char>)
-	| <tradition special>
+  = '\' ( <string restrict> | <interpolate char>)
+  | <tradition special>
 <string restrict> = '"'
 ```
 
@@ -179,11 +179,11 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 
 ```
 <literal>
-	= <int literal>    | <bool literal>
-	| <unit literal>   | <fd literal>
-	| <string literal> | <path literal>
-	| <array literal>  | <map literal>
-	| <char literal>
+  = <int literal>    | <bool literal>
+  | <unit literal>   | <fd literal>
+  | <string literal> | <path literal>
+  | <array literal>  | <map literal>
+  | <char literal>
 ```
 
 ##### 3.1.1.1 Array Literal
@@ -215,9 +215,9 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <binop expr> = <expression> <binary op> <expression>
 <binary op>
-	= '+'  | '-' | '*'  | '/'  | '%'
-	| '>'  | '<' | '>=' | '<=' | '==' | '!='
-	| "or" | "and"
+  = '+'  | '-' | '*'  | '/'  | '%'
+  | '>'  | '<' | '>=' | '<=' | '==' | '!='
+  | "or" | "and"
 ```
 
 ##### 3.1.3.2 Binary Operator Precedence Table
@@ -250,10 +250,10 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <command> = '!' <comamnd param>* <command end>
 <command param>
-	= <interpolation>
-	| <raw token>
-	| <string literal>
-	| <char literal>
+  = <interpolation>
+  | <raw token>
+  | <string literal>
+  | <char literal>
 <command end> = <line break> | ';'
 ```
 
@@ -263,8 +263,8 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 <redirection>   = "redirect" <redirect item> (',' <redirect item>)*
 <redirect item> = <fd literal>? <redirect action>
 <redirect action>
-	= "to" (<expression> "append"? | "here")
-	| "from" <expression>
+  = "to" (<expression> "append"? | "here")
+  | "from" <expression>
 ```
 
 ##### 3.1.4.5 Procedure Call
@@ -285,11 +285,11 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 
 ```
 <expression>
-	= <procedure call>
-	| <atom expr>
-	| <binop expr>
-	| <unop expr>
-	| <indexing>
+  = <procedure call>
+  | <atom expr>
+  | <binop expr>
+  | <unop expr>
+  | <indexing>
 ```
 
 #### 3.1.7 Type Expression
@@ -297,8 +297,8 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <type> = <simple type> | <complex type>
 <simple type>
-	= "Int"  | "Bool" | "String"
-	| "Path" | "Unit" | "FD" | "ExitCode"
+  = "Int"  | "Bool" | "String"
+  | "Path" | "Unit" | "FD" | "ExitCode"
 <complex type> = <array type> | <map type>
 <array type>   = "Array" <atom type>
 <map type>     = "Map" <atom type> <atom type>
@@ -328,14 +328,14 @@ And all statements within the same innermost block must have same level of inden
 
 ```
 <define var> =
-	"export"? "define" <identifier> ( ':' <type> )? '=' <expression>
+  "export"? "define" <identifier> ( ':' <type> )? '=' <expression>
 ```
 
 ##### 3.2.1.2 Function Definition
 
 ```
 <define func> =
-	"export"? "define" <identifier> '(' <param list>? ')' '=' <program>
+  "export"? "define" <identifier> '(' <param list>? ')' '=' <program>
 <param list>  = <param dec> (',' <param dec>)*
 <param dec>   = <identifier> ':' <type>
 ```
@@ -351,6 +351,7 @@ And all statements within the same innermost block must have same level of inden
 #### 3.2.3 return
 
 `return` is used for returning from the control flow of current enclosing function.
+
 
 ```
 <return> = return <expression>
@@ -382,8 +383,8 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 ```
 <for> = "for" <loop condition> ':' <loop body>
 <loop condition>
-	= <identifier> "in" <expression>
-	| <expression>
+  = <identifier> "in" <expression>
+  | <expression>
 <loop body> = ( <statement> | <break> | <continue> )*
 ```
 
@@ -400,12 +401,12 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ```
 <statement>
-	= <expression>
-	| <definition>
-	| <assignment>
-	| <if>
-	| <switch>
-	| <for>
+  = <expression>
+  | <definition>
+  | <assignment>
+  | <if>
+  | <switch>
+  | <for>
 <program> = <statement>*
 ```
 
@@ -415,7 +416,9 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ## 6. Translation
 
-### 6.0 Translation example
+### 6.0 Prologue
+
+#### 6.0.1 Simple Translation Example
 
 ```sushi
 for i in [1, 2, 3, 4, 5]:
@@ -432,25 +435,32 @@ for i in ($((0)) $((1)) $((2)) $((3)) $((5))); do
 done
 ```
 
+#### 6.0.2 Wrapped by a `main` function
+
+It might seem weird that all the codes translated are wrapped in a `main` function, and call main function at the end. We do this because we use `local` as many as possible. `local` ensures that the variables are just **in** the function scope.
+
 ### 6.1 Definition
 
-|type     |declare option	|
-|:-------:|:-------------:|
-|Int 			|-i            	|
-|Bool			|								|
-|String		|								|
-|Path			|								|
-|Unit			| 							|
-|FD				|								|
-|ExitCode |								|
-|Array		|-a							|
-|Map			|-A							|
-|Function |-f							|
+|type       |declare option  |
+|:---------:|:--------------:|
+|Int        |-i              |
+|Bool       |                |
+|String     |                |
+|Path       |                |
+|Unit       |                |
+|FD         |                |
+|ExitCode   |-i              |
+|Array      |-a              |
+|Map        |-A              |
+|Function   |-f              |
+|No Specific|                |
 
-#### Variable Definition
+#### 6.1.1 Variable Definition
 
-`define` statement will be all translated into `local` statement
-`export` statement will be all translated into `declare` statement, with option `-gx`
++ `define` statement will be all translated into `local` statement
++ `export` statement will be all translated into `declare` statement, with option `-gx`
++ If type is not specified in the definition, the variable's type will be infered from the right value
++ For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value.
 
 ##### Example
 
@@ -465,45 +475,114 @@ declare -gx ex="def"
 local -ai arr=($((1)) $((2)) $((3)))
 # define map : Map String String = { "a": "abc", "b": "def" }
 local -A map=(
-	["a"]="abc"
-	["b"]="def
+  ["a"]="abc"
+  ["b"]="def"
 )
+# define b = a
+local -i b=$a
+# define exit : ExitCode = ! gcc
+gcc
+local -i exit=$?
 ```
 
-#### Function Definition
+#### 6.1.2 Function Definition
 
-Both `define` and `export` statement will be translated into the following style
++ Both `define` and `export` statement will be translated into the following style
 
-```bash
-func_name() {
-	local first_para_name=$0
-	local second_para_name=$1
-	# func body
-	echo -ne "return_value"
-}
-```
+  ```bash
+  func_name() {
+    local first_para_name=$0
+    local second_para_name=$1
+    # func body
+    echo -ne "return_value"
+  }
+  ```
 
-Return value will be "returned" by using `echo -ne`.
++ Return value will be "returned" by using `echo -ne`.
 
-But for `export`, an `export` follows the function.
++ But for `export`, an `export` follows the function.
 
 ##### Example
 
 ```bash
 # define Add(a : Int, b : Int) : Int =
-# 	return a + b
+#   return a + b
 Add() {
-	local -i a=$0
-	local -i b=$1
-	echo -ne $((a + b))
+  local -i a=$0
+  local -i b=$1
+  echo -ne $((a + b))
 }
 
 # export define Subtract(a : Int, b : Int) : Int =
-# 	return a - b
+#   return a - b
 Subtract() {
-	local -i a=$0
-	local -i b=$1
-	echo -ne $((a - b))
+  local -i a=$0
+  local -i b=$1
+  echo -ne $((a - b))
 }
 export -f Subtract
+```
+
+### 6.2 Assignment
+
+#### 6.2.1 Assignment
+
++ For `Int` type, right value of the assignment will be treated as arithmetic. And the right part will be surrounded by `$(())`.
++ For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value. (Just like what's in Definition part)
++ For other type, right value of the assignment will be treated as string. And the right part will be surrounded by `""`.
+
+##### Example
+
+```bash
+# define x : Int = 10
+# x = 20
+# x = 10 + 20
+# define y = 20
+# x = x + y
+# y = "abc"
+local -i x=10
+x=$((20))
+x=$((10 + 20))
+local y=20
+x=$((x + y))
+y="abc"
+
+```
+
+### 6.3 if
+
+#### 6.3.1 if
+
+For convenience, all the "condition"s are surrounded by `[[]]`.
+
+##### Example
+
+```bash
+# define a : Int = 1
+# define b : Int = 2
+# if a + b == 3:
+#   ! echo 'ok'
+# else:
+#   ! echo 'no'
+local -i a=1
+local -i b=2
+if [[ $((a + b)) == 3 ]]; then
+  echo 'ok'
+else
+  echo 'no'
+fi
+
+# define a = "abc"
+# define b = "def"
+# if a + b == "abcdef":
+#   ! echo 'ok'
+# else:
+#   ! echo 'no
+local a="abc"
+local b="def"
+if [[ $a$b == "abcdef" ]]; then
+  echo 'ok'
+else
+  echo 'no'
+fi
 ```
