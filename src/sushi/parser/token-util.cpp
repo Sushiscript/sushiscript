@@ -1,6 +1,4 @@
 #include "sushi/parser/detail/token-util.h"
-#include "sushi/ast/expression/binary-expr.h"
-#include "sushi/ast/expression/unary-expr.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -83,6 +81,12 @@ ast::UnaryExpr::Operator UnaryOpTokenToOperator(Token::Type t) {
             "UnaryOpTokenToOperator: invalid unary operator: " +
             Token::TypeToString(t));
     }
+}
+
+bool IsSimpleType(Token::Type t) {
+    TOKEN_IN(
+        t, TT(kInt), TT(kBool), TT(kUnit), TT(kChar), TT(kString), TT(kPath),
+        TT(kRelPath), TT(kExitCode), TT(kFd));
 }
 
 bool IsType(Token::Type t) {
