@@ -98,6 +98,8 @@ class Parser {
 
     nullptr_t Recover(std::vector<lexer::Token::Type> stops);
 
+    nullptr_t Recover(bool (*)(lexer::Token::Type));
+
     boost::optional<lexer::Token::Type> SkipToken();
 
   private:

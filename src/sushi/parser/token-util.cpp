@@ -119,8 +119,29 @@ bool IsBoolLiteral(Token::Type t) {
     TOKEN_IN(t, TT(kTrue), TT(kFalse));
 }
 
+bool BoolLitToBool(lexer::Token::Type t) {
+    if (t == Token::Type::kTrue)
+        return true;
+    else if (t == Token::Type::kFalse)
+        return false;
+    throw std::invalid_argument(
+        "BoolLitToBool: invalid bool: " + Token::TypeToString(t));
+}
+
 bool IsFdLiteral(lexer::Token::Type t) {
     TOKEN_IN(t, TT(kStdin), TT(kStdout), TT(kStderr));
+}
+
+ast::FdLit::Value FdLiteralToFd(lexer::Token::Type t) {
+    using V = ast::FdLit::Value;
+    switch (t) {
+    case Token::Type::kStdin: return V::kStdin;
+    case Token::Type::kStdout: return V::kStdout;
+    case Token::Type::kStderr: return V::kStderr;
+    default:
+        throw std::invalid_argument(
+            "BoolLitToBool: invalid fd: " + Token::TypeToString(t));
+    }
 }
 
 bool IsError(Token::Type t) {
@@ -133,6 +154,9 @@ bool IsSpace(Token::Type t) {
 
 bool IsStatementEnd(Token::Type t) {
     TOKEN_IN(t, TT(kSemicolon), TT(kLineBreak));
+}
+bool IsInterpolatable(Token::Type t) {
+    TOKEN_IN(t, TT(kPathLit), TT(kRawString), TT(kStringLit));
 }
 
 #undef TT

@@ -9,6 +9,7 @@
 using boost::get;
 using boost::none;
 using boost::optional;
+using std::make_unique;
 using std::unique_ptr;
 using std::vector;
 
@@ -34,24 +35,19 @@ ast::Program Parser::Block() {
     ast::Program p;
     for (;;) {
         auto ostmt = CurrentBlockStatement();
-        if (not ostmt)
-            break;
-        if (*ostmt != nullptr)
-            p.statements.push_back(std::move(*ostmt));
+        if (not ostmt) break;
+        if (*ostmt != nullptr) p.statements.push_back(std::move(*ostmt));
     }
     return p;
 }
 optional<unique_ptr<ast::Statement>> Parser::CurrentBlockStatement() {
     auto lookahead = Lookahead(s_.lexer, false);
-    if (not lookahead)
-        return boost::none;
-    if (lookahead->type != TokenT::kIndent)
-        return Statement();
+    if (not lookahead) return boost::none;
+    if (lookahead->type != TokenT::kIndent) return Statement();
 
     // type != Type::kIndent
     int indent = lookahead->IntData();
-    if (indent < s_.CurrentIndent())
-        return boost::none;
+    if (indent < s_.CurrentIndent()) return boost::none;
     if (indent > s_.CurrentIndent()) {
         s_.RecordError(ErrorT::kUnexpectIndent, *Next(s_.lexer, false));
         WithBlock(indent, &Parser::Statement);
@@ -74,8 +70,7 @@ int Parser::DetermineBlockIndent() {
 
 unique_ptr<ast::Statement> Parser::Statement() {
     auto lookahead = Lookahead(s_.lexer, false);
-    if (not lookahead)
-        return nullptr;
+    if (not lookahead) return nullptr;
     switch (lookahead->type) {
     case TokenT::kExport:
     case TokenT::kDefine: return Definition();
@@ -95,8 +90,15 @@ unique_ptr<ast::Statement> Parser::Definition() {
 }
 
 unique_ptr<ast::ReturnStmt> Parser::Return() {
-    return nullptr;
+    Next(s_.lexer);
+    auto l = s_.lexer.Lookahead();
+    if (not l or IsStatementEnd(l->type))
+        return make_unique<ast::ReturnStmt>(nullptr);
+    auto expr = Expression();
+    if (expr == nullptr) return Recover(IsStatementEnd);
+    return make_unique<ast::ReturnStmt>(std::move(expr));
 }
+
 unique_ptr<ast::IfStmt> Parser::If() {
     return nullptr;
 }
@@ -110,11 +112,27 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
 }
 
 unique_ptr<ast::LoopControlStmt> Parser::Break() {
-    return nullptr;
+    Next(s_.lexer, false);
+    auto l = s_.lexer.Lookahead();
+    if (not l or IsStatementEnd(l->type))
+        return make_unique<ast::LoopControlStmt>(
+            ast::LoopControlStmt::Value::kBreak, 1);
+    auto level = s_.AssertLookahead(TokenT::kIntLit);
+    if (not level) Recover(IsStatementEnd);
+    return make_unique<ast::LoopControlStmt>(
+        ast::LoopControlStmt::Value::kBreak, level->IntData());
 }
 
 unique_ptr<ast::LoopControlStmt> Parser::Continue() {
-    return nullptr;
+    Next(s_.lexer, false);
+    auto l = s_.lexer.Lookahead();
+    if (not l or IsStatementEnd(l->type))
+        return make_unique<ast::LoopControlStmt>(
+            ast::LoopControlStmt::Value::kContinue, 1);
+    auto level = s_.AssertLookahead(TokenT::kIntLit);
+    if (not level) Recover(IsStatementEnd);
+    return make_unique<ast::LoopControlStmt>(
+        ast::LoopControlStmt::Value::kContinue, level->IntData());
 }
 
 unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
@@ -163,6 +181,15 @@ unique_ptr<ast::TypeExpr> Parser::TypeExpression() {
 }
 
 unique_ptr<ast::Literal> Parser::Literal() {
+    auto t = *SkipSpaceNext(s_.lexer);
+    if (t.type == TokenT::kIntLit) return make_unique<ast::IntLit>(t.IntData());
+    if (t.type == TokenT::kUnitLit) return make_unique<ast::UnitLit>();
+    if (IsBoolLiteral(t.type))
+        return make_unique<ast::BoolLit>(BoolLitToBool(t.type));
+    if (IsFdLiteral(t.type))
+        return make_unique<ast::FdLit>(FdLiteralToFd(t.type));
+    if (t.type == TokenT::kStringLit) return StringLiteral();
+    if (t.type == TokenT::kPathLit) return PathLiteral();
     return nullptr;
 }
 
@@ -180,9 +207,8 @@ bool Parser::InterpolateAction(
         err = true;
         return exit_on_err;
     }
-    if (t.type == TokenT::kInterDone) {
-        return true;
-    }
+    if (t.type == TokenT::kInterDone) return true;
+
     if (t.type == TokenT::kInterStart) {
         auto expr = InterExpr();
         err = err or expr == nullptr;
@@ -199,19 +225,16 @@ optional<ast::InterpolatedString> Parser::Interpolatable(bool exit_on_err) {
     bool err = false;
     for (; (t = s_.lexer.Next());) {
         auto finish = InterpolateAction(*t, exit_on_err, inter_str, err);
-        if (finish)
-            break;
+        if (finish) break;
     }
-    if (err)
-        return none;
+    if (err) return none;
     return std::move(inter_str);
 }
 
 unique_ptr<ast::StringLit> Parser::StringLiteral() {
     SkipSpaceNext(s_.lexer);
     auto content = Interpolatable(true);
-    if (not content)
-        return nullptr;
+    if (not content) return nullptr;
     return std::make_unique<ast::StringLit>(std::move(*content));
 }
 
@@ -221,8 +244,7 @@ bool IsRelativePath(ast::InterpolatedString &s) {
     std::string start;
     s.Traverse(
         [&start](const std::string &s) {
-            if (start.empty())
-                start = s;
+            if (start.empty()) start = s;
         },
         [](auto &) {});
     return start.front() == '.';
@@ -244,14 +266,24 @@ unique_ptr<ast::Literal> Parser::PathLiteral() {
 
 nullptr_t Parser::Recover(std::vector<TokenT> stops) {
     for (optional<TokenT> skipped; (skipped = SkipToken());) {
-        if (std::find(begin(stops), end(stops), *skipped) == end(stops))
-            break;
+        if (std::find(begin(stops), end(stops), *skipped) == end(stops)) break;
+    }
+    return nullptr;
+}
+
+nullptr_t Parser::Recover(bool (*p)(lexer::Token::Type)) {
+    for (optional<TokenT> skipped; (skipped = SkipToken());) {
+        if (p(*skipped)) break;
     }
     return nullptr;
 }
 
 optional<TokenT> Parser::SkipToken() {
-    return none;
+    auto t = s_.lexer.Next();
+    if (not t) return none;
+    if (IsInterpolatable(t->type))
+        Interpolatable(t->type == TokenT::kStringLit);
+    return t->type;
 }
 
 } // namespace parser

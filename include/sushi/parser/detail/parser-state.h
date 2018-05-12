@@ -54,19 +54,15 @@ struct ParserState {
         errors.push_back({t, std::move(tok)});
     }
 
-    bool AssertLookahead(lexer::Token::Type t, bool skip_space = true) {
+    boost::optional<lexer::Token>
+    AssertLookahead(lexer::Token::Type t, bool skip_space = true) {
         auto tok = Lookahead(lexer, skip_space);
-        if (not tok) {
-            RecordError(
-                Error::Type::kExpectToken, {t, TokenLocation::Eof(), 0});
-            return false;
+        if (not tok or tok->type != t) {
+            auto loc = tok ? tok->location : TokenLocation::Eof();
+            RecordError(Error::Type::kExpectToken, {t, loc, 0});
+            return boost::none;
         }
-        if (tok->type != t) {
-            RecordError(Error::Type::kExpectToken, {t, tok->location, 0});
-            return false;
-        }
-        Next(lexer, skip_space);
-        return true;
+        return Next(lexer, skip_space);
     }
 
     lexer::Lexer lexer;
