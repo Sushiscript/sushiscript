@@ -82,7 +82,7 @@ struct IfStmt : Statement {
 struct ReturnStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
-    ReturnStmt(std::unique_ptr<Expression> value): value(value) {}
+    ReturnStmt(std::unique_ptr<Expression> value): value(std::move(value)) {}
 
     // value can be nullptr, default to be "unit"
     std::unique_ptr<Expression> value;
