@@ -43,7 +43,7 @@ Following punctuations are meaningful:
 
 ```
 <built-in type>
-	= "()"   | "Bool"    | "Char"  | "Int" | "String"
+	= "()"   | "Bool"    | "Char"  | "Int" | "String"   | "Function"
 	| "Path" | "RelPath" | "Array" | "Map" | "ExitCode" | "FD"
 ```
 

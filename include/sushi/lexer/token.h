@@ -49,6 +49,7 @@ struct Token {
         kRelPath,
         kArray,
         kMap,
+        kFunction,
         kExitCode,
         kFd,
 
@@ -143,6 +144,7 @@ struct Token {
         case Type::kRelPath: return "RelPath";
         case Type::kArray: return "Array";
         case Type::kMap: return "Map";
+        case Type::kFunction: return "Function";
         case Type::kExitCode: return "ExitCode";
         case Type::kFd: return "Fd";
         case Type::kStdin: return "stdin";
@@ -219,6 +221,7 @@ struct Token {
             {"RelPath", Type::kRelPath},
             {"Array", Type::kArray},
             {"Map", Type::kMap},
+            {"Function", Type::kFunction},
             {"ExitCode", Type::kExitCode},
             {"FD", Type::kFd},
             {"stdin", Type::kStdin},

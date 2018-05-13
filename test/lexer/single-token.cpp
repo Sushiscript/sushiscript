@@ -72,6 +72,7 @@ TEST(SingleTokenTest, TestKeywords) {
     NoIndentStrIsToks("RelPath", TK(kRelPath));
     NoIndentStrIsToks("Array", TK(kArray));
     NoIndentStrIsToks("Map", TK(kMap));
+    NoIndentStrIsToks("Function", TK(kFunction));
     NoIndentStrIsToks("ExitCode", TK(kExitCode));
     NoIndentStrIsToks("FD", TK(kFd));
     NoIndentStrIsToks("true", TK(kTrue));
