@@ -65,14 +65,17 @@ struct FunctionCall : CommandLike {
 struct Command : CommandLike {
     SUSHI_ACCEPT_VISITOR_FROM(CommandLike)
 
+    using CommandParam =
+        boost::variant<InterpolatedString, std::unique_ptr<Expression>>;
+
     Command(
-        InterpolatedString cmd, std::vector<InterpolatedString> parameters,
+        std::string cmd_name, std::vector<CommandParam> parameters,
         std::vector<Redirection> redirs, std::unique_ptr<CommandLike> pipe_next)
         : CommandLike(std::move(redirs), std::move(pipe_next)),
-          cmd(std::move(cmd)), parameters(std::move(parameters)) {}
+          cmd_name(std::move(cmd_name)), parameters(std::move(parameters)) {}
 
-    InterpolatedString cmd;
-    std::vector<InterpolatedString> parameters;
+    std::string cmd_name;
+    std::vector<CommandParam> parameters;
 };
 
 } // namespace ast
