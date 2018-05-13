@@ -92,7 +92,12 @@ bool IsSimpleType(Token::Type t) {
 bool IsType(Token::Type t) {
     TOKEN_IN(
         t, TT(kInt), TT(kBool), TT(kUnit), TT(kChar), TT(kString), TT(kPath),
-        TT(kRelPath), TT(kArray), TT(kMap), TT(kExitCode), TT(kFd));
+        TT(kRelPath), TT(kArray), TT(kMap), TT(kExitCode), TT(kFd),
+        TT(kFunction));
+}
+
+bool IsTypeLookahead(Token::Type t) {
+    return IsType(t) or t == TT(kLParen);
 }
 
 BuiltInAtom::Type TypeTokenToType(Token::Type t) {
@@ -116,7 +121,7 @@ BuiltInAtom::Type TypeTokenToType(Token::Type t) {
 bool IsLiteral(Token::Type t) {
     TOKEN_IN(
         t, TT(kCharLit), TT(kStringLit), TT(kPathLit), TT(kIntLit), TT(kTrue),
-        TT(kFalse), TT(kUnitLit), TT(kStdin), TT(kStdout), TT(kStderr));
+        TT(kFalse), TT(kUnit), TT(kStdin), TT(kStdout), TT(kStderr));
 }
 
 bool IsBoolLiteral(Token::Type t) {
@@ -161,6 +166,15 @@ bool IsStatementEnd(Token::Type t) {
 }
 bool IsInterpolatable(Token::Type t) {
     TOKEN_IN(t, TT(kPathLit), TT(kRawString), TT(kStringLit));
+}
+
+bool IsAtomExprLookahead(Token::Type t) {
+    return IsLiteral(t) or t == TT(kLParen) or t == TT(kLBrace) or
+           t == TT(kIdent);
+}
+
+bool IsRawExit(lexer::Token::Type t) {
+    TOKEN_IN(t, TT(kSemicolon), TT(kLineBreak), TT(kPipe));
 }
 
 #undef TT

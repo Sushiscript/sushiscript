@@ -110,7 +110,11 @@ struct Token {
 
         kUnknownChar,
         kInvalidChar,
-        kErrorCode
+        kErrorCode,
+
+        // eof
+
+        kEof
     };
     static std::string TypeToString(Type t) {
         switch (t) {
@@ -189,6 +193,7 @@ struct Token {
         case Type::kUnknownChar: return "Unknown";
         case Type::kInvalidChar: return "Invalid";
         case Type::kErrorCode: return "ErrCode";
+        case Type::kEof: return "EOF";
         }
     }
     static const std::unordered_map<std::string, Token::Type> &IdentifierMap() {
@@ -267,6 +272,10 @@ struct Token {
 
     static Token Error(TokenLocation l, lexer::Error e) {
         return {Type::kErrorCode, l, static_cast<int>(e)};
+    }
+
+    static Token Eof() {
+        return {Type::kEof, TokenLocation::Eof(), 0};
     }
 
     bool operator==(const Token &rhs) const {

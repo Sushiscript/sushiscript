@@ -6,10 +6,10 @@
 #include "sushi/parser/detail/parser-state.h"
 #include "sushi/parser/error.h"
 
+#include <functional>
 #include <memory>
 #include <stack>
 #include <vector>
-#include <functional>
 
 namespace sushi {
 namespace parser {
@@ -72,11 +72,17 @@ class Parser {
 
     std::unique_ptr<ast::Expression> StartWithIdentifier();
 
-    std::vector<ast::Redirection> Redirections();
+    boost::optional<std::vector<ast::Redirection>> Redirections();
+
+    std::unique_ptr<ast::CommandLike> AssertCommandLike();
+
+    std::unique_ptr<ast::CommandLike> SingleCommandLike();
 
     std::unique_ptr<ast::CommandLike> CommandLike();
 
     std::unique_ptr<ast::FunctionCall> FunctionCall();
+
+    boost::optional<ast::InterpolatedString> CommandArg();
 
     std::unique_ptr<ast::Command> Command();
 
@@ -89,6 +95,16 @@ class Parser {
     std::unique_ptr<ast::Expression> AtomExpr();
 
     std::unique_ptr<ast::Literal> MapArrayLiteral();
+
+    std::unique_ptr<ast::TypeExpr> TypeInParen(const lexer::Token&);
+
+    boost::optional<type::BuiltInAtom::Type> AssertSimpleType();
+
+    std::unique_ptr<ast::MapType> MapType(const lexer::Token&);
+
+    std::unique_ptr<ast::ArrayType> ArrayType(const lexer::Token&);
+
+    std::unique_ptr<ast::FunctionType> FunctionType(const lexer::Token&);
 
     std::unique_ptr<ast::TypeExpr> TypeExpression();
 
@@ -114,6 +130,7 @@ class Parser {
     nullptr_t RecoverFromExpression(std::vector<lexer::Token::Type> = {});
 
     bool OptionalStatementEnd();
+
     bool AssertStatementEnd();
 
     void SkipStatementEnd();

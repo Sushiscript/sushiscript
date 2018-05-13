@@ -25,6 +25,8 @@ bool IsSimpleType(lexer::Token::Type t);
 
 bool IsType(lexer::Token::Type);
 
+bool IsTypeLookahead(lexer::Token::Type t);
+
 type::BuiltInAtom::Type TypeTokenToType(lexer::Token::Type);
 
 bool IsLiteral(lexer::Token::Type);
@@ -44,6 +46,10 @@ bool IsSpace(lexer::Token::Type);
 bool IsStatementEnd(lexer::Token::Type);
 
 bool IsInterpolatable(lexer::Token::Type);
+
+bool IsAtomExprLookahead(lexer::Token::Type t);
+
+bool IsRawExit(lexer::Token::Type t);
 
 } // namespace detail
 } // namespace parser

@@ -4,6 +4,7 @@
 #include "sushi/lexer/lexer.h"
 #include "sushi/parser/detail/lexer-util.h"
 #include "sushi/parser/error.h"
+#include <functional>
 
 namespace sushi {
 
@@ -50,8 +51,10 @@ struct ParserState {
     int CurrentIndent() const {
         return indents.top();
     }
-    void RecordError(Error::Type t, lexer::Token tok) {
+
+    nullptr_t RecordError(Error::Type t, lexer::Token tok) {
         errors.push_back({t, std::move(tok)});
+        return nullptr;
     }
 
     boost::optional<lexer::Token>
@@ -60,6 +63,18 @@ struct ParserState {
         if (not tok or tok->type != t) {
             auto loc = tok ? tok->location : TokenLocation::Eof();
             RecordError(Error::Type::kExpectToken, {t, loc, 0});
+            return boost::none;
+        }
+        return Next(lexer, skip_space);
+    }
+
+    boost::optional<lexer::Token> AssertLookahead(
+        std::function<bool(lexer::Token::Type t)> p, Error::Type error_type,
+        bool skip_space = true) {
+        auto tok = Lookahead(lexer, skip_space);
+        if (not tok or not p(tok->type)) {
+            auto loc = tok ? tok->location : TokenLocation::Eof();
+            RecordError(error_type, tok ? *tok : lexer::Token::Eof());
             return boost::none;
         }
         return Next(lexer, skip_space);

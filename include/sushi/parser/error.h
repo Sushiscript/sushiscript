@@ -12,7 +12,11 @@ struct Error {
         kExpectToken,
         kUnexpectIndent,
         kUnexpectToken,
-        kUnexpectedEof
+        kUnexpectedEof,
+        kExpectCommand,
+        kExpectType,
+        kExpectSimpleType,
+        kWrongTypeKind,
     };
     Type type;
     lexer::Token position;

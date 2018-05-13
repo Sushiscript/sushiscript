@@ -144,8 +144,7 @@ unique_ptr<ast::Expression> Parser::PrimaryExpr() {
     if (l.type == TokenT::kLBrace) return MapArrayLiteral();
     if (IsUnaryOp(l.type)) return UnaryOperation();
     if (IsLiteral(l.type)) return Literal();
-    s_.RecordError(ErrorT::kUnexpectToken, l);
-    return nullptr;
+    return s_.RecordError(ErrorT::kUnexpectToken, l);
 }
 
 unique_ptr<ast::Expression> Parser::Expression() {
@@ -163,21 +162,121 @@ unique_ptr<ast::Expression> Parser::StartWithIdentifier() {
     return nullptr;
 }
 
-std::vector<ast::Redirection> Redirections() {
-    return {};
+namespace {
+
+unique_ptr<ast::CommandLike>
+FromPipeline(std::vector<unique_ptr<ast::CommandLike>> pipeline) {
+    unique_ptr<ast::CommandLike> result = nullptr;
+    for (; not pipeline.empty();) {
+        pipeline.back()->pipe_next = std::move(result);
+        result = std::move(pipeline.back());
+        pipeline.pop_back();
+    }
+    return result;
 }
 
-unique_ptr<ast::CommandLike> CommandLike() {
-    return nullptr;
+} // namespace
+
+optional<std::vector<ast::Redirection>> Parser::Redirections() {
+    if (not Optional(s_.lexer, TokenT::kRedirect, true))
+        return std::vector<ast::Redirection>{};
+    return none;
+}
+
+std::unique_ptr<ast::CommandLike> Parser::AssertCommandLike() {
+    auto l = *SkipSpaceLookahead(s_.lexer);
+    if (l.type == TokenT::kExclamation) return Command();
+    if (l.type == TokenT::kIdent) return FunctionCall();
+    Recover({TokenT::kSemicolon, TokenT::kRedirect, TokenT::kLineBreak,
+             TokenT::kPipe});
+    Optional(s_.lexer, TokenT::kSemicolon);
+    return s_.RecordError(ErrorT::kExpectCommand, l);
+}
+
+unique_ptr<ast::CommandLike> Parser::SingleCommandLike() {
+    unique_ptr<ast::CommandLike> cmd;
+
+    optional<std::vector<ast::Redirection>> redir = Redirections();
+    if (cmd == nullptr or not redir) return nullptr;
+
+    cmd->redirs = std::move(*redir);
+    return cmd;
+}
+
+unique_ptr<ast::CommandLike> Parser::CommandLike() {
+    std::vector<unique_ptr<ast::CommandLike>> pipeline;
+    bool fail = false;
+    for (optional<const Token &> l; (l = SkipSpaceLookahead(s_.lexer));) {
+        auto cmd = SingleCommandLike();
+        fail = fail or cmd == nullptr;
+        pipeline.push_back(std::move(cmd));
+        auto pipe = Optional(s_.lexer, TokenT::kPipe, true);
+        if (not pipe) break;
+        if (not s_.lexer.Lookahead())
+            return s_.RecordError(ErrorT::kExpectCommand, *pipe);
+    }
+    if (fail or pipeline.empty()) return nullptr;
+    return FromPipeline(pipeline);
 }
 
 unique_ptr<ast::FunctionCall> Parser::FunctionCall() {
-    return nullptr;
+    auto func_name = *SkipSpaceNext(s_.lexer);
+    bool fail = false;
+    std::vector<std::unique_ptr<ast::Expression>> params;
+    for (optional<const Token &> l;
+         (l = s_.lexer.Lookahead()) and IsAtomExprLookahead(l->type);) {
+        auto param = AtomExpr();
+        fail = fail or param == nullptr;
+        params.push_back(std::move(param));
+    }
+    if (fail) return nullptr;
+    return make_unique<ast::FunctionCall>(
+        ast::Identifier{func_name.StrData()}, std::move(params),
+        vector<ast::Redirection>{}, nullptr);
 }
 
+boost::optional<ast::InterpolatedString> Parser::CommandArg() {
+    auto l = *s_.lexer.Lookahead();
+    if (l.type == TokenT::kStringLit) {
+        auto str = StringLiteral();
+        if (str == nullptr) return none;
+        return std::move(str->value);
+    }
+    if (l.type == TokenT::kRawString) {
+        s_.lexer.Next();
+        return Interpolatable(false);
+    }
+    if (IsError(l.type)) s_.RecordError(ErrorT::kLexicalError, std::move(l));
+    return none;
+}
+
+namespace {
+
+unique_ptr<ast::Command> FromCommandArgs(vector<ast::InterpolatedString> args) {
+    auto cmd = std::move(args.front());
+    args.erase(begin(args));
+    return make_unique<ast::Command>(
+        std::move(cmd), std::move(args), std::vector<ast::Redirection>{},
+        nullptr);
+}
+
+} // namespace
+
 unique_ptr<ast::Command> Parser::Command() {
-    s_.lexer.Next();
-    s_.lexer.NewContext() return nullptr;
+    auto exclamation = SkipSpaceNext(s_.lexer);
+    bool fail = false;
+    std::vector<ast::InterpolatedString> args;
+    for (optional<const Token &> l;
+         (l = s_.lexer.Lookahead()) and not IsRawExit(l->type);) {
+        auto a = CommandArg();
+        fail = fail or not a;
+        if (a) args.push_back(std::move(*a));
+    }
+    SkipStatementEnd();
+    if (fail) return nullptr;
+    if (args.empty())
+        return s_.RecordError(ErrorT::kExpectCommand, std::move(*exclamation));
+    return FromCommandArgs(std::move(args));
 }
 
 unique_ptr<ast::Expression> Parser::UnaryOperation() {
@@ -213,6 +312,8 @@ unique_ptr<ast::Expression> Parser::AtomExpr() {
     if (l->type == TokenT::kLParen) expr = ParenExpr();
     if (l->type == TokenT::kIdent)
         expr = make_unique<ast::Variable>(ast::Identifier{l->StrData()});
+    if (IsLiteral(l->type)) expr = Literal();
+    if (l->type == TokenT::kLBrace) expr = MapArrayLiteral();
 
     for (; (l = s_.lexer.Lookahead()) and l->type == TokenT::kLBracket;) {
         auto index = Index();
@@ -229,14 +330,74 @@ unique_ptr<ast::Literal> Parser::MapArrayLiteral() {
     return nullptr;
 }
 
+std::unique_ptr<ast::TypeExpr> Parser::TypeInParen(const Token &lparen) {
+    auto t = TypeExpression();
+    if (not t or s_.AssertLookahead(TokenT::kRParen, true))
+        return RecoverFromExpression({TokenT::kLParen});
+    return t;
+}
+
+namespace {
+
+unique_ptr<ast::FunctionType>
+FromTypes(std::vector<unique_ptr<ast::TypeExpr>> types) {
+    auto ret = std::move(types.front());
+    types.erase(begin(types));
+    return ast::FunctionType(std::move(types), std::move(ret));
+}
+
+} // namespace
+
+unique_ptr<ast::FunctionType> Parser::FunctionType(const Token &func) {
+    std::vector<unique_ptr<ast::TypeExpr>> types;
+    bool fail = false;
+    for (optional<const Token &> l; (l = s_.lexer.Lookahead());) {
+        auto t = TypeExpression();
+        fail = fail or t == nullptr;
+        types.push_back(std::move(t));
+    }
+    if (fail) return nullptr;
+    if (types.empty()) return s_.RecordError(ErrorT::kWrongTypeKind, func);
+    return FromTypes(std::move(types));
+}
+
+optional<type::BuiltInAtom::Type> Parser::AssertSimpleType() {
+    auto t = s_.AssertLookahead(IsSimpleType, ErrorT::kExpectSimpleType, false);
+    if (not t) return none;
+    return TypeTokenToType(t->type);
+}
+
+std::unique_ptr<ast::ArrayType> Parser::ArrayType(const Token &arr) {
+    auto e = AssertSimpleType();
+    if (not e) return nullptr;
+    return make_unique<ast::ArrayType>(*e);
+}
+
+std::unique_ptr<ast::MapType> Parser::MapType(const Token &map) {
+    auto k = AssertSimpleType(), v = AssertSimpleType();
+    if (not k or not v) return nullptr;
+    return make_unique<ast::MapType>(*k, *v);
+}
+
 unique_ptr<ast::TypeExpr> Parser::TypeExpression() {
+    auto t = s_.AssertLookahead(IsTypeLookahead, ErrorT::kExpectType, true);
+    auto l = *t;
+    if (not t) return nullptr;
+    if (IsSimpleType(l.type)) {
+        SkipSpaceNext(s_.lexer);
+        return make_unique<ast::TypeLit>(TypeTokenToType(l.type));
+    }
+    if (l.type == TokenT::kLParen) return TypeInParen(l);
+    if (l.type == TokenT::kArray) return ArrayType(l);
+    if (l.type == TokenT::kMap) return MapType(l);
+    if (l.type == TokenT::kFunction) return FunctionType(l);
     return nullptr;
 }
 
 unique_ptr<ast::Literal> Parser::Literal() {
     auto t = *SkipSpaceNext(s_.lexer);
     if (t.type == TokenT::kIntLit) return make_unique<ast::IntLit>(t.IntData());
-    if (t.type == TokenT::kUnitLit) return make_unique<ast::UnitLit>();
+    if (t.type == TokenT::kUnit) return make_unique<ast::UnitLit>();
     if (IsBoolLiteral(t.type))
         return make_unique<ast::BoolLit>(BoolLitToBool(t.type));
     if (IsFdLiteral(t.type))
@@ -357,14 +518,16 @@ void Parser::SkipStatementEnd() {
 }
 
 nullptr_t Parser::RecoverFromStatement() {
-    Recover(IsStatementEnd);
+    Recover([](TokenT t) {
+        return t == TokenT::kLineBreak or t == TokenT::kIndent;
+    });
     SkipStatementEnd();
     return nullptr;
 }
 
 nullptr_t Parser::RecoverFromExpression(std::vector<lexer::Token::Type> extra) {
     Recover([&extra](TokenT t) {
-        return IsStatementEnd(t) or
+        return t == TokenT::kLineBreak or
                std::find(begin(extra), end(extra), t) != end(extra);
     });
     for (auto t : extra) Optional(s_.lexer, t, false);
