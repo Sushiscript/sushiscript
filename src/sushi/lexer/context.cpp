@@ -52,10 +52,6 @@ Context::LexResult RawDispatch(LexerState &s) {
     if (lookahead == '"')
         return Context::EmitEnter<StringLitContext>(
             SkipAndMake(s, Token::Type::kStringLit));
-    if (lookahead == '\'') return CharLiteral(s);
-    if (lookahead == '.' or lookahead == '/' or lookahead == '~')
-        return Context::EmitEnter<PathLitContext>(
-            token(Token::Type::kPathLit, 0));
     if (RawConfig().Prohibit(lookahead))
         return SkipAndMake(s, Token::Type::kUnknownChar, 1, lookahead);
     return Context::EmitEnter<RawTokenContext>(
