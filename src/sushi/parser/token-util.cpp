@@ -177,6 +177,10 @@ bool IsRawExit(lexer::Token::Type t) {
     TOKEN_IN(t, TT(kSemicolon), TT(kLineBreak), TT(kPipe));
 }
 
+bool IsExpressionLookahead(lexer::Token::Type t) {
+    return IsLiteral(t) or IsUnaryOp(t) or t == TT(kIdent) or t == TT(kLBrace);
+}
+
 #undef TT
 
 } // namespace detail

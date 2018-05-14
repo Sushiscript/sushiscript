@@ -17,6 +17,7 @@ struct Error {
         kExpectType,
         kExpectSimpleType,
         kWrongTypeKind,
+        kExpectMappedValue
     };
     Type type;
     lexer::Token position;

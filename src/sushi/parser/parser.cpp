@@ -216,7 +216,7 @@ unique_ptr<ast::CommandLike> Parser::CommandLike() {
             return s_.RecordError(ErrorT::kExpectCommand, *pipe);
     }
     if (fail or pipeline.empty()) return nullptr;
-    return FromPipeline(pipeline);
+    return FromPipeline(std::move(pipeline));
 }
 
 unique_ptr<ast::FunctionCall> Parser::FunctionCall() {
@@ -326,8 +326,88 @@ unique_ptr<ast::Expression> Parser::AtomExpr() {
     return expr;
 }
 
-unique_ptr<ast::Literal> Parser::MapArrayLiteral() {
+optional<std::vector<std::unique_ptr<ast::Expression>>>
+Parser::ArrayItems(std::vector<std::unique_ptr<ast::Expression>> init) {
+    bool fail = false;
+    for (optional<const Token &> l; (l = SkipSpaceLookahead(s_.lexer));) {
+        auto elem = ExpressionWithRecovery({TokenT::kComma, TokenT::kRBrace});
+        if (elem == nullptr) fail = true;
+        init.push_back(std::move(elem));
+        if (not Optional(s_.lexer, TokenT::kComma, true)) break;
+    }
+    if (fail) return none;
+    return std::move(init);
+}
+
+optional<std::vector<ast::MapLit::MapItem>>
+Parser::MapItems(std::vector<ast::MapLit::MapItem> init) {
+    bool fail = false;
+    for (optional<const Token &> l; (l = SkipSpaceLookahead(s_.lexer));) {
+        auto t = *l;
+        auto key = ExpressionWithRecovery(
+            {TokenT::kColon, TokenT::kComma, TokenT::kRBrace});
+        if (Optional(s_.lexer, TokenT::kColon, true)) {
+            auto value =
+                ExpressionWithRecovery({TokenT::kComma, TokenT::kRBrace});
+            if (key == nullptr or value == nullptr) fail = true;
+            init.push_back({std::move(key), std::move(value)});
+        } else {
+            s_.RecordError(ErrorT::kExpectMappedValue, t);
+        }
+        if (not Optional(s_.lexer, TokenT::kComma, true)) break;
+    }
+    if (fail) return none;
+    return std::move(init);
+}
+
+std::unique_ptr<ast::MapLit>
+Parser::ConfirmedMapLiteral(std::unique_ptr<ast::Expression> expr) {
+    auto v = ExpressionWithRecovery({TokenT::kRBrace, TokenT::kComma}, true);
+    std::vector<ast::MapLit::MapItem> kvs;
+    if (v != nullptr and expr != nullptr)
+        kvs.push_back({std::move(expr), std::move(v)});
+    if (Optional(s_.lexer, TokenT::kRBrace, true)) {
+        if (kvs.empty()) return nullptr;
+        return make_unique<ast::MapLit>(std::move(kvs));
+    } else if (Optional(s_.lexer, TokenT::kComma, true)) {
+        auto items = MapItems(std::move(kvs));
+        if (not s_.AssertLookahead(TokenT::kRBrace))
+            return RecoverFromExpression({TokenT::kRBrace});
+        else if (items)
+            return make_unique<ast::MapLit>(std::move(*items));
+    }
     return nullptr;
+}
+
+std::unique_ptr<ast::ArrayLit>
+Parser::ConfirmedArrayLiteral(std::unique_ptr<ast::Expression> expr) {
+    auto items = ArrayItems();
+    if (not s_.AssertLookahead(TokenT::kRBrace))
+        return RecoverFromExpression({TokenT::kRBrace});
+    if (not items or expr == nullptr) return nullptr;
+    items->insert(begin(*items), std::move(expr));
+    return make_unique<ast::ArrayLit>(std::move(items));
+}
+
+std::unique_ptr<ast::Literal> Parser::NonEmptyMapArray() {
+    std::vector<TokenT> nexts{TokenT::kRBrace, TokenT::kColon, TokenT::kComma};
+    auto expr = ExpressionWithRecovery(nexts, true);
+    if (Optional(s_.lexer, TokenT::kComma, true))
+        return ConfirmedArrayLiteral(std::move(expr));
+    else if (Optional(s_.lexer, TokenT::kColon, true))
+        return ConfirmedMapLiteral(std::move(expr));
+    else if (Optional(s_.lexer, TokenT::kRBrace, true))
+        return make_unique<ast::ArrayLit>(
+            std::vector<unique_ptr<ast::Expression>>{std::move(expr)});
+    return nullptr;
+}
+
+unique_ptr<ast::Literal> Parser::MapArrayLiteral() {
+    SkipSpaceNext(s_.lexer);
+    if (Optional(s_.lexer, TokenT::kRBrace, true))
+        return make_unique<ast::ArrayLit>(
+            std::vector<std::unique_ptr<ast::Expression>>{});
+    return NonEmptyMapArray();
 }
 
 std::unique_ptr<ast::TypeExpr> Parser::TypeInParen(const Token &lparen) {
@@ -343,7 +423,7 @@ unique_ptr<ast::FunctionType>
 FromTypes(std::vector<unique_ptr<ast::TypeExpr>> types) {
     auto ret = std::move(types.front());
     types.erase(begin(types));
-    return ast::FunctionType(std::move(types), std::move(ret));
+    return make_unique<ast::FunctionType>(std::move(types), std::move(ret));
 }
 
 } // namespace
@@ -541,6 +621,29 @@ optional<TokenT> Parser::SkipToken() {
     if (IsInterpolatable(t->type))
         Interpolatable(t->type == TokenT::kStringLit);
     return t->type;
+}
+
+unique_ptr<ast::Expression>
+Parser::ExpressionWithRecovery(std::vector<TokenT> nexts, bool skip_space) {
+    auto recover_stops = nexts;
+    recover_stops.push_back(TokenT::kLineBreak);
+    auto expr = Expression();
+    if (not expr)
+        Recover(recover_stops);
+    else if (auto l = Lookahead(s_.lexer, skip_space)) {
+        if (std::find(begin(nexts), end(nexts), l->type) != std::end(nexts)) {
+            return expr;
+        } else {
+            s_.RecordError(
+                ErrorT::kExpectToken, {nexts.front(), l->location, 0});
+            Recover(recover_stops);
+        }
+    }
+    auto l = Lookahead(s_.lexer, skip_space);
+    if (not l) return s_.RecordError(ErrorT::kExpectToken, Token::Eof());
+    if (std::find(begin(nexts), end(nexts), l->type) == std::end(nexts))
+        s_.RecordError(ErrorT::kExpectToken, nexts.front());
+    return nullptr;
 }
 
 } // namespace parser

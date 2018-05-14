@@ -51,6 +51,8 @@ bool IsAtomExprLookahead(lexer::Token::Type t);
 
 bool IsRawExit(lexer::Token::Type t);
 
+bool IsExpressionLookahead(lexer::Token::Type t);
+
 } // namespace detail
 } // namespace parser
 } // namespace sushi

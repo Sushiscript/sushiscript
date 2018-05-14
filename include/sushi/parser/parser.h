@@ -94,17 +94,31 @@ class Parser {
 
     std::unique_ptr<ast::Expression> AtomExpr();
 
+    boost::optional<std::vector<std::unique_ptr<ast::Expression>>>
+    ArrayItems(std::vector<std::unique_ptr<ast::Expression>> init = {});
+
+    boost::optional<std::vector<ast::MapLit::MapItem>>
+    MapItems(std::vector<ast::MapLit::MapItem> init = {});
+
+    std::unique_ptr<ast::Literal> NonEmptyMapArray();
+
+    std::unique_ptr<ast::MapLit>
+    ConfirmedMapLiteral(std::unique_ptr<ast::Expression> first_key);
+
+    std::unique_ptr<ast::ArrayLit>
+    ConfirmedArrayLiteral(std::unique_ptr<ast::Expression> first_elem);
+
     std::unique_ptr<ast::Literal> MapArrayLiteral();
 
-    std::unique_ptr<ast::TypeExpr> TypeInParen(const lexer::Token&);
+    std::unique_ptr<ast::TypeExpr> TypeInParen(const lexer::Token &);
 
     boost::optional<type::BuiltInAtom::Type> AssertSimpleType();
 
-    std::unique_ptr<ast::MapType> MapType(const lexer::Token&);
+    std::unique_ptr<ast::MapType> MapType(const lexer::Token &);
 
-    std::unique_ptr<ast::ArrayType> ArrayType(const lexer::Token&);
+    std::unique_ptr<ast::ArrayType> ArrayType(const lexer::Token &);
 
-    std::unique_ptr<ast::FunctionType> FunctionType(const lexer::Token&);
+    std::unique_ptr<ast::FunctionType> FunctionType(const lexer::Token &);
 
     std::unique_ptr<ast::TypeExpr> TypeExpression();
 
@@ -128,6 +142,9 @@ class Parser {
     nullptr_t RecoverFromStatement();
 
     nullptr_t RecoverFromExpression(std::vector<lexer::Token::Type> = {});
+
+    std::unique_ptr<ast::Expression> ExpressionWithRecovery(
+        std::vector<lexer::Token::Type> nexts, bool skip_space = true);
 
     bool OptionalStatementEnd();
 
