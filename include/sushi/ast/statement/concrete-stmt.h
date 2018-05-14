@@ -52,7 +52,7 @@ struct FunctionDef : Statement {
 
     FunctionDef(
         bool is_export, const std::string &name, std::vector<Parameter> params,
-        std::unique_ptr<TypeExpr> ret_type, std::unique_ptr<Program> body)
+        std::unique_ptr<TypeExpr> ret_type, Program body)
         : is_export(is_export), name(name), params(std::move(params)),
           ret_type(std::move(ret_type)), body(std::move(body)) {}
 
@@ -61,7 +61,7 @@ struct FunctionDef : Statement {
     std::vector<Parameter> params;
     // ret_type can be nullptr
     std::unique_ptr<TypeExpr> ret_type;
-    std::unique_ptr<Program> body;
+    Program body;
 };
 
 struct IfStmt : Statement {
@@ -69,14 +69,14 @@ struct IfStmt : Statement {
 
     IfStmt(
         std::unique_ptr<Expression> condition,
-        std::unique_ptr<Program> true_body, std::unique_ptr<Program> false_body)
+        Program true_body, Program false_body)
         : condition(std::move(condition)), true_body(std::move(true_body)),
           false_body(std::move(false_body)) {}
 
     std::unique_ptr<Expression> condition;
-    std::unique_ptr<Program> true_body;
+    Program true_body;
     // false_body_ can be nullptr
-    std::unique_ptr<Program> false_body;
+    Program false_body;
 };
 
 struct ReturnStmt : Statement {
@@ -93,15 +93,15 @@ struct SwitchStmt : Statement {
 
     struct Case {
         std::unique_ptr<Expression> condition;
-        std::unique_ptr<Program> body;
+        Program body;
     };
 
-    SwitchStmt(std::vector<Case> cases, std::unique_ptr<Program> default_)
+    SwitchStmt(std::vector<Case> cases, Program default_)
         : cases(std::move(cases)), default_(std::move(default_)) {}
 
     std::vector<Case> cases;
     // default can be nullptr
-    std::unique_ptr<Program> default_;
+    Program default_;
 };
 
 struct ForStmt : Statement {
@@ -121,11 +121,11 @@ struct ForStmt : Statement {
         std::unique_ptr<Expression> condition;
     };
 
-    ForStmt(Condition condition, std::unique_ptr<Program> body)
+    ForStmt(Condition condition, Program body)
         : condition(std::move(condition)), body(std::move(body)) {}
 
     Condition condition;
-    std::unique_ptr<Program> body;
+    Program body;
 };
 
 struct LoopControlStmt : Statement {
