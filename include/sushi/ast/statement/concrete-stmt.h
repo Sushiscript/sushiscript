@@ -68,23 +68,23 @@ struct IfStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     IfStmt(
-        std::unique_ptr<Expression> condition,
-        Program true_body, Program false_body)
+        std::unique_ptr<Expression> condition, Program true_body,
+        Program false_body)
         : condition(std::move(condition)), true_body(std::move(true_body)),
           false_body(std::move(false_body)) {}
 
     std::unique_ptr<Expression> condition;
     Program true_body;
-    // false_body_ can be nullptr
+    // false_body_ can be empty
     Program false_body;
 };
 
 struct ReturnStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
-    ReturnStmt(std::unique_ptr<Expression> value): value(std::move(value)) {}
+    ReturnStmt(std::unique_ptr<Expression> value) : value(std::move(value)) {}
 
-    // value can be nullptr, default to be "unit"
+    // value can be empty, default to be "()"(unit)
     std::unique_ptr<Expression> value;
 };
 
@@ -92,16 +92,14 @@ struct SwitchStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     struct Case {
+        // nullptr means default case
         std::unique_ptr<Expression> condition;
         Program body;
     };
 
-    SwitchStmt(std::vector<Case> cases, Program default_)
-        : cases(std::move(cases)), default_(std::move(default_)) {}
+    SwitchStmt(std::vector<Case> cases) : cases(std::move(cases)) {}
 
     std::vector<Case> cases;
-    // default can be nullptr
-    Program default_;
 };
 
 struct ForStmt : Statement {
