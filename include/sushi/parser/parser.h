@@ -55,6 +55,8 @@ class Parser {
 
     std::unique_ptr<ast::ForStmt> For();
 
+    boost::optional<ast::SwitchStmt::Case> Case();
+
     std::unique_ptr<ast::SwitchStmt> Switch();
 
     std::unique_ptr<ast::LoopControlStmt> Break();

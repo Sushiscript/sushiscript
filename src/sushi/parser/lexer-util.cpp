@@ -31,6 +31,13 @@ optional<const Token &> Lookahead(Lexer &lex, bool skip_space, int n) {
     return skip_space ? SkipSpaceLookahead(lex, n) : lex.Lookahead(n);
 }
 
+optional<const Token &>
+OptionalLookahead(Lexer &lex, Token::Type t, bool skip_space, int n) {
+    auto l = Lookahead(lex, skip_space, n);
+    if (l and l->type == t) return l;
+    return none;
+}
+
 optional<Token> Next(Lexer &lex, bool skip_space) {
     return skip_space ? SkipSpaceNext(lex) : lex.Next();
 }

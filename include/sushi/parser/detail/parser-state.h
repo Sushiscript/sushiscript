@@ -80,6 +80,14 @@ struct ParserState {
         return Next(lexer, skip_space);
     }
 
+    boost::optional<lexer::Token> LineBreakOr(lexer::Token::Type t) {
+        if (auto l = Optional(lexer, t, true)) {
+            Optional(lexer, lexer::Token::Type::kLineBreak);
+            return l;
+        }
+        return AssertLookahead(lexer::Token::Type::kLineBreak, false);
+    }
+
     lexer::Lexer lexer;
     std::vector<Error> errors;
     std::stack<int> indents;

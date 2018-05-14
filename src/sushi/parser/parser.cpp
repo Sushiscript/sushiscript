@@ -58,6 +58,7 @@ optional<unique_ptr<ast::Statement>> Parser::CurrentBlockStatement() {
 }
 
 int Parser::DetermineBlockIndent() {
+    Optional(s_.lexer, TokenT::kLineBreak);
     auto lookahead = Lookahead(s_.lexer, false);
     if (not lookahead) {
         return -1;
@@ -86,6 +87,9 @@ unique_ptr<ast::Statement> Parser::Statement() {
 }
 
 unique_ptr<ast::Statement> Parser::Definition() {
+    auto export_ = Optional(s_.lexer, TokenT::kExport);
+    auto define = s_.AssertLookahead(TokenT::kDefine);
+    auto ident = s_.AssertLookahead(TokenT::kIdent);
     return nullptr;
 }
 
@@ -99,14 +103,38 @@ unique_ptr<ast::ReturnStmt> Parser::Return() {
 }
 
 unique_ptr<ast::IfStmt> Parser::If() {
-    return nullptr;
+    SkipSpaceNext(s_.lexer);
+    auto cond = Expression();
+    auto sep = s_.LineBreakOr(TokenT::kColon);
+    auto true_body = Program();
+    ast::Program false_body;
+    auto else_ = OptionalLookahead(s_.lexer, TokenT::kElse, true);
+    if (else_) {
+        SkipSpaceNext(s_.lexer);
+        if (Optional(s_.lexer, TokenT::kIf, false)) {
+            auto elif = If();
+            false_body.statements.push_back(std::move(elif));
+        } else {
+            Optional(s_.lexer, TokenT::kColon, true);
+            auto false_body = Program();
+        }
+    }
+    return make_unique<ast::IfStmt>(
+        std::move(cond), std::move(true_body), std::move(false_body));
 }
 
 unique_ptr<ast::ForStmt> Parser::For() {
+    SkipSpaceNext(s_.lexer);
     return nullptr;
 }
 
+boost::optional<ast::SwitchStmt::Case> Case() {
+    return none;
+}
+
 unique_ptr<ast::SwitchStmt> Parser::Switch() {
+    SkipSpaceNext(s_.lexer);
+    auto switched = Expression();
     return nullptr;
 }
 

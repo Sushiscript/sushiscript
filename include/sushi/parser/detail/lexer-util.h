@@ -17,6 +17,9 @@ boost::optional<lexer::Token> SkipSpaceNext(lexer::Lexer &);
 boost::optional<const lexer::Token &>
 Lookahead(lexer::Lexer &, bool, int n = 1);
 
+optional<const lexer::Token &> OptionalLookahead(
+    lexer::Lexer &lex, lexer::Token::Type t, bool skip_space = true, int n = 1);
+
 boost::optional<lexer::Token> Next(lexer::Lexer &, bool);
 
 boost::optional<lexer::Token>
