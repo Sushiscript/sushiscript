@@ -154,12 +154,30 @@ unique_ptr<ast::Expression> Parser::Expression() {
 }
 
 unique_ptr<ast::Expression>
-PrecedenceClimb(unique_ptr<ast::Expression> lhs, int min_prec) {
-    return nullptr;
+Parser::PrecedenceClimb(unique_ptr<ast::Expression> lhs, int min_prec) {
+    for (auto l = SkipSpaceLookahead(s_.lexer);
+         l and IsBinaryOp(l->type) and BinaryOpPrec(l->type) >= min_prec;) {
+        auto op = *SkipSpaceNext(s_.lexer);
+        auto rhs = PrimaryExpr();
+        for (; (l = SkipSpaceLookahead(s_.lexer)) and IsBinaryOp(l->type) and
+               BinaryOpPrec(l->type) > BinaryOpPrec(op.type);) {
+            rhs = PrecedenceClimb(std::move(rhs), BinaryOpPrec(l->type));
+        }
+        if (rhs == nullptr)
+            lhs = nullptr;
+        else if (lhs != nullptr)
+            lhs = make_unique<ast::BinaryExpr>(
+                std::move(lhs), BinOpTokenToOperator(op.type));
+    }
+    return lhs;
 }
 
 unique_ptr<ast::Expression> Parser::StartWithIdentifier() {
-    return nullptr;
+    auto l2 = SkipSpaceLookahead(s_.lexer, 2);
+    if (not l2) return Variable();
+    if (l2->type == TokenT::kLBracket) return AtomExpr();
+    if (IsAtomExprLookahead(l2->type)) return FunctionCall();
+    return Variable();
 }
 
 namespace {
@@ -279,6 +297,11 @@ unique_ptr<ast::Command> Parser::Command() {
     return FromCommandArgs(std::move(args));
 }
 
+std::unique_ptr<ast::Variable> Parser::Variable() {
+    auto ident = *SkipSpaceNext(s_.lexer);
+    return make_unique<ast::Variable>(ast::Identifier{ident.StrData()});
+}
+
 unique_ptr<ast::Expression> Parser::UnaryOperation() {
     auto op = Optional(s_.lexer, IsUnaryOp, true);
     if (not op) return AtomExpr();
@@ -310,8 +333,7 @@ unique_ptr<ast::Expression> Parser::AtomExpr() {
     auto l = s_.lexer.Lookahead();
     unique_ptr<ast::Expression> expr;
     if (l->type == TokenT::kLParen) expr = ParenExpr();
-    if (l->type == TokenT::kIdent)
-        expr = make_unique<ast::Variable>(ast::Identifier{l->StrData()});
+    if (l->type == TokenT::kIdent) expr = Variable();
     if (IsLiteral(l->type)) expr = Literal();
     if (l->type == TokenT::kLBrace) expr = MapArrayLiteral();
 

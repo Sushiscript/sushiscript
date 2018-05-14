@@ -13,12 +13,13 @@ using lexer::Token;
 
 optional<const Token &> SkipSpaceLookahead(Lexer &lex, int n) {
     int c = 0;
-    for (int i = 1;; ++i) {
+    int i = 1;
+    for (;; ++i) {
         auto l = lex.Lookahead(i);
         if (not l) return boost::none;
-        if (IsSpace(l->type)) continue;
-        if (++c == n) return l;
+        if (not IsSpace(l->type)) break;
     }
+    return lex.Lookahead(i + n - 1);
 }
 
 optional<Token> SkipSpaceNext(Lexer &lex) {

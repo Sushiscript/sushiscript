@@ -178,7 +178,7 @@ bool IsRawExit(lexer::Token::Type t) {
 }
 
 bool IsExpressionLookahead(lexer::Token::Type t) {
-    return IsLiteral(t) or IsUnaryOp(t) or t == TT(kIdent) or t == TT(kLBrace);
+    return IsUnaryOp(t) or IsAtomExprLookahead(t);
 }
 
 #undef TT

@@ -86,6 +86,8 @@ class Parser {
 
     std::unique_ptr<ast::Command> Command();
 
+    std::unique_ptr<ast::Variable> Variable();
+
     std::unique_ptr<ast::Expression> UnaryOperation();
 
     std::unique_ptr<ast::Expression> ParenExpr();
