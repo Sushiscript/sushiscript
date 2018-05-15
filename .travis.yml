@@ -1,0 +1,43 @@
+language: cpp
+
+os:
+  - linux
+  # - osx
+
+compiler:
+  - g++
+  # - clang
+
+
+addons:
+  apt:
+    sources:
+      - kubuntu-backports
+    packages:
+      - cmake
+      - python3.6
+      - python3-pip
+
+
+before_install:
+  # execute all of the commands which need to be executed 
+  # before installing dependencies
+
+
+install:
+  # install all of the dependencies you need here
+  # Install conan
+  - pip3 install conan
+
+before_script:
+  # execute all of the commands which need to be executed 
+  # before running actual tests
+
+script:
+  # execute all of the commands which should make the build pass or fail
+  - mkdir build && cd build
+  - conan remote add lasote https://api.bintray.com/conan/lasote/conan-repo
+  - conan install .. -s compiler=gcc -s compiler.libcxx=libstdc++11 --build gtest
+  - cmake ..
+  - make -j4
+  - ./bin/lexer-test
