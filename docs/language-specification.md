@@ -808,16 +808,16 @@ The required types of expression following `case` are:
 
 ```sushi
 for i in [1, 2, 3, 4, 5]:
-  ! ./random.out redirect to ./inputs/in$i
-  ! ./a.out redirect to ./outputs/out$i, from ./inputs/in$i
+  ! ./random.out redirect to ./inputs/in${i}
+  ! ./a.out redirect to ./outputs/out${i} , from ./inputs/in${i}
 ```
 
 Traslate to -->
 
 ```bash
 for i in ($((0)) $((1)) $((2)) $((3)) $((5))); do
-  ./random.out > ./inputs/in$i
-  ./a.out > ./outputs/out$i < ./inputs/in$i
+  ./random.out > ./inputs/in${i}
+  ./a.out > ./outputs/out${i} < ./inputs/in${i}
 done
 ```
 
@@ -969,29 +969,29 @@ fi
 # define a : Int = 1
 # define b : Int = 2
 # if a + b == 3:
-#   ! echo 'ok'
+#   ! echo "ok"
 # else:
-#   ! echo 'no'
+#   ! echo "no"
 local -i a=1
 local -i b=2
 if [[ $((a + b)) == 3 ]]; then
-  echo 'ok'
+  echo "ok"
 else
-  echo 'no'
+  echo "no"
 fi
 
 # define a = "abc"
 # define b = "def"
 # if a + b == "abcdef":
-#   ! echo 'ok'
+#   ! echo "ok"
 # else:
-#   ! echo 'no
+#   ! echo "no"
 local a="abc"
 local b="def"
 if [[ $a$b == "abcdef" ]]; then
-  echo 'ok'
+  echo "ok"
 else
-  echo 'no'
+  echo "no"
 fi
 ```
 
@@ -1039,29 +1039,29 @@ esac
 ```bash
 # define arr = [4, 5, 6]
 # for i in arr:
-#   ! echo "$i"
+#   ! echo "${i}"
 declare -a arr=(4 5 6)
 for i in ${arr[@]}; do
-  echo $i
+  echo ${i}
 done
 # for i in arr:
 #   if i == 2:
 #     break
-#   ! echo "$i"
+#   ! echo "${i}"
 for i in ${arr[@]}; do
   if [[ $i == "5" ]]; then
     break
   fi
-  echo $i
+  echo ${i}
 done
 
 # define cnt = 5
 # for cnt > 0: # Used as `while`
-#   ! echo "$cnt"
+#   ! echo "${cnt}"
 #   cnt = cnt - 1
 local -i cnt=5
 while [[ $cnt > 0 ]]; do
-  echo "$cnt"
+  echo "${cnt}"
   cnt=$(($cnt-1))
 done
 # for cnt < 5:
