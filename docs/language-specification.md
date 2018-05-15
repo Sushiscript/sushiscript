@@ -343,7 +343,7 @@ And all statements within the same innermost block must have same level of inden
 #### 3.2.2 Assignment
 
 ```
-<assignment> = (<identifier> | <indexing>) '=' <expression>
+<assignment> = <expression> '=' <expression>
 ```
 
 #### 3.2.3 return
