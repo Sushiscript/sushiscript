@@ -57,12 +57,21 @@ struct ParserState {
         return nullptr;
     }
 
+    nullptr_t ExpectToken(Token::Type t) {
+        auto loc = LookaheadAsToken(lexer).location;
+        return RecordError(Error::Type::kExpectToken, {t, loc, 0});
+    }
+
+    nullptr_t UnexpectedToken(bool skip_space = true) {
+        auto loc = LookaheadAsToken(lexer, skip_space);
+        return RecordError(Error::Type::kUnexpectToken, loc);
+    }
+
     boost::optional<lexer::Token>
     AssertLookahead(lexer::Token::Type t, bool skip_space = true) {
         auto tok = Lookahead(lexer, skip_space);
         if (not tok or tok->type != t) {
-            auto loc = tok ? tok->location : TokenLocation::Eof();
-            RecordError(Error::Type::kExpectToken, {t, loc, 0});
+            ExpectToken(t);
             return boost::none;
         }
         return Next(lexer, skip_space);

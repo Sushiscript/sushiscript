@@ -4,6 +4,7 @@
 #include "sushi/ast.h"
 #include "sushi/parser/detail/lexer-util.h"
 #include "sushi/parser/detail/token-util.h"
+#include "sushi/util/optional.h"
 #include <algorithm>
 
 using boost::get;
@@ -17,6 +18,7 @@ namespace sushi {
 
 using lexer::Token;
 using TokenT = Token::Type;
+using util::Has;
 
 namespace parser {
 
@@ -90,11 +92,69 @@ unique_ptr<ast::Statement> Parser::Statement() {
     return nullptr;
 }
 
+optional<unique_ptr<ast::TypeExpr>> Parser::OptionalTypeInDef() {
+    if (not Optional(s_.lexer, TokenT::kColon, true))
+        return unique_ptr<ast::TypeExpr>{};
+    auto type =
+        WithRecovery(&Parser::TypeExpression, {TokenT::kSingleEq}, true, false);
+    if (not type) return none;
+    return std::move(type);
+}
+
+std::unique_ptr<ast::VariableDef>
+Parser::VariableDef(bool is_export, optional<std::string> name) {
+    auto type = OptionalTypeInDef();
+    if (s_.AssertLookahead(TokenT::kSingleEq, true)) {
+        auto expr = Expression();
+        if (expr) {
+            if (AssertStatementEnd() and name and type)
+                return make_unique<ast::VariableDef>(
+                    is_export, *name, std::move(*type), std::move(expr));
+            else
+                return nullptr;
+        }
+    }
+    return RecoverFromStatement();
+}
+
+std::vector<ast::FunctionDef::Parameter> Parser::ParameterList() {
+    std::vector<ast::FunctionDef::Parameter> result;
+    for (;;) {
+        auto ident = s_.AssertLookahead(TokenT::kIdent, true);
+        auto colon = s_.AssertLookahead(TokenT::kColon);
+        auto type = WithRecovery(
+            &Parser::TypeExpression, {TokenT::kComma, TokenT::kRParen}, true);
+        if (ident and colon and type)
+            result.push_back({ident->StrData(), std::move(type)});
+        if (not Optional(s_.lexer, TokenT::kComma, true)) break;
+    }
+    Optional(s_.lexer, TokenT::kRParen, true);
+    return result;
+}
+
+std::unique_ptr<ast::FunctionDef>
+Parser::FunctionDef(bool is_export, optional<std::string> name) {
+    auto params = ParameterList();
+    auto ret_type = OptionalTypeInDef();
+    auto eq = s_.AssertLookahead(TokenT::kSingleEq, true);
+    auto body = Program();
+    if (ret_type and eq and name)
+        return make_unique<ast::FunctionDef>(
+            is_export, *name, std::move(params), std::move(*ret_type),
+            std::move(body));
+    return nullptr;
+}
+
 unique_ptr<ast::Statement> Parser::Definition() {
+    using namespace sushi::util::monadic_optional;
     auto export_ = Optional(s_.lexer, TokenT::kExport);
     auto define = s_.AssertLookahead(TokenT::kDefine);
     auto ident = s_.AssertLookahead(TokenT::kIdent);
-    return nullptr;
+    if (not define) ident = none;
+    auto ident_name = ident > [](const Token &t) { return t.StrData(); };
+    if (Optional(s_.lexer, TokenT::kLBrace))
+        return FunctionDef(static_cast<bool>(export_), ident_name);
+    return VariableDef(static_cast<bool>(export_), ident_name);
 }
 
 unique_ptr<ast::ReturnStmt> Parser::Return() {
@@ -107,8 +167,8 @@ unique_ptr<ast::ReturnStmt> Parser::Return() {
 }
 
 unique_ptr<ast::Expression> Parser::Condition() {
-    auto cond =
-        ExpressionWithRecovery({TokenT::kColon, TokenT::kLineBreak}, false);
+    auto cond = WithRecovery(
+        &Parser::Expression, {TokenT::kColon, TokenT::kLineBreak}, false);
     s_.LineBreakOr(TokenT::kColon);
     return cond;
 }
@@ -146,9 +206,24 @@ unique_ptr<ast::IfStmt> Parser::If() {
         std::move(cond), std::move(true_body), std::move(false_body));
 }
 
+optional<ast::ForStmt::Condition> Parser::LoopCondition() {
+    std::string ident;
+    if (LookaheadAsToken(s_.lexer, false, 1).type == TokenT::kIdent and
+        LookaheadAsToken(s_.lexer, false, 2).type == TokenT::kIn) {
+        ident = s_.lexer.Next()->StrData();
+        s_.lexer.Next();
+    }
+    auto cond = Condition();
+    if (not cond) return none;
+    return ast::ForStmt::Condition{ident, std::move(cond)};
+}
+
 unique_ptr<ast::ForStmt> Parser::For() {
     SkipSpaceNext(s_.lexer);
-    return nullptr;
+    auto cond = LoopCondition();
+    auto body = Program();
+    if (not cond or body.statements.empty()) return nullptr;
+    return make_unique<ast::ForStmt>(std::move(*cond), std::move(body));
 }
 
 boost::optional<ast::SwitchStmt::Case> Parser::Case() {
@@ -182,8 +257,8 @@ std::vector<ast::SwitchStmt::Case> Parser::Cases() {
 
 unique_ptr<ast::SwitchStmt> Parser::Switch() {
     auto switch_ = SkipSpaceNext(s_.lexer);
-    auto switched =
-        ExpressionWithRecovery({TokenT::kCase, TokenT::kDefault}, true);
+    auto switched = WithRecovery(
+        &Parser::Expression, {TokenT::kCase, TokenT::kDefault}, true);
     auto l = SkipSpaceLookahead(s_.lexer);
     if (not l or l->type != TokenT::kCase or l->type != TokenT::kDefault)
         return nullptr;
@@ -223,7 +298,18 @@ unique_ptr<ast::LoopControlStmt> Parser::Continue() {
 }
 
 unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
-    return nullptr;
+    unique_ptr<ast::Statement> ret;
+    auto expr = Expression();
+    if (Optional(s_.lexer, TokenT::kSingleEq, false)) {
+        auto value = Expression();
+        if (expr != nullptr and value != nullptr)
+            ret =
+                make_unique<ast::Assignment>(std::move(expr), std::move(value));
+    } else {
+        ret = std::move(expr);
+    }
+    if (not AssertStatementEnd()) return nullptr;
+    return ret;
 }
 
 unique_ptr<ast::Expression> Parser::PrimaryExpr() {
@@ -417,6 +503,18 @@ unique_ptr<ast::Expression> Parser::Index() {
     return expr;
 }
 
+optional<std::vector<unique_ptr<ast::Expression>>> Parser::Indices() {
+    std::vector<unique_ptr<ast::Expression>> indices;
+    bool fail = false;
+    for (; LookaheadAsToken(s_.lexer, false).type == TokenT::kLBracket;) {
+        auto index = Index();
+        fail = fail or index == nullptr;
+        indices.push_back(std::move(index));
+    }
+    if (fail) return none;
+    return std::move(indices);
+}
+
 unique_ptr<ast::Expression> Parser::AtomExpr() {
     auto l = s_.lexer.Lookahead();
     unique_ptr<ast::Expression> expr;
@@ -425,14 +523,11 @@ unique_ptr<ast::Expression> Parser::AtomExpr() {
     if (IsLiteral(l->type)) expr = Literal();
     if (l->type == TokenT::kLBrace) expr = MapArrayLiteral();
 
-    for (; (l = s_.lexer.Lookahead()) and l->type == TokenT::kLBracket;) {
-        auto index = Index();
-        if (expr != nullptr and index != nullptr)
-            expr =
-                make_unique<ast::Indexing>(std::move(expr), std::move(index));
-        else
-            expr = nullptr;
-    }
+    auto indices = Indices();
+    if (not indices) return nullptr;
+    for (auto &index : *indices)
+        expr = make_unique<ast::Indexing>(std::move(expr), std::move(index));
+
     return expr;
 }
 
@@ -440,7 +535,8 @@ optional<std::vector<std::unique_ptr<ast::Expression>>>
 Parser::ArrayItems(std::vector<std::unique_ptr<ast::Expression>> init) {
     bool fail = false;
     for (optional<const Token &> l; (l = SkipSpaceLookahead(s_.lexer));) {
-        auto elem = ExpressionWithRecovery({TokenT::kComma, TokenT::kRBrace});
+        auto elem = WithRecovery(
+            &Parser::Expression, {TokenT::kComma, TokenT::kRBrace});
         if (elem == nullptr) fail = true;
         init.push_back(std::move(elem));
         if (not Optional(s_.lexer, TokenT::kComma, true)) break;
@@ -454,11 +550,12 @@ Parser::MapItems(std::vector<ast::MapLit::MapItem> init) {
     bool fail = false;
     for (optional<const Token &> l; (l = SkipSpaceLookahead(s_.lexer));) {
         auto t = *l;
-        auto key = ExpressionWithRecovery(
+        auto key = WithRecovery(
+            &Parser::Expression,
             {TokenT::kColon, TokenT::kComma, TokenT::kRBrace});
         if (Optional(s_.lexer, TokenT::kColon, true)) {
-            auto value =
-                ExpressionWithRecovery({TokenT::kComma, TokenT::kRBrace});
+            auto value = WithRecovery(
+                &Parser::Expression, {TokenT::kComma, TokenT::kRBrace});
             if (key == nullptr or value == nullptr) fail = true;
             init.push_back({std::move(key), std::move(value)});
         } else {
@@ -472,7 +569,8 @@ Parser::MapItems(std::vector<ast::MapLit::MapItem> init) {
 
 std::unique_ptr<ast::MapLit>
 Parser::ConfirmedMapLiteral(std::unique_ptr<ast::Expression> expr) {
-    auto v = ExpressionWithRecovery({TokenT::kRBrace, TokenT::kComma}, true);
+    auto v = WithRecovery(
+        &Parser::Expression, {TokenT::kRBrace, TokenT::kComma}, true);
     std::vector<ast::MapLit::MapItem> kvs;
     if (v != nullptr and expr != nullptr)
         kvs.push_back({std::move(expr), std::move(v)});
@@ -501,7 +599,7 @@ Parser::ConfirmedArrayLiteral(std::unique_ptr<ast::Expression> expr) {
 
 std::unique_ptr<ast::Literal> Parser::NonEmptyMapArray() {
     std::vector<TokenT> nexts{TokenT::kRBrace, TokenT::kColon, TokenT::kComma};
-    auto expr = ExpressionWithRecovery(nexts, true);
+    auto expr = WithRecovery(&Parser::Expression, nexts, true);
     if (Optional(s_.lexer, TokenT::kComma, true))
         return ConfirmedArrayLiteral(std::move(expr));
     else if (Optional(s_.lexer, TokenT::kColon, true))
@@ -671,7 +769,7 @@ unique_ptr<ast::Literal> Parser::PathLiteral() {
 
 nullptr_t Parser::Recover(std::vector<TokenT> stops) {
     return Recover([stops = std::move(stops)](lexer::Token::Type t) {
-        return std::find(begin(stops), end(stops), t) != end(stops);
+        return util::Has(stops, t);
     });
 }
 
@@ -731,28 +829,6 @@ optional<TokenT> Parser::SkipToken() {
     if (IsInterpolatable(t->type))
         Interpolatable(t->type == TokenT::kStringLit);
     return t->type;
-}
-
-unique_ptr<ast::Expression>
-Parser::ExpressionWithRecovery(std::vector<TokenT> nexts, bool skip_space) {
-    auto recover_stops = nexts;
-    recover_stops.push_back(TokenT::kLineBreak);
-    auto expr = Expression();
-    if (not expr)
-        Recover(recover_stops);
-    else if (auto l = Lookahead(s_.lexer, skip_space)) {
-        if (std::find(begin(nexts), end(nexts), l->type) != std::end(nexts)) {
-            return expr;
-        } else {
-            s_.RecordError(
-                ErrorT::kExpectToken, {nexts.front(), l->location, 0});
-            Recover(recover_stops);
-        }
-    }
-    auto l = LookaheadAsToken(s_.lexer, skip_space);
-    if (std::find(begin(nexts), end(nexts), l.type) == std::end(nexts))
-        s_.RecordError(ErrorT::kExpectToken, {nexts.front(), l.location, 0});
-    return nullptr;
 }
 
 } // namespace parser

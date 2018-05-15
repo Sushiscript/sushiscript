@@ -54,8 +54,8 @@ Optional(Lexer &lex, std::function<bool(Token::Type)> p, bool skip_space) {
     return none;
 }
 
-Token LookaheadAsToken(Lexer& lex, bool skip_space) {
-    auto l = Lookahead(lex, skip_space);
+Token LookaheadAsToken(Lexer& lex, bool skip_space, int n) {
+    auto l = Lookahead(lex, skip_space, n);
     if (not l) return Token::Eof();
     return *l;
 }

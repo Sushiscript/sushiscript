@@ -29,7 +29,8 @@ boost::optional<lexer::Token> Optional(
     lexer::Lexer &lex, std::function<bool(lexer::Token::Type)> p,
     bool skip_space = true);
 
-lexer::Token LookaheadAsToken(lexer::Lexer& lex, bool skip_space = false);
+lexer::Token
+LookaheadAsToken(lexer::Lexer &lex, bool skip_space = false, int n = 1);
 
 } // namespace detail
 } // namespace parser

@@ -5,6 +5,7 @@
 #include "sushi/lexer.h"
 #include "sushi/parser/detail/parser-state.h"
 #include "sushi/parser/error.h"
+#include "sushi/util/container.h"
 
 #include <functional>
 #include <memory>
@@ -40,7 +41,8 @@ class Parser {
     template <typename T>
     T WithWrongIndentBlock(int indent, T (Parser::*parse)()) {
         s_.RecordError(
-            Error::Type::kUnexpectIndent, LookaheadAsToken(s_.lexer, false));
+            Error::Type::kUnexpectIndent,
+            detail::LookaheadAsToken(s_.lexer, false));
         WithBlock(indent, parse);
         return T{};
     }
@@ -55,6 +57,16 @@ class Parser {
 
     std::unique_ptr<ast::Statement> Statement();
 
+    std::unique_ptr<ast::VariableDef>
+    VariableDef(bool is_export, boost::optional<std::string> name);
+
+    std::vector<ast::FunctionDef::Parameter> ParameterList();
+
+    std::unique_ptr<ast::FunctionDef>
+    FunctionDef(bool is_export, boost::optional<std::string> name);
+
+    boost::optional<std::unique_ptr<ast::TypeExpr>> OptionalTypeInDef();
+
     std::unique_ptr<ast::Statement> Definition();
 
     std::unique_ptr<ast::ReturnStmt> Return();
@@ -66,6 +78,8 @@ class Parser {
     ast::Program OptionalElse();
 
     std::unique_ptr<ast::IfStmt> If();
+
+    boost::optional<ast::ForStmt::Condition> LoopCondition();
 
     std::unique_ptr<ast::ForStmt> For();
 
@@ -111,6 +125,8 @@ class Parser {
     std::unique_ptr<ast::Expression> ParenExpr();
 
     std::unique_ptr<ast::Expression> Index();
+
+    boost::optional<std::vector<std::unique_ptr<ast::Expression>>> Indices();
 
     std::unique_ptr<ast::Expression> AtomExpr();
 
@@ -163,9 +179,6 @@ class Parser {
 
     nullptr_t RecoverFromExpression(std::vector<lexer::Token::Type> = {});
 
-    std::unique_ptr<ast::Expression> ExpressionWithRecovery(
-        std::vector<lexer::Token::Type> nexts, bool skip_space = true);
-
     bool OptionalStatementEnd();
 
     bool AssertStatementEnd();
@@ -173,6 +186,30 @@ class Parser {
     void SkipStatementEnd();
 
     boost::optional<lexer::Token::Type> SkipToken();
+
+    template <typename T>
+    T WithRecovery(
+        T (Parser::*parse)(), std::vector<lexer::Token::Type> nexts,
+        bool skip_space = true, bool final_record = true) {
+        using util::Has;
+        auto recover_stops = nexts;
+        recover_stops.push_back(lexer::Token::Type::kLineBreak);
+        auto expr = (this->*parse)();
+        if (not expr)
+            Recover(recover_stops);
+        else if (auto l = detail::Lookahead(s_.lexer, skip_space)) {
+            if (Has(nexts, l->type)) {
+                return expr;
+            } else {
+                s_.ExpectToken(nexts.front());
+                Recover(recover_stops);
+            }
+        }
+        auto l = detail::LookaheadAsToken(s_.lexer, skip_space);
+        if (final_record and not Has(nexts, l.type))
+            s_.ExpectToken(nexts.front());
+        return nullptr;
+    }
 
   private:
     detail::ParserState s_;
