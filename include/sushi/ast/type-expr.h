@@ -34,8 +34,7 @@ struct TypeLit : TypeExpr {
 struct ArrayType : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
-    ArrayType(type::BuiltInAtom::Type element)
-        : element(std::move(element)) {}
+    ArrayType(type::BuiltInAtom::Type element) : element(std::move(element)) {}
 
     type::BuiltInAtom::Type element;
 };

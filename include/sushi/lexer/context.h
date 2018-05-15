@@ -129,8 +129,7 @@ using RawInterCfg = InterpolateConfig<RawConfig>;
 struct PathInterCfg : InterpolateConfig<RawConfig> {
     Context::LexResult
     Segment(std::string data, TokenLocation l, SegmentReason r) {
-        if (not start)
-            return Super::Segment(std::move(data), std::move(l), r);
+        if (not start) return Super::Segment(std::move(data), std::move(l), r);
         start = false;
         int offset = ExpectSlash(data);
         if ((offset >= data.size() and (r == SegmentReason::kFalseStop or
@@ -144,11 +143,9 @@ struct PathInterCfg : InterpolateConfig<RawConfig> {
 
   private:
     int ExpectSlash(std::string data) {
-        if (data.front() == '~')
-            return 1;
+        if (data.front() == '~') return 1;
         auto pos = data.find_first_not_of('.');
-        if (pos == std::string::npos)
-            return data.size();
+        if (pos == std::string::npos) return data.size();
         return pos;
     }
     bool start = true;
@@ -191,8 +188,7 @@ class InterpolateContext : public Context {
         for (;;) {
             data += detail::String(state, *cc);
             reason = CheckStopReason();
-            if (reason != SegmentReason::kFalseStop)
-                break;
+            if (reason != SegmentReason::kFalseStop) break;
             ConsumeSingleDollar(data);
         }
         return {data, reason};
@@ -200,16 +196,13 @@ class InterpolateContext : public Context {
 
     void ConsumeSingleDollar(std::string &s) {
         auto oc = state.input.Lookahead();
-        if (oc and *oc == '$')
-            s.push_back(*state.input.Next());
+        if (oc and *oc == '$') s.push_back(*state.input.Next());
     }
 
     SegmentReason CheckStopReason() {
         auto oc = state.input.Lookahead();
-        if (not oc)
-            return SegmentReason::kEof;
-        if (*oc != '$')
-            return SegmentReason::kRestrict;
+        if (not oc) return SegmentReason::kEof;
+        if (*oc != '$') return SegmentReason::kRestrict;
         if (state.input.LookaheadMany(2) == "${")
             return SegmentReason::kInterpolation;
         return SegmentReason::kFalseStop;
