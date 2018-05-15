@@ -1,5 +1,8 @@
 # Sushiscript
 
+[![Build Status](https://travis-ci.org/Sushiscript/sushiscript.svg?branch=type-check)](https://travis-ci.org/Sushiscript/sushiscript)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/Sushiscript/sushiscrip/issues)
+
 Sushiscript is new programming language based on shell, we want to offer a better experience when use shell.
 
 ## Build
