@@ -823,20 +823,20 @@ It might seem weird that all the codes translated are wrapped in a `main` functi
 
 ### 6.1 Definition
 
-|type       |declare option  |
-|:---------:|:--------------:|
-|Int        |-i              |
-|Bool       |                |
-|String     |                |
-|Path       |                |
-|RelPath    |                |
-|Unit       |                |
-|FD         |                |
-|ExitCode   |-i              |
-|Array      |-a              |
-|Map        |-A              |
-|Function   |-f              |
-|No Specific|                |
+|type       |declare option  |translated like                   |
+|:---------:|:--------------:|:--------------------:            |
+|Int        |-i              |`declare -i a=1`                  |
+|Bool       |-i              |`declare -i a=1`(true)            |
+|String     |                |`declare a="abc"`                 |
+|Path       |                |`declare a="/foo"`                |
+|RelPath    |                |`declare a="./bar"`               |
+|Unit       |                |`declare unit=""`                 |
+|FD         |                |`0`(stdin)/`1`(stdout)/`2`(stderr)|
+|ExitCode   |-i              |`gcc; declare -i code=$?`         |
+|Array      |-a              |`declare -a arr=("a" "b" "c")`    |
+|Map        |-A              |`declare -A map=(["a"]="b")`      |
+|Function   |-f              |`declare -f func="otherfunc"`     |
+|No Specific|                |Inferred from rhs                 |
 
 #### 6.1.1 Variable Definition
 
@@ -844,6 +844,8 @@ It might seem weird that all the codes translated are wrapped in a `main` functi
 + `export` statement will be all translated into `declare` statement, with option `-gx`
 + If type is not specified in the definition, the variable's type will be infered from the right value
 + For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value.
++ For `Function` type: function name in definition and identifier of Function type are not the same. Identifier of Function type is actually a string. In the translated code, we use `$func` to call the function. Function name in definition can be directly called by `func`.
++ For `Bool` type, we treat it as integer. In translation, false is `0` and true is `1`, which seems opposite to bash's **exit status**.
 
 ##### Example
 
@@ -938,6 +940,25 @@ y="abc"
 
 For convenience, all the "condition"s are surrounded by `[[]]`.
 
+When the condition is `Bool` type, the condition will be translated to `!= 0`, for example
+
+```bash
+# define t : Bool = true
+# define f : Bool = false
+# if t:
+#   ! echo "true"
+# if f:
+#   ! echo "false"
+declare -i t=1
+declare -i f=0
+if [[ $t != 0 ]]; then
+  echo "true"
+fi
+if [[ $f != 0 ]]; then
+  echo "false"
+fi
+```
+
 ##### Example
 
 ```bash
@@ -968,4 +989,91 @@ if [[ $a$b == "abcdef" ]]; then
 else
   echo 'no'
 fi
+```
+
+### 6.4 switch
+
+#### 6.4.1 switch
+
+`switch` will be translated into `case`, every case ends with `;;`.
+
+##### Example
+
+```bash
+# switch input
+# case "y":
+#   ! echo "ok"
+# case "n":
+#   ! echo "no"
+# default:
+#   ! echo "Input again"
+case $input in
+  "y")
+    echo "ok"
+    ;;
+  "n")
+    echo "no"
+    ;;
+  *)
+    echo "Input again"
+    ;;
+esac
+```
+
+### 6.5 for
+
+#### 6.5.1 for
+
+`for` statement has 2 types
+
++ `for <identifier> in <expression>`, this is to iterate the expression
++ `for <expression>`, this is equal to `while` in other language
++ `break`, `continue` will be traslated as it is
+
+##### Example
+
+```bash
+# define arr = [4, 5, 6]
+# for i in arr:
+#   ! echo "$i"
+declare -a arr=(4 5 6)
+for i in ${arr[@]}; do
+  echo $i
+done
+# for i in arr:
+#   if i == 2:
+#     break
+#   ! echo "$i"
+for i in ${arr[@]}; do
+  if [[ $i == "5" ]]; then
+    break
+  fi
+  echo $i
+done
+
+# define cnt = 5
+# for cnt > 0: # Used as `while`
+#   ! echo "$cnt"
+#   cnt = cnt - 1
+local -i cnt=5
+while [[ $cnt > 0 ]]; do
+  echo "$cnt"
+  cnt=$(($cnt-1))
+done
+# for cnt < 5:
+#   if cnt < 4:
+#     ! echo "continue"
+#     cnt = cnt + 1
+#     continue
+#   ! echo "not continue"
+#   break
+while [[ $cnt < 5 ]]; do
+  if [[ $cnt < 4 ]]; then
+    echo "continue"
+    cnt=$(($cnt + 1))
+    continue
+  fi
+  echo "not continue"
+  break
+done
 ```
