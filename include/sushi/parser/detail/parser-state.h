@@ -82,7 +82,7 @@ struct ParserState {
 
     boost::optional<lexer::Token> LineBreakOr(lexer::Token::Type t) {
         if (auto l = Optional(lexer, t, true)) {
-            Optional(lexer, lexer::Token::Type::kLineBreak);
+            Optional(lexer, lexer::Token::Type::kLineBreak, false);
             return l;
         }
         return AssertLookahead(lexer::Token::Type::kLineBreak, false);

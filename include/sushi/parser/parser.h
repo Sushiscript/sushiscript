@@ -37,11 +37,19 @@ class Parser {
         return ret;
     }
 
-    ast::Program Program();
+    template <typename T>
+    T WithWrongIndentBlock(int indent, T (Parser::*parse)()) {
+        s_.RecordError(
+            Error::Type::kUnexpectIndent, LookaheadAsToken(s_.lexer, false));
+        WithBlock(indent, parse);
+        return T{};
+    }
+
+    ast::Program Program(bool emptyable = false);
 
     ast::Program Block();
 
-    int DetermineBlockIndent();
+    int NextStatementIndent();
 
     boost::optional<std::unique_ptr<ast::Statement>> CurrentBlockStatement();
 
@@ -51,9 +59,17 @@ class Parser {
 
     std::unique_ptr<ast::ReturnStmt> Return();
 
+    std::unique_ptr<ast::Expression> Condition();
+
+    ast::Program Else();
+
+    ast::Program OptionalElse();
+
     std::unique_ptr<ast::IfStmt> If();
 
     std::unique_ptr<ast::ForStmt> For();
+
+    std::vector<ast::SwitchStmt::Case> Cases();
 
     boost::optional<ast::SwitchStmt::Case> Case();
 

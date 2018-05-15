@@ -17,7 +17,7 @@ boost::optional<lexer::Token> SkipSpaceNext(lexer::Lexer &);
 boost::optional<const lexer::Token &>
 Lookahead(lexer::Lexer &, bool, int n = 1);
 
-optional<const lexer::Token &> OptionalLookahead(
+boost::optional<const lexer::Token &> OptionalLookahead(
     lexer::Lexer &lex, lexer::Token::Type t, bool skip_space = true, int n = 1);
 
 boost::optional<lexer::Token> Next(lexer::Lexer &, bool);
@@ -28,6 +28,8 @@ Optional(lexer::Lexer &lex, lexer::Token::Type t, bool skip_space = true);
 boost::optional<lexer::Token> Optional(
     lexer::Lexer &lex, std::function<bool(lexer::Token::Type)> p,
     bool skip_space = true);
+
+lexer::Token LookaheadAsToken(lexer::Lexer& lex, bool skip_space = false);
 
 } // namespace detail
 } // namespace parser

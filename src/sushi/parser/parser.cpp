@@ -23,12 +23,16 @@ namespace parser {
 using namespace detail;
 using ErrorT = Error::Type;
 
-ast::Program Parser::Program() {
-    int indent = DetermineBlockIndent();
+ast::Program Parser::Program(bool emptyable) {
+    int indent = NextStatementIndent();
+    auto loc = LookaheadAsToken(s_.lexer, false);
     if (indent <= s_.CurrentIndent()) {
         return {};
     }
-    return WithBlock(indent, &Parser::Block);
+    auto p = WithBlock(indent, &Parser::Block);
+    if (p.statements.empty() and not emptyable)
+        s_.RecordError(ErrorT::kEmptyBlock, loc);
+    return p;
 }
 
 ast::Program Parser::Block() {
@@ -57,7 +61,7 @@ optional<unique_ptr<ast::Statement>> Parser::CurrentBlockStatement() {
     return Statement();
 }
 
-int Parser::DetermineBlockIndent() {
+int Parser::NextStatementIndent() {
     Optional(s_.lexer, TokenT::kLineBreak);
     auto lookahead = Lookahead(s_.lexer, false);
     if (not lookahead) {
@@ -70,7 +74,7 @@ int Parser::DetermineBlockIndent() {
 }
 
 unique_ptr<ast::Statement> Parser::Statement() {
-    auto lookahead = Lookahead(s_.lexer, false);
+    auto lookahead = Lookahead(s_.lexer, true);
     if (not lookahead) return nullptr;
     switch (lookahead->type) {
     case TokenT::kExport:
@@ -102,23 +106,42 @@ unique_ptr<ast::ReturnStmt> Parser::Return() {
     return make_unique<ast::ReturnStmt>(std::move(expr));
 }
 
+unique_ptr<ast::Expression> Parser::Condition() {
+    auto cond =
+        ExpressionWithRecovery({TokenT::kColon, TokenT::kLineBreak}, false);
+    s_.LineBreakOr(TokenT::kColon);
+    return cond;
+}
+
+ast::Program Parser::Else() {
+    if (Optional(s_.lexer, TokenT::kIf, false)) {
+        auto elif = If();
+        if (elif == nullptr) return {};
+        std::vector<std::unique_ptr<ast::Statement>> stmts;
+        stmts.push_back(std::move(elif));
+        return ast::Program{std::move(stmts)};
+    }
+    Optional(s_.lexer, TokenT::kColon, true);
+    return Program();
+}
+
+ast::Program Parser::OptionalElse() {
+    if (not OptionalLookahead(s_.lexer, TokenT::kElse, true)) return {};
+    auto indent = NextStatementIndent();
+    if (indent < s_.CurrentIndent()) return {};
+    auto else_ = SkipSpaceNext(s_.lexer);
+    if (indent > s_.CurrentIndent()) {
+        return WithWrongIndentBlock(indent, &Parser::Else);
+    }
+    return Else();
+}
+
 unique_ptr<ast::IfStmt> Parser::If() {
     SkipSpaceNext(s_.lexer);
-    auto cond = Expression();
-    auto sep = s_.LineBreakOr(TokenT::kColon);
+    auto cond = Condition();
     auto true_body = Program();
-    ast::Program false_body;
-    auto else_ = OptionalLookahead(s_.lexer, TokenT::kElse, true);
-    if (else_) {
-        SkipSpaceNext(s_.lexer);
-        if (Optional(s_.lexer, TokenT::kIf, false)) {
-            auto elif = If();
-            false_body.statements.push_back(std::move(elif));
-        } else {
-            Optional(s_.lexer, TokenT::kColon, true);
-            auto false_body = Program();
-        }
-    }
+    ast::Program false_body = OptionalElse();
+    if (cond == nullptr or true_body.statements.empty()) return nullptr;
     return make_unique<ast::IfStmt>(
         std::move(cond), std::move(true_body), std::move(false_body));
 }
@@ -128,14 +151,51 @@ unique_ptr<ast::ForStmt> Parser::For() {
     return nullptr;
 }
 
-boost::optional<ast::SwitchStmt::Case> Case() {
-    return none;
+boost::optional<ast::SwitchStmt::Case> Parser::Case() {
+    ast::SwitchStmt::Case case_;
+    if (Optional(s_.lexer, TokenT::kDefault, true)) {
+        Optional(s_.lexer, TokenT::kColon, true);
+        auto p = Program();
+        if (p.statements.empty()) return none;
+    } else if (Optional(s_.lexer, TokenT::kCase, true)) {
+        auto cond = Condition();
+        if (cond == nullptr) return none;
+        case_.body = Program(true);
+    }
+    return std::move(case_);
+}
+
+std::vector<ast::SwitchStmt::Case> Parser::Cases() {
+    std::vector<ast::SwitchStmt::Case> cases;
+    for (optional<const Token &> l;
+         (l = SkipSpaceLookahead(s_.lexer)) and
+         (l->type == TokenT::kCase or l->type == TokenT::kDefault);) {
+        auto indent = NextStatementIndent();
+        if (indent < s_.CurrentIndent()) break;
+        if (indent > s_.CurrentIndent())
+            WithWrongIndentBlock(indent, &Parser::Case);
+        else if (auto case_ = Case())
+            cases.push_back(std::move(*case_));
+    }
+    return cases;
 }
 
 unique_ptr<ast::SwitchStmt> Parser::Switch() {
-    SkipSpaceNext(s_.lexer);
-    auto switched = Expression();
-    return nullptr;
+    auto switch_ = SkipSpaceNext(s_.lexer);
+    auto switched =
+        ExpressionWithRecovery({TokenT::kCase, TokenT::kDefault}, true);
+    auto l = SkipSpaceLookahead(s_.lexer);
+    if (not l or l->type != TokenT::kCase or l->type != TokenT::kDefault)
+        return nullptr;
+    auto indent = NextStatementIndent();
+    if (indent < s_.CurrentIndent())
+        return s_.RecordError(
+            ErrorT::kExpectToken,
+            {TokenT::kCase, s_.lexer.Lookahead()->location, 0});
+
+    auto cases = WithBlock(indent, &Parser::Cases);
+    if (switched == nullptr or cases.empty()) return nullptr;
+    return make_unique<ast::SwitchStmt>(std::move(switched), std::move(cases));
 }
 
 unique_ptr<ast::LoopControlStmt> Parser::Break() {
@@ -195,7 +255,7 @@ Parser::PrecedenceClimb(unique_ptr<ast::Expression> lhs, int min_prec) {
             lhs = nullptr;
         else if (lhs != nullptr)
             lhs = make_unique<ast::BinaryExpr>(
-                std::move(lhs), BinOpTokenToOperator(op.type));
+                std::move(lhs), BinOpTokenToOperator(op.type), std::move(rhs));
     }
     return lhs;
 }
@@ -689,10 +749,9 @@ Parser::ExpressionWithRecovery(std::vector<TokenT> nexts, bool skip_space) {
             Recover(recover_stops);
         }
     }
-    auto l = Lookahead(s_.lexer, skip_space);
-    if (not l) return s_.RecordError(ErrorT::kExpectToken, Token::Eof());
-    if (std::find(begin(nexts), end(nexts), l->type) == std::end(nexts))
-        s_.RecordError(ErrorT::kExpectToken, nexts.front());
+    auto l = LookaheadAsToken(s_.lexer, skip_space);
+    if (std::find(begin(nexts), end(nexts), l.type) == std::end(nexts))
+        s_.RecordError(ErrorT::kExpectToken, {nexts.front(), l.location, 0});
     return nullptr;
 }
 

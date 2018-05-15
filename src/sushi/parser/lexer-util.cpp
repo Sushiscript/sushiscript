@@ -12,7 +12,6 @@ using lexer::Lexer;
 using lexer::Token;
 
 optional<const Token &> SkipSpaceLookahead(Lexer &lex, int n) {
-    int c = 0;
     int i = 1;
     for (;; ++i) {
         auto l = lex.Lookahead(i);
@@ -48,11 +47,17 @@ optional<Token> Optional(Lexer &lex, Token::Type t, bool skip_space) {
     return none;
 }
 
-optional<lexer::Token>
+optional<Token>
 Optional(Lexer &lex, std::function<bool(Token::Type)> p, bool skip_space) {
     auto l = Lookahead(lex, skip_space);
     if (l and p(l->type)) return Next(lex, skip_space);
     return none;
+}
+
+Token LookaheadAsToken(Lexer& lex, bool skip_space) {
+    auto l = Lookahead(lex, skip_space);
+    if (not l) return Token::Eof();
+    return *l;
 }
 
 } // namespace detail

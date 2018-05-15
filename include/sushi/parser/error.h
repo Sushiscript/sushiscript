@@ -9,6 +9,7 @@ namespace parser {
 struct Error {
     enum class Type {
         kLexicalError,
+        kEmptyBlock,
         kExpectToken,
         kUnexpectIndent,
         kUnexpectToken,
