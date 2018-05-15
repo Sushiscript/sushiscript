@@ -15,14 +15,14 @@ struct Assignment : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     Assignment(
-        Identifier ident, std::unique_ptr<Expression> index,
+        Identifier ident, std::vector<std::unique_ptr<Expression>> indices,
         std::unique_ptr<Expression> value)
-        : ident(std::move(ident)), index(std::move(index)),
+        : ident(std::move(ident)), indices(std::move(indices)),
           value(std::move(value)) {}
 
     Identifier ident;
-    // index is nullptr in a normal assignment
-    std::unique_ptr<Expression> index;
+    // empty in a normal assignment
+    std::vector<std::unique_ptr<Expression>> indices;
     std::unique_ptr<Expression> value;
 };
 
