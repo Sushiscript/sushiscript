@@ -824,7 +824,7 @@ It might seem weird that all the codes translated are wrapped in a `main` functi
 ### 6.1 Definition
 
 |type       |declare option  |translated like                   |
-|:---------:|:--------------:|:--------------------:            |
+|:---------:|:--------------:|:--------------------------------:|
 |Int        |-i              |`declare -i a=1`                  |
 |Bool       |-i              |`declare -i a=1`(true)            |
 |String     |                |`declare a="abc"`                 |
@@ -1076,4 +1076,30 @@ while [[ $cnt < 5 ]]; do
   echo "not continue"
   break
 done
+```
+
+### 6.6 Scope
+
+#### 6.6.1 Scope
+
+Scope here is a scope of identifiers. In sushi, one program has one scope. The difference from bash is that only **function** has a scope in bash, while **if** can also introduce a program (with a scope). This difference force sushi to manage the scope itself.
+
+Only when **duplicate** identifier name is used, sushi will rename the identifier denpending on the duplicate times, and finally `unset` it at the end of scope.
+
+```bash
+# define a = 1
+# if true:
+#   define a = 2
+#   for false:
+#     define a = 3
+local -i a=1
+if [[ 1 != 0 ]]; then
+  local -i a_1=2
+  while [[ 0 != 0 ]]; do
+    local -i a_2=3
+    unset a_2
+  done
+  unset a_1
+fi
+unset a
 ```
