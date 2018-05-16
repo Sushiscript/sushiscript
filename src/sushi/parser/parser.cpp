@@ -318,7 +318,7 @@ unique_ptr<ast::Expression> Parser::PrimaryExpr() {
     if (l.type == TokenT::kLBrace) return MapArrayLiteral();
     if (IsUnaryOp(l.type)) return UnaryOperation();
     if (IsLiteral(l.type)) return Literal();
-    return s_.RecordError(ErrorT::kUnexpectToken, l);
+    return s_.RecordErrorOnLookahead(ErrorT::kExpectExpression, false);
 }
 
 unique_ptr<ast::Expression> Parser::Expression() {
@@ -369,10 +369,65 @@ FromPipeline(std::vector<unique_ptr<ast::CommandLike>> pipeline) {
 
 } // namespace
 
-optional<std::vector<ast::Redirection>> Parser::Redirections() {
-    if (not Optional(s_.lexer, TokenT::kRedirect, true))
-        return std::vector<ast::Redirection>{};
+optional<ast::Redirection> Parser::RedirectTo() {
+    std::unique_ptr<ast::Expression> ext;
+    bool fail = false;
+    if (not Optional(s_.lexer, TokenT::kHere, true)) {
+        ext = AtomExpr();
+        fail = ext == nullptr;
+    }
+    bool append = static_cast<bool>(Optional(s_.lexer, TokenT::kAppend));
+    if (fail) return none;
+    return ast::Redirection(
+        ast::FdLit::Value::kStdout, ast::Redirection::Direction::kOut,
+        std::move(ext), append);
+}
+
+optional<ast::Redirection> Parser::RedirectFrom() {
+    auto expr = AtomExpr();
+    if (not expr) return none;
+    return ast::Redirection(
+        ast::FdLit::Value::kStderr, ast::Redirection::Direction::kOut,
+        std::move(expr), false);
+}
+
+optional<ast::Redirection> Parser::RedirectItem() {
+    using namespace util::monadic_optional;
+    auto me_tok = Optional(s_.lexer, IsFdLiteral, true);
+    auto me = me_tok > [](const Token &t) { return FdLiteralToFd(t.type); };
+    if (Optional(s_.lexer, TokenT::kTo, true))
+        return RedirectTo() > [&](ast::Redirection redir) {
+            redir.me = me.value_or(ast::FdLit::Value::kStdout);
+            return redir;
+        };
+    if (Optional(s_.lexer, TokenT::kFrom, true))
+        return RedirectFrom() > [&](ast::Redirection redir) {
+            redir.me = me.value_or(ast::FdLit::Value::kStdin);
+            return redir;
+        };
+    s_.ExpectToken(TokenT::kTo);
     return none;
+}
+
+optional<std::vector<ast::Redirection>> Parser::Redirections() {
+    auto redir = Optional(s_.lexer, TokenT::kRedirect, true);
+    if (not redir) return std::vector<ast::Redirection>{};
+    std::vector<ast::Redirection> redirs;
+    bool fail = false;
+    for (;;) {
+        auto item = RedirectItem();
+        if (not item)
+            fail = true;
+        else
+            redirs.push_back(std::move(*item));
+        if (Optional(s_.lexer, TokenT::kComma)) continue;
+    }
+    if (redirs.empty()) {
+        s_.RecordErrorOnLookahead(ErrorT::kExpectRedirItem);
+        fail = true;
+    }
+    if (fail) return none;
+    return redirs;
 }
 
 std::unique_ptr<ast::CommandLike> Parser::AssertCommandLike() {

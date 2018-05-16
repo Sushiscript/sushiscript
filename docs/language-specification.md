@@ -232,7 +232,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.3.3 Unary Operator
 
 ```
-<unop expr> = <unary op> <expression>
+<unop expr> = <unary op> <atom expr>
 <unary op> = '+' | '-' | "not"
 ```
 

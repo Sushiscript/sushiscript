@@ -62,9 +62,9 @@ struct ParserState {
         return RecordError(Error::Type::kExpectToken, {t, loc, 0});
     }
 
-    nullptr_t UnexpectedToken(bool skip_space = true) {
+    nullptr_t RecordErrorOnLookahead(Error::Type e, bool skip_space = true) {
         auto loc = LookaheadAsToken(lexer, skip_space);
-        return RecordError(Error::Type::kUnexpectToken, loc);
+        return RecordError(e, loc);
     }
 
     boost::optional<lexer::Token>

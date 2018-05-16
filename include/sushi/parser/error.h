@@ -14,11 +14,13 @@ struct Error {
         kUnexpectIndent,
         kUnexpectToken,
         kUnexpectedEof,
+        kExpectExpression,
         kExpectCommand,
         kExpectType,
         kExpectSimpleType,
         kWrongTypeKind,
-        kExpectMappedValue
+        kExpectMappedValue,
+        kExpectRedirItem
     };
     Type type;
     lexer::Token position;

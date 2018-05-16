@@ -104,6 +104,12 @@ class Parser {
 
     std::unique_ptr<ast::Expression> StartWithIdentifier();
 
+    boost::optional<ast::Redirection> RedirectTo();
+
+    boost::optional<ast::Redirection> RedirectFrom();
+
+    boost::optional<ast::Redirection> RedirectItem();
+
     boost::optional<std::vector<ast::Redirection>> Redirections();
 
     std::unique_ptr<ast::CommandLike> AssertCommandLike();
