@@ -22,9 +22,9 @@ addons:
       - llvm-toolchain-trusty-5.0   # for clang-5.0 (maybe)
     packages:
       - cmake                       # for cmake
-      # (why this vertion? later we will talk about it)
-      - g++-7                       # for this vertion g++ 
-      - clang-5.0                   # for this vertion clang
+      # (why this version? later we will talk about it)
+      - g++-7                       # for this version g++ 
+      - clang-5.0                   # for this version clang
       - python3                     # for python3 (pip3 need)
       - python3-pip                 # for pip (conan need)
 
