@@ -20,6 +20,8 @@ using ExpressionVisitor = sushi::util::DefineVisitor<
 struct Expression: Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
     SUSHI_VISITABLE(ExpressionVisitor)
+
+    virtual ~Expression() = default;
 };
 
 } // namespace ast

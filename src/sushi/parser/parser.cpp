@@ -649,7 +649,7 @@ Parser::ConfirmedArrayLiteral(std::unique_ptr<ast::Expression> expr) {
         return RecoverFromExpression({TokenT::kRBrace});
     if (not items or expr == nullptr) return nullptr;
     items->insert(begin(*items), std::move(expr));
-    return make_unique<ast::ArrayLit>(std::move(items));
+    return make_unique<ast::ArrayLit>(std::move(*items));
 }
 
 std::unique_ptr<ast::Literal> Parser::NonEmptyMapArray() {
@@ -659,9 +659,11 @@ std::unique_ptr<ast::Literal> Parser::NonEmptyMapArray() {
         return ConfirmedArrayLiteral(std::move(expr));
     else if (Optional(s_.lexer, TokenT::kColon, true))
         return ConfirmedMapLiteral(std::move(expr));
-    else if (Optional(s_.lexer, TokenT::kRBrace, true))
-        return make_unique<ast::ArrayLit>(
-            std::vector<unique_ptr<ast::Expression>>{std::move(expr)});
+    else if (Optional(s_.lexer, TokenT::kRBrace, true)) {
+        std::vector<unique_ptr<ast::Expression>> singleton;
+        singleton.push_back(std::move(expr));
+        std::vector<unique_ptr<ast::Expression>>(std::move(singleton));
+    }
     return nullptr;
 }
 

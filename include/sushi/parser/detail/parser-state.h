@@ -57,7 +57,7 @@ struct ParserState {
         return nullptr;
     }
 
-    nullptr_t ExpectToken(Token::Type t) {
+    nullptr_t ExpectToken(lexer::Token::Type t) {
         auto loc = LookaheadAsToken(lexer).location;
         return RecordError(Error::Type::kExpectToken, {t, loc, 0});
     }
