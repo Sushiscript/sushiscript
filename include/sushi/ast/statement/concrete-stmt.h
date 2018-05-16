@@ -93,8 +93,11 @@ struct SwitchStmt : Statement {
         Program body;
     };
 
-    SwitchStmt(std::vector<Case> cases) : cases(std::move(cases)) {}
+    SwitchStmt(
+        std::unique_ptr<ast::Expression> switched, std::vector<Case> cases)
+        : switched(std::move(switched)), cases(std::move(cases)) {}
 
+    std::unique_ptr<ast::Expression> switched;
     std::vector<Case> cases;
 };
 
