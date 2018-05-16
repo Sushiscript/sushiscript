@@ -1,9 +1,14 @@
+# travis auto test config file
+# you can edit it as you like but make sure it can run in remote system
+
 language: cpp
 
+# if you want test osx, uncomment that line
 os:
   - linux
   # - osx
 
+# if you want test clang, uncomment that line
 compiler:
   - g++
   # - clang
@@ -12,39 +17,51 @@ compiler:
 addons:
   apt:
     sources:
-      - kubuntu-backports
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-trusty-5.0
+      - kubuntu-backports           # for cmake
+      - ubuntu-toolchain-r-test     # for g++-7 (maybe)
+      - llvm-toolchain-trusty-5.0   # for clang-5.0 (maybe)
     packages:
-      - cmake
-      - g++-7
-      - clang-5.0
-      - python3
-      - python3-pip
+      - cmake                       # for cmake
+      # (why this vertion? later we will talk about it)
+      - g++-7                       # for this vertion g++ 
+      - clang-5.0                   # for this vertion clang
+      - python3                     # for python3 (pip3 need)
+      - python3-pip                 # for pip (conan need)
 
 
+# execute all of the commands which need to be executed 
+# before installing dependencies
 before_install:
-  # execute all of the commands which need to be executed 
-  # before installing dependencies
+  # set this will avoid memory not enough problem
   - if [[ "$CXX" == "g++" ]]; then export CXX="g++-7" CC="gcc-7"; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX" == "clang++" ]]; then export CXX="clang++-5.0" CC="clang-5.0"; fi
 
 
+# install all of the dependencies you need here
+# Install conan
 install:
-  # install all of the dependencies you need here
-  # Install conan
   - pip3 install --user conan
 
+# execute all of the commands which need to be executed 
+# before running actual tests
 before_script:
-  # execute all of the commands which need to be executed 
-  # before running actual tests
 
 script:
   # execute all of the commands which should make the build pass or fail
   - mkdir build && cd build
+  # add some remote (I don't know if this is necessary, but I add it anyway)
   - conan remote add lasote https://api.bintray.com/conan/lasote/conan-repo
   - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+  # why compiler.libcxx=libstdc++11 ?
+  #     for gtest, without this you will face error in the final make
+  # why --build=missing
+  #     for conan can't download pre build libs, you need build it by yourself
   - conan install .. -s compiler.libcxx=libstdc++11 --build=missing
   - cmake ..
   - make -j4
+  # run test
   - ./bin/lexer-test
+
+after_success:
+  # so, pass the test...
+  - echo '(￣▽￣)~*' cheers! 
