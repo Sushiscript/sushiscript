@@ -13,21 +13,27 @@ addons:
   apt:
     sources:
       - kubuntu-backports
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty-5.0
     packages:
       - cmake
-      - python3.6
+      - g++-7
+      - clang-5.0
+      - python3
       - python3-pip
 
 
 before_install:
   # execute all of the commands which need to be executed 
   # before installing dependencies
+  - if [[ "$CXX" == "g++" ]]; then export CXX="g++-7" CC="gcc-7"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX" == "clang++" ]]; then export CXX="clang++-5.0" CC="clang-5.0"; fi
 
 
 install:
   # install all of the dependencies you need here
   # Install conan
-  - pip3 install conan
+  - pip3 install --user conan
 
 before_script:
   # execute all of the commands which need to be executed 
@@ -37,7 +43,8 @@ script:
   # execute all of the commands which should make the build pass or fail
   - mkdir build && cd build
   - conan remote add lasote https://api.bintray.com/conan/lasote/conan-repo
-  - conan install .. -s compiler=gcc -s compiler.libcxx=libstdc++11 --build gtest
+  - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+  - conan install .. -s compiler.libcxx=libstdc++11 --build=missing
   - cmake ..
   - make -j4
   - ./bin/lexer-test
