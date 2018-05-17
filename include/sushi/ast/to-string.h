@@ -262,7 +262,7 @@ struct Statement2Str : StatementVisitor::Const, Result {
         }
         result =
             Indent() + (boost::format("switch %s\n%s") %
-                        ToString(sw.switched.get()) % boost::join(cases, '\n'))
+                        ToString(sw.switched.get()) % boost::join(cases, "\n"))
                            .str();
     }
     SUSHI_VISITING(ReturnStmt, ret) {
@@ -275,6 +275,9 @@ struct Statement2Str : StatementVisitor::Const, Result {
                             : "continue";
         std::string level = l.level == 1 ? "" : " " + std::to_string(l.level);
         result = Indent() + t + level;
+    }
+    SUSHI_VISITING(Expression, e) {
+        result = Indent() + ToString(&e);
     }
 
     std::string Indent() {
@@ -301,7 +304,7 @@ struct Type2Str : TypeExprVisitor::Const, Result {
         for (auto &p : f.params) {
             params.push_back(ToString(p.get()));
         }
-        result = "Function " + boost::join(params, ' ');
+        result = "Function " + boost::join(params, " ");
     }
 };
 
@@ -317,7 +320,7 @@ inline std::string ToString(const InterpolatedString &str) {
     std::string result;
     str.Traverse(
         [&](const std::string &s) { result += s; },
-        [&](Expression *expr) { result += ToString(expr); });
+        [&](const Expression& expr) { result += ToString(&expr); });
     return result;
 }
 

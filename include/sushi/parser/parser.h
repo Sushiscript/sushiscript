@@ -25,7 +25,7 @@ class Parser {
     Parser(lexer::Lexer lexer) : s_(std::move(lexer)) {}
 
     ParsingResult Parse() {
-        SUSHI_PARSER_NEW_BLOCK(s_, 0);
+        SUSHI_PARSER_NEW_BLOCK(s_, -1);
         auto p = Program();
         return {std::move(p), std::move(s_.errors)};
     }

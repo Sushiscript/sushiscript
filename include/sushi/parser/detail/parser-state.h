@@ -37,7 +37,7 @@ struct ParserState {
     };
 
     struct BlockGuard {
-        BlockGuard(ParserState &s, bool indents) : s(s) {
+        BlockGuard(ParserState &s, int indents) : s(s) {
             s.indents.push(indents);
         }
         ~BlockGuard() {

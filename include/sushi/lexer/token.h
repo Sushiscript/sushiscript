@@ -281,6 +281,7 @@ struct Token {
     bool operator==(const Token &rhs) const {
         return WeakEqual(*this, rhs) and location == rhs.location;
     }
+    std::string ToString() const;
 
     int IntData() const {
         return boost::get<int>(content);
@@ -298,8 +299,14 @@ struct Token {
 
 inline std::ostream &operator<<(std::ostream &os, lexer::Token tok) {
     os << "`" << lexer::Token::TypeToString(tok.type) << ", " << tok.content
-       << ", (" << tok.location.line << ", " << tok.location.column << ")`";
+       << ", " + tok.location.ToString() << '`';
     return os;
+}
+
+inline std::string Token::ToString() const {
+    std::ostringstream oss;
+    oss << *this;
+    return oss.str();
 }
 
 } // namespace lexer

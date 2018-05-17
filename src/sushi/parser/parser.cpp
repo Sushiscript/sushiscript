@@ -743,6 +743,8 @@ unique_ptr<ast::Literal> Parser::Literal() {
     auto t = *SkipSpaceNext(s_.lexer);
     if (t.type == TokenT::kIntLit) return make_unique<ast::IntLit>(t.IntData());
     if (t.type == TokenT::kUnit) return make_unique<ast::UnitLit>();
+    if (t.type == TokenT::kCharLit)
+        return make_unique<ast::CharLit>(char(t.IntData()));
     if (IsBoolLiteral(t.type))
         return make_unique<ast::BoolLit>(BoolLitToBool(t.type));
     if (IsFdLiteral(t.type))
@@ -792,7 +794,6 @@ optional<ast::InterpolatedString> Parser::Interpolatable(bool exit_on_err) {
 }
 
 unique_ptr<ast::StringLit> Parser::StringLiteral() {
-    SkipSpaceNext(s_.lexer);
     auto content = Interpolatable(true);
     if (not content) return nullptr;
     return std::make_unique<ast::StringLit>(std::move(*content));
@@ -813,7 +814,6 @@ bool IsRelativePath(ast::InterpolatedString &s) {
 } // namespace
 
 unique_ptr<ast::Literal> Parser::PathLiteral() {
-    SkipSpaceNext(s_.lexer);
     auto content = Interpolatable(false);
     if (not content) {
         return nullptr;
@@ -854,6 +854,7 @@ bool Parser::AssertStatementEnd() {
         RecoverFromStatement();
         return false;
     }
+    SkipStatementEnd();
     return true;
 }
 
