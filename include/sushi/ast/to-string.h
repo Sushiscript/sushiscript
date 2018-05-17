@@ -108,6 +108,9 @@ struct Literal2Str : LiteralVisitor::Const, Result {
         else
             result = "false";
     }
+    SUSHI_VISITING(CharLit, c) {
+        result = std::string("\'") + c.value + '\'';
+    }
     SUSHI_VISITING(UnitLit, u) {
         result = "()";
     }
