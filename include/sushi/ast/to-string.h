@@ -129,15 +129,15 @@ struct Literal2Str : LiteralVisitor::Const, Result {
     SUSHI_VISITING(ArrayLit, a) {
         std::vector<std::string> elems;
         for (auto &e : a.value) elems.push_back(ToString(e.get()));
-        result = (boost::format("{ %s }") % (boost::join(elems, " , "))).str();
+        result = (boost::format("{%s}") % (boost::join(elems, ", "))).str();
     }
     SUSHI_VISITING(MapLit, m) {
         std::vector<std::string> maps;
         for (auto &p : m.value)
-            maps.push_back((boost::format("%s : %s") % ToString(p.first.get()) %
+            maps.push_back((boost::format("%s: %s") % ToString(p.first.get()) %
                             ToString(p.second.get()))
                                .str());
-        result = (boost::format("{ %s }") % (boost::join(maps, " , "))).str();
+        result = (boost::format("{%s}") % (boost::join(maps, ", "))).str();
     }
 };
 
@@ -320,7 +320,7 @@ inline std::string ToString(const InterpolatedString &str) {
     std::string result;
     str.Traverse(
         [&](const std::string &s) { result += s; },
-        [&](const Expression& expr) { result += ToString(&expr); });
+        [&](const Expression& expr) { result += "${" + ToString(&expr) + '}'; });
     return result;
 }
 

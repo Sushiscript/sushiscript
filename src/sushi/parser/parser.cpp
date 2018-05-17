@@ -315,9 +315,11 @@ unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
 unique_ptr<ast::Expression> Parser::PrimaryExpr() {
     auto l = *Lookahead(s_.lexer, true);
     if (l.type == TokenT::kIdent) return StartWithIdentifier();
-    if (l.type == TokenT::kLBrace) return MapArrayLiteral();
+    if (l.type == TokenT::kLBrace or l.type == TokenT::kLParen or
+        IsLiteral(l.type))
+        return AtomExpr();
+    if (IsLiteral(l.type)) return AtomExpr();
     if (IsUnaryOp(l.type)) return UnaryOperation();
-    if (IsLiteral(l.type)) return Literal();
     return s_.RecordErrorOnLookahead(ErrorT::kExpectExpression, false);
 }
 
@@ -545,8 +547,6 @@ std::unique_ptr<ast::Expression> Parser::ParenExpr() {
     auto expr = Expression();
     if (expr == nullptr or not s_.AssertLookahead(TokenT::kRParen))
         return RecoverFromExpression({TokenT::kRParen});
-
-    if (not s_.AssertLookahead(TokenT::kRParen)) return nullptr;
     return expr;
 }
 
@@ -571,12 +571,16 @@ optional<std::vector<unique_ptr<ast::Expression>>> Parser::Indices() {
 }
 
 unique_ptr<ast::Expression> Parser::AtomExpr() {
-    auto l = s_.lexer.Lookahead();
+    auto l = SkipSpaceLookahead(s_.lexer);
     unique_ptr<ast::Expression> expr;
-    if (l->type == TokenT::kLParen) expr = ParenExpr();
-    if (l->type == TokenT::kIdent) expr = Variable();
-    if (IsLiteral(l->type)) expr = Literal();
-    if (l->type == TokenT::kLBrace) expr = MapArrayLiteral();
+    if (l->type == TokenT::kLParen)
+        expr = ParenExpr();
+    else if (l->type == TokenT::kIdent)
+        expr = Variable();
+    else if (IsLiteral(l->type))
+        expr = Literal();
+    else if (l->type == TokenT::kLBrace)
+        expr = MapArrayLiteral();
 
     auto indices = Indices();
     if (not indices) return nullptr;
@@ -662,7 +666,7 @@ std::unique_ptr<ast::Literal> Parser::NonEmptyMapArray() {
     else if (Optional(s_.lexer, TokenT::kRBrace, true)) {
         std::vector<unique_ptr<ast::Expression>> singleton;
         singleton.push_back(std::move(expr));
-        std::vector<unique_ptr<ast::Expression>>(std::move(singleton));
+        return make_unique<ast::ArrayLit>(std::move(singleton));
     }
     return nullptr;
 }
