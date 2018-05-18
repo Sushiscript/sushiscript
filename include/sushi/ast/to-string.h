@@ -79,8 +79,11 @@ std::string ToString(const CommandLike *cmd);
 std::string ToString(const TypeExpr *type);
 
 inline std::string ToString(const Redirection &redir) {
-    return (boost::format("%s %s %s") % ToString(redir.me) %
-            ToString(redir.direction) % ToString(redir.external.get()))
+    std::string dest =
+        redir.external ? ToString(redir.external.get()) : std::string("here");
+    std::string append = redir.append ? " append" : "";
+    return (boost::format("%s %s %s%s") % ToString(redir.me) %
+            ToString(redir.direction) % dest % append)
         .str();
 }
 
@@ -192,7 +195,7 @@ struct Expression2Str : ExpressionVisitor::Const, Result {
                 pipes.push_back(std::move(call));
             else
                 pipes.push_back((boost::format("%s redirect %s") %
-                                 std::move(call) % boost::join(redirs, " , "))
+                                 std::move(call) % boost::join(redirs, ", "))
                                     .str());
         }
         result = (boost::format("(%s)") % boost::join(pipes, " | ")).str();
@@ -320,7 +323,9 @@ inline std::string ToString(const InterpolatedString &str) {
     std::string result;
     str.Traverse(
         [&](const std::string &s) { result += s; },
-        [&](const Expression& expr) { result += "${" + ToString(&expr) + '}'; });
+        [&](const Expression &expr) {
+            result += "${" + ToString(&expr) + '}';
+        });
     return result;
 }
 

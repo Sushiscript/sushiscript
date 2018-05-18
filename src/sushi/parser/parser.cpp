@@ -318,6 +318,7 @@ unique_ptr<ast::Expression> Parser::PrimaryExpr() {
     if (l.type == TokenT::kLBrace or l.type == TokenT::kLParen or
         IsLiteral(l.type))
         return AtomExpr();
+    if (l.type == TokenT::kExclamation) return CommandLike();
     if (IsLiteral(l.type)) return AtomExpr();
     if (IsUnaryOp(l.type)) return UnaryOperation();
     return s_.RecordErrorOnLookahead(ErrorT::kExpectExpression, false);
@@ -352,7 +353,7 @@ unique_ptr<ast::Expression> Parser::StartWithIdentifier() {
     auto l2 = SkipSpaceLookahead(s_.lexer, 2);
     if (not l2) return Variable();
     if (l2->type == TokenT::kLBracket) return AtomExpr();
-    if (IsAtomExprLookahead(l2->type)) return FunctionCall();
+    if (IsAtomExprLookahead(l2->type)) return CommandLike();
     return Variable();
 }
 
@@ -389,7 +390,7 @@ optional<ast::Redirection> Parser::RedirectFrom() {
     auto expr = AtomExpr();
     if (not expr) return none;
     return ast::Redirection(
-        ast::FdLit::Value::kStderr, ast::Redirection::Direction::kOut,
+        ast::FdLit::Value::kStderr, ast::Redirection::Direction::kIn,
         std::move(expr), false);
 }
 
@@ -422,7 +423,7 @@ optional<std::vector<ast::Redirection>> Parser::Redirections() {
             fail = true;
         else
             redirs.push_back(std::move(*item));
-        if (Optional(s_.lexer, TokenT::kComma)) continue;
+        if (not Optional(s_.lexer, TokenT::kComma)) break;
     }
     if (redirs.empty()) {
         s_.RecordErrorOnLookahead(ErrorT::kExpectRedirItem);
@@ -443,7 +444,7 @@ std::unique_ptr<ast::CommandLike> Parser::AssertCommandLike() {
 }
 
 unique_ptr<ast::CommandLike> Parser::SingleCommandLike() {
-    unique_ptr<ast::CommandLike> cmd;
+    unique_ptr<ast::CommandLike> cmd = AssertCommandLike();
 
     optional<std::vector<ast::Redirection>> redir = Redirections();
     if (cmd == nullptr or not redir) return nullptr;
