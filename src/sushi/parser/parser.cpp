@@ -85,8 +85,8 @@ unique_ptr<ast::Statement> Parser::Statement() {
     case TokenT::kIf: return If();
     case TokenT::kFor: return For();
     case TokenT::kSwitch: return Switch();
-    case TokenT::kBreak: return Break();
-    case TokenT::kContinue: return Continue();
+    case TokenT::kBreak:
+    case TokenT::kContinue: return LoopControlStmt();
     default: return ExpressionOrAssignment();
     }
     return nullptr;
@@ -134,6 +134,7 @@ std::vector<ast::FunctionDef::Parameter> Parser::ParameterList() {
 
 std::unique_ptr<ast::FunctionDef>
 Parser::FunctionDef(bool is_export, optional<std::string> name) {
+    SUSHI_PARSER_EXIT_LOOP(s_);
     auto params = ParameterList();
     auto ret_type = OptionalTypeInDef();
     auto eq = s_.AssertLookahead(TokenT::kSingleEq, true);
@@ -220,6 +221,7 @@ optional<ast::ForStmt::Condition> Parser::LoopCondition() {
 
 unique_ptr<ast::ForStmt> Parser::For() {
     SkipSpaceNext(s_.lexer);
+    SUSHI_PARSER_ENTER_LOOP(s_);
     auto cond = LoopCondition();
     auto body = Program();
     if (not cond or body.statements.empty()) return nullptr;
@@ -262,6 +264,7 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
     auto l = SkipSpaceLookahead(s_.lexer);
     if (not l or l->type != TokenT::kCase or l->type != TokenT::kDefault)
         return nullptr;
+
     auto indent = NextStatementIndent();
     if (indent < s_.CurrentIndent())
         return s_.RecordError(
@@ -273,28 +276,19 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
     return make_unique<ast::SwitchStmt>(std::move(switched), std::move(cases));
 }
 
-unique_ptr<ast::LoopControlStmt> Parser::Break() {
-    using V = ast::LoopControlStmt::Value;
-    Next(s_.lexer, false);
+unique_ptr<ast::LoopControlStmt> Parser::LoopControlStmt() {
+    auto ctrl = *SkipSpaceNext(s_.lexer);
+    auto v = LoopControlTokToAst(ctrl.type);
     if (OptionalStatementEnd())
-        return make_unique<ast::LoopControlStmt>(V::kBreak, 1);
+        return make_unique<ast::LoopControlStmt>(v, 1);
 
     auto level = s_.AssertLookahead(TokenT::kIntLit);
     if (not level) return RecoverFromStatement();
     if (not AssertStatementEnd()) return nullptr;
-    return make_unique<ast::LoopControlStmt>(V::kBreak, level->IntData());
-}
-
-unique_ptr<ast::LoopControlStmt> Parser::Continue() {
-    using V = ast::LoopControlStmt::Value;
-    Next(s_.lexer, false);
-    if (OptionalStatementEnd())
-        return make_unique<ast::LoopControlStmt>(V::kContinue, 1);
-
-    auto level = s_.AssertLookahead(TokenT::kIntLit);
-    if (not level) return RecoverFromStatement();
-    if (not AssertStatementEnd()) return nullptr;
-    return make_unique<ast::LoopControlStmt>(V::kContinue, level->IntData());
+    auto lv = level->IntData();
+    if (lv < s_.LoopLevel())
+        return s_.RecordError(ErrorT::kInvalidLoopLevel, *level);
+    return make_unique<ast::LoopControlStmt>(v, lv);
 }
 
 unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {

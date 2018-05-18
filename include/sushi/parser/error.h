@@ -21,7 +21,8 @@ struct Error {
         kExpectSimpleType,
         kWrongTypeKind,
         kExpectMappedValue,
-        kExpectRedirItem
+        kExpectRedirItem,
+        kInvalidLoopLevel
     };
     static std::string ToString(Type t) {
         switch (t) {
@@ -38,6 +39,7 @@ struct Error {
         case Type::kWrongTypeKind: return "WrongTypeKind";
         case Type::kExpectMappedValue: return "ExpectMappedValue";
         case Type::kExpectRedirItem: return "ExpectRedirectItem";
+        case Type::kInvalidLoopLevel: return "InvalidLoopLevel";
         }
     }
     std::string ToString() const {

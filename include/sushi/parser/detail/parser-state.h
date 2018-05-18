@@ -13,12 +13,11 @@ namespace parser {
 namespace detail {
 
 #define SUSHI_PARSER_ENTER_LOOP(state)                                         \
-    sushi::parser::detail::ParserState::LoopGuard sushi_parser_loop_guard(     \
-        state, true)
+    sushi::parser::detail::ParserState::LoopGuard sushi_parser_loop_guard(state)
 
 #define SUSHI_PARSER_EXIT_LOOP(state)                                          \
     sushi::parser::detail::ParserState::LoopGuard sushi_parser_loop_guard(     \
-        state, false)
+        state, true)
 
 #define SUSHI_PARSER_NEW_BLOCK(state, indents)                                 \
     sushi::parser::detail::ParserState::BlockGuard sushi_parser_block_guard(   \
@@ -26,14 +25,24 @@ namespace detail {
 
 struct ParserState {
     struct LoopGuard {
-        LoopGuard(ParserState &s, bool now_in_loop) : s(s), old(s.inside_loop) {
-            s.inside_loop = now_in_loop;
+        LoopGuard(ParserState &s, bool clear = false) : s(s), clear(clear) {
+            if (clear) {
+                old = s.loop_level;
+                s.loop_level = 0;
+            } else {
+                ++s.loop_level;
+            }
         }
         ~LoopGuard() {
-            s.inside_loop = old;
+            if (clear) {
+                s.loop_level = old;
+            } else {
+                --s.loop_level;
+            }
         }
         ParserState &s;
-        bool old;
+        bool clear;
+        int old = -1;
     };
 
     struct BlockGuard {
@@ -50,6 +59,10 @@ struct ParserState {
 
     int CurrentIndent() const {
         return indents.top();
+    }
+
+    int LoopLevel() const {
+        return loop_level;
     }
 
     nullptr_t RecordError(Error::Type t, lexer::Token tok) {
@@ -100,7 +113,7 @@ struct ParserState {
     lexer::Lexer lexer;
     std::vector<Error> errors;
     std::stack<int> indents;
-    bool inside_loop = false;
+    int loop_level = 0;
 };
 
 } // namespace detail

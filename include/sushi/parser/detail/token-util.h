@@ -4,6 +4,7 @@
 #include "sushi/ast/expression/binary-expr.h"
 #include "sushi/ast/expression/literal.h"
 #include "sushi/ast/expression/unary-expr.h"
+#include "sushi/ast/statement/concrete-stmt.h"
 #include "sushi/lexer/token.h"
 #include "sushi/type-system/type.h"
 
@@ -22,6 +23,10 @@ bool IsUnaryOp(lexer::Token::Type);
 ast::UnaryExpr::Operator UnaryOpTokenToOperator(lexer::Token::Type t);
 
 bool IsSimpleType(lexer::Token::Type t);
+
+bool IsLoopControl(lexer::Token::Type t);
+
+ast::LoopControlStmt::Value LoopControlTokToAst(lexer::Token::Type t);
 
 bool IsType(lexer::Token::Type);
 

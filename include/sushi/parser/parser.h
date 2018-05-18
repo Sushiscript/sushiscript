@@ -89,9 +89,7 @@ class Parser {
 
     std::unique_ptr<ast::SwitchStmt> Switch();
 
-    std::unique_ptr<ast::LoopControlStmt> Break();
-
-    std::unique_ptr<ast::LoopControlStmt> Continue();
+    std::unique_ptr<ast::LoopControlStmt> LoopControlStmt();
 
     std::unique_ptr<ast::Statement> ExpressionOrAssignment();
 

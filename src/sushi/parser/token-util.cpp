@@ -89,6 +89,22 @@ bool IsSimpleType(Token::Type t) {
         TT(kRelPath), TT(kExitCode), TT(kFd));
 }
 
+bool IsLoopControl(Token::Type t) {
+    TOKEN_IN(t, TT(kContinue), TT(kBreak));
+}
+
+ast::LoopControlStmt::Value LoopControlTokToAst(Token::Type t) {
+    using V = ast::LoopControlStmt::Value;
+    switch (t) {
+    case TT(kBreak): return V::kBreak;
+    case TT(kContinue): return V::kContinue;
+    default:
+        throw std::invalid_argument(
+            "LoopControlTokToAst: invalid loop control token: " +
+            Token::TypeToString(t));
+    }
+}
+
 bool IsType(Token::Type t) {
     TOKEN_IN(
         t, TT(kInt), TT(kBool), TT(kUnit), TT(kChar), TT(kString), TT(kPath),
@@ -164,6 +180,7 @@ bool IsSpace(Token::Type t) {
 bool IsStatementEnd(Token::Type t) {
     TOKEN_IN(t, TT(kSemicolon), TT(kLineBreak));
 }
+
 bool IsInterpolatable(Token::Type t) {
     TOKEN_IN(t, TT(kPathLit), TT(kRawString), TT(kStringLit));
 }
