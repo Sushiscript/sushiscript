@@ -31,7 +31,7 @@ TEST(ExpressionTest, SimpleBinaryOperation) {
     ParseSuccess("1 + 2 * 3", "(1 + (2 * 3))");
     ParseSuccess("1 * 2 + 3", "((1 * 2) + 3)");
     ParseSuccess("1 * 2 + 3 * 4", "((1 * 2) + (3 * 4))");
-    ParseSuccess("1*2+3*4", "((1 * 2) + (3 * 4))");
+    ParseSuccess("1 * 2 +\n3\n*\n4", "((1 * 2) + (3 * 4))");
     ParseSuccess(
         "1 + 2 * 3 > 4 or 5 // 6 < 7 + 8",
         "(((1 + (2 * 3)) > 4) or ((5 // 6) < (7 + 8)))");

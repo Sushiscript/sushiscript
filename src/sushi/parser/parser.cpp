@@ -175,7 +175,7 @@ unique_ptr<ast::Expression> Parser::Condition() {
 }
 
 ast::Program Parser::Else() {
-    if (Optional(s_.lexer, TokenT::kIf, false)) {
+    if (LookaheadAsToken(s_.lexer, false).type == TokenT::kIf) {
         auto elif = If();
         if (elif == nullptr) return {};
         std::vector<std::unique_ptr<ast::Statement>> stmts;
@@ -279,8 +279,7 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
 unique_ptr<ast::LoopControlStmt> Parser::LoopControlStmt() {
     auto ctrl = *SkipSpaceNext(s_.lexer);
     auto v = LoopControlTokToAst(ctrl.type);
-    if (OptionalStatementEnd())
-        return make_unique<ast::LoopControlStmt>(v, 1);
+    if (OptionalStatementEnd()) return make_unique<ast::LoopControlStmt>(v, 1);
 
     auto level = s_.AssertLookahead(TokenT::kIntLit);
     if (not level) return RecoverFromStatement();
@@ -676,7 +675,7 @@ unique_ptr<ast::Literal> Parser::MapArrayLiteral() {
 
 std::unique_ptr<ast::TypeExpr> Parser::TypeInParen(const Token &lparen) {
     auto t = TypeExpression();
-    if (not t or s_.AssertLookahead(TokenT::kRParen, true))
+    if (not t or not s_.AssertLookahead(TokenT::kRParen, true))
         return RecoverFromExpression({TokenT::kLParen});
     return t;
 }
@@ -684,7 +683,7 @@ std::unique_ptr<ast::TypeExpr> Parser::TypeInParen(const Token &lparen) {
 namespace {
 
 unique_ptr<ast::FunctionType>
-FromTypes(std::vector<unique_ptr<ast::TypeExpr>> types) {
+FromFunctionTypeParams(std::vector<unique_ptr<ast::TypeExpr>> types) {
     auto ret = std::move(types.front());
     types.erase(begin(types));
     return make_unique<ast::FunctionType>(std::move(types), std::move(ret));
@@ -695,14 +694,16 @@ FromTypes(std::vector<unique_ptr<ast::TypeExpr>> types) {
 unique_ptr<ast::FunctionType> Parser::FunctionType(const Token &func) {
     std::vector<unique_ptr<ast::TypeExpr>> types;
     bool fail = false;
-    for (optional<const Token &> l; (l = s_.lexer.Lookahead());) {
+    for (optional<const Token &> l;
+         (l = s_.lexer.Lookahead()) and
+         (l->type == TokenT::kLParen or IsSimpleType(l->type));) {
         auto t = TypeExpression();
         fail = fail or t == nullptr;
         types.push_back(std::move(t));
     }
     if (fail) return nullptr;
     if (types.empty()) return s_.RecordError(ErrorT::kWrongTypeKind, func);
-    return FromTypes(std::move(types));
+    return FromFunctionTypeParams(std::move(types));
 }
 
 optional<type::BuiltInAtom::Type> Parser::AssertSimpleType() {
@@ -725,10 +726,9 @@ std::unique_ptr<ast::MapType> Parser::MapType(const Token &map) {
 
 unique_ptr<ast::TypeExpr> Parser::TypeExpression() {
     auto t = s_.AssertLookahead(IsTypeLookahead, ErrorT::kExpectType, true);
-    auto l = *t;
     if (not t) return nullptr;
+    auto l = *t;
     if (IsSimpleType(l.type)) {
-        SkipSpaceNext(s_.lexer);
         return make_unique<ast::TypeLit>(TypeTokenToType(l.type));
     }
     if (l.type == TokenT::kLParen) return TypeInParen(l);

@@ -241,7 +241,8 @@ struct Statement2Str : StatementVisitor::Const, Result {
                             ToString(fi.false_body, indent + 2))
                                .str()
                          : "";
-        result = (boost::format("if %s\n%s%s") % ToString(fi.condition.get()) %
+        result = Indent() +
+                 (boost::format("if %s\n%s%s") % ToString(fi.condition.get()) %
                   ToString(fi.true_body, indent + 2) % else_)
                      .str();
     }
@@ -269,7 +270,10 @@ struct Statement2Str : StatementVisitor::Const, Result {
                            .str();
     }
     SUSHI_VISITING(ReturnStmt, ret) {
-        result = Indent() + "return " + ToString(ret.value.get());
+        std::string value = ret.value == nullptr
+                                ? std::string()
+                                : ' ' + ToString(ret.value.get());
+        result = Indent() + "return" + value;
     }
 
     SUSHI_VISITING(LoopControlStmt, l) {
@@ -307,7 +311,7 @@ struct Type2Str : TypeExprVisitor::Const, Result {
         for (auto &p : f.params) {
             params.push_back(ToString(p.get()));
         }
-        result = "Function " + boost::join(params, " ");
+        result = "(Function " + boost::join(params, " ") + ')';
     }
 };
 
