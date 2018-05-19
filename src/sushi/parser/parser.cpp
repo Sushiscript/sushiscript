@@ -273,9 +273,7 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
 
     auto indent = NextStatementIndent();
     if (indent < s_.CurrentIndent())
-        return s_.RecordError(
-            ErrorT::kExpectToken,
-            {TokenT::kCase, s_.lexer.Lookahead()->location, 0});
+        return s_.ExpectToken(ErrorT::kExpectToken);
 
     auto cases = WithBlock(indent, &Parser::Cases);
     if (switched == nullptr or cases.empty()) return nullptr;
@@ -462,7 +460,7 @@ unique_ptr<ast::CommandLike> Parser::CommandLike() {
         auto pipe = Optional(s_.lexer, TokenT::kPipe, true);
         if (not pipe) break;
         if (not s_.lexer.Lookahead())
-            return s_.RecordError(ErrorT::kExpectCommand, *pipe);
+            return s_.RecordErrorOnLookahead(ErrorT::kExpectCommand, false);
     }
     if (fail or pipeline.empty()) return nullptr;
     return FromPipeline(std::move(pipeline));
@@ -524,7 +522,7 @@ unique_ptr<ast::Command> Parser::Command() {
     Optional(s_.lexer, TokenT::kComma, true);
     if (fail) return nullptr;
     if (args.empty())
-        return s_.RecordErrorOnLookahead(ErrorT::kExpectCommand);
+        return s_.RecordErrorOnLookahead(ErrorT::kExpectCommand, false);
     return FromCommandArgs(std::move(args));
 }
 
@@ -854,8 +852,7 @@ bool Parser::AssertStatementEnd() {
     auto l = s_.lexer.Lookahead();
     if (not l) return true;
     if (not IsStatementEnd(l->type)) {
-        s_.RecordError(
-            Error::Type::kExpectToken, {TokenT::kSemicolon, l->location, 0});
+        s_.RecordErrorOnLookahead(Error::Type::kExpectStatementEnd, false);
         RecoverFromStatement();
         return false;
     }
@@ -885,7 +882,6 @@ nullptr_t Parser::RecoverFromExpression(std::vector<lexer::Token::Type> extra) {
     return nullptr;
 }
 
-nullptr_t RecoverFromExpression(std::vector<lexer::Token::Type>);
 optional<TokenT> Parser::SkipToken() {
     auto t = s_.lexer.Next();
     if (not t) return none;

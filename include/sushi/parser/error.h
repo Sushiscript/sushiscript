@@ -15,6 +15,7 @@ struct Error {
         kUnexpectIndent,
         kUnexpectToken,
         kUnexpectedEof,
+        kExpectStatementEnd,
         kExpectExpression,
         kExpectCommand,
         kExpectType,
@@ -32,6 +33,7 @@ struct Error {
         case Type::kUnexpectIndent: return "UnexpectedIndent";
         case Type::kUnexpectToken: return "ExpectToken";
         case Type::kUnexpectedEof: return "UnexpectedEOF";
+        case Type::kExpectStatementEnd: return "ExpectStatementEnd";
         case Type::kExpectExpression: return "ExpectExpression";
         case Type::kExpectCommand: return "ExpectCommand";
         case Type::kExpectType: return "ExpectType";
