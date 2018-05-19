@@ -8,7 +8,7 @@ namespace lexer {
 namespace detail {
 
 struct LexerState {
-    SourceStream& input;
+    SourceStream &input;
     bool line_start;
 };
 

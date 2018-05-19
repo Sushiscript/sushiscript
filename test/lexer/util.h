@@ -1,10 +1,10 @@
 #ifndef SUSHI_TEST_LEXER_UTIL_H_
 #define SUSHI_TEST_LEXER_UTIL_H_
 
+#include "sushi/lexer/detail/character-config.h"
+#include "sushi/lexer/error.h"
 #include "sushi/lexer/lexer.h"
 #include "sushi/lexer/token.h"
-#include "sushi/lexer/error.h"
-#include "sushi/lexer/detail/character-config.h"
 #include "gtest/gtest.h"
 #include <iostream>
 #include <sstream>

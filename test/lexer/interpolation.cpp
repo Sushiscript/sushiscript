@@ -67,8 +67,8 @@ TEST(InterpolationTest, TestRaw) {
         TL(kInterStart, 1, 3), TDL(kIdent, "ident", 1, 6), TL(kComma, 1, 11),
         TDL(kIntLit, 123, 1, 13), TL(kRBrace, 1, 16));
     RawStrIsTokens<true>(
-        "${ident}", TL(kRawString, 1, 1),
-        TL(kInterStart, 1, 1), TDL(kIdent, "ident", 1, 3), TL(kRBrace, 1, 8));
+        "${ident}", TL(kRawString, 1, 1), TL(kInterStart, 1, 1),
+        TDL(kIdent, "ident", 1, 3), TL(kRBrace, 1, 8));
 }
 
 TEST(InterpolationTest, TestPathLiteral) {
