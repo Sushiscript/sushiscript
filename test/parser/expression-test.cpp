@@ -106,18 +106,19 @@ TEST(ExpressionTest, TestIndexing) {
 }
 
 TEST(ExpressionTest, TestCommand) {
-    ParseSuccess("! hello", "(! hello;)");
-    ParseSuccess("! hello;\n", "(! hello;)");
-    ParseSuccess("! hello hello", "(! hello hello;)");
-    ParseSuccess("! hello hello; ", "(! hello hello;)");
-    ParseSuccess("! hello${world}; ", "(! hello${world};)");
+    ParseSuccess("! hello", "(! hello)");
+    ParseSuccess("! hello;\n", "(! hello)");
+    ParseSuccess("(! hello)", "(! hello)");
+    ParseSuccess("! hello hello", "(! hello hello)");
+    ParseSuccess("! hello hello; ", "(! hello hello)");
+    ParseSuccess("! hello${world}; ", "(! hello${world})");
     ParseSuccess(
         "! hello${world} ${world and you}; ",
-        "(! hello${world} ${(world and you)};)");
-    ParseSuccess("! hello --verbose --help", "(! hello --verbose --help;)");
+        "(! hello${world} ${(world and you)})");
+    ParseSuccess("! hello --verbose --help", "(! hello --verbose --help)");
     ParseSuccess(
-        "not (! hello;) or not (! world;)",
-        "((not (! hello;)) or (not (! world;)))");
+        "not (! hello) or not (! world)",
+        "((not (! hello)) or (not (! world)))");
 }
 
 TEST(ExpressionTest, TestPipe) {
@@ -125,21 +126,21 @@ TEST(ExpressionTest, TestPipe) {
     ParseSuccess(
         "func call | another call | third call",
         "(func call | another call | third call)");
-    ParseSuccess("! ls -1; | ! sort -n", "(! ls -1; | ! sort -n;)");
-    ParseSuccess(
-        "! ls -1; | ! sort -n; | ! pbcopy",
-        "(! ls -1; | ! sort -n; | ! pbcopy;)");
+    ParseSuccess("! ls -1 | ! sort -n", "(! ls -1 | ! sort -n)");
     ParseSuccess(
         "! ls -1 | ! sort -n | ! pbcopy",
-        "(! ls -1; | ! sort -n; | ! pbcopy;)");
-    ParseSuccess("func call | ! a command", "(func call | ! a command;)");
-    ParseSuccess("! a command; | func call", "(! a command; | func call)");
+        "(! ls -1 | ! sort -n | ! pbcopy)");
     ParseSuccess(
-        "func call | ! a command; | func call",
-        "(func call | ! a command; | func call)");
+        "! ls -1 | ! sort -n | ! pbcopy",
+        "(! ls -1 | ! sort -n | ! pbcopy)");
+    ParseSuccess("func call | ! a command", "(func call | ! a command)");
+    ParseSuccess("! a command | func call", "(! a command | func call)");
     ParseSuccess(
-        "! a command; | func call | ! another command",
-        "(! a command; | func call | ! another command;)");
+        "func call | ! a command | func call",
+        "(func call | ! a command | func call)");
+    ParseSuccess(
+        "! a command | func call | ! another command",
+        "(! a command | func call | ! another command)");
 }
 
 TEST(ExpressionTest, TestRedirection) {
@@ -147,8 +148,8 @@ TEST(ExpressionTest, TestRedirection) {
         "func call redirect to ./output",
         "(func call redirect stdout to ./output)");
     ParseSuccess(
-        "! some command; redirect to ./output",
-        "(! some command; redirect stdout to ./output)");
+        "! some command, redirect to ./output",
+        "(! some command redirect stdout to ./output)");
     ParseSuccess(
         "func call redirect stderr to stdout",
         "(func call redirect stderr to stdout)");
@@ -164,6 +165,6 @@ TEST(ExpressionTest, TestRedirection) {
         "func call redirect to ./output, from ./input",
         "(func call redirect stdout to ./output, stdin from ./input)");
     ParseSuccess(
-        "! cmd; redirect stdout to stderr, stderr to stdout | ! with pipe",
-        "(! cmd; redirect stdout to stderr, stderr to stdout | ! with pipe;)");
+        "! cmd, redirect stdout to stderr, stderr to stdout | ! with pipe",
+        "(! cmd redirect stdout to stderr, stderr to stdout | ! with pipe)");
 }

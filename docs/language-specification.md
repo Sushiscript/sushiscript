@@ -88,7 +88,7 @@ The raw mode of lexer is turned on in special contexts (typically when [invoking
 ```
 <raw token>    = <raw char>*
 <raw char>     = [^<raw restrict>] | <raw escape>
-<raw restrict> = ' ' | ';' | '"' | "'" | '\' | '|'
+<raw restrict> = ' ' | ';' | '"' | "'" | '\' | '|' | ',' | ')'
 <raw escape>   = '\' (<raw restrict> | <interpolate char>)
 ```
 

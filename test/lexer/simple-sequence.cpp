@@ -119,6 +119,16 @@ TEST(SimpleSequence, TestRawModeExit) {
         TD(kIdent, "call"));
 }
 
+TEST(SimpleSequence, TestNormalRawSwitch) {
+    NoIndentStrIsToks(
+        "switch ! cmd\n case", TK(kSwitch), TK(kExclamation), TK(kRawString),
+        TD(kSegment, "cmd"), TK(kInterDone), TK(kLineBreak), TD(kIndent, 1),
+        TK(kCase));
+    NoIndentStrIsToks(
+        "(! cmd)", TK(kLParen), TK(kExclamation), TK(kRawString),
+        TD(kSegment, "cmd"), TK(kInterDone), TK(kRParen));
+}
+
 TEST(SimpleSequence, TestRawModeLineJoin) {
     RawStrIsTokens(
         "--opt \\\n--still", TK(kRawString), TD(kSegment, "--opt"),

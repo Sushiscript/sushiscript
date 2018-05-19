@@ -521,10 +521,10 @@ unique_ptr<ast::Command> Parser::Command() {
         fail = fail or not a;
         if (a) args.push_back(std::move(*a));
     }
-    SkipStatementEnd();
+    Optional(s_.lexer, TokenT::kComma, true);
     if (fail) return nullptr;
     if (args.empty())
-        return s_.RecordError(ErrorT::kExpectCommand, std::move(*exclamation));
+        return s_.RecordErrorOnLookahead(ErrorT::kExpectCommand);
     return FromCommandArgs(std::move(args));
 }
 

@@ -5,6 +5,7 @@
 #include "./detail/lookahead-stream.h"
 #include "./token.h"
 #include <stack>
+#include <iostream>
 
 namespace sushi {
 namespace lexer {
@@ -15,6 +16,12 @@ class Lexer : public detail::LookaheadStream<Token> {
         : input_(is, start), state_{input_, true} {
         contexts_.push(NormalContext::Factory(state_));
     }
+
+    // boost::optional<Token> Next() override {
+    //     auto n = LookaheadStream<Token>::Next();
+    //     if (n) std::cout << n->ToString() << '\n';
+    //     return n;
+    // }
 
     void NewContext(Context::Factory *f) {
         contexts_.push(f(state_));
@@ -28,6 +35,7 @@ class Lexer : public detail::LookaheadStream<Token> {
         auto result = contexts_.top()->Lex();
         ExecuteAction(result.action);
         if (not result.token and result.action) return Consume();
+        // if (result.token) std::cout << result.token->ToString() << '\n';
         return std::move(result.token);
     }
 

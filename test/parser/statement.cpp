@@ -114,13 +114,13 @@ TEST(StatementTest, TestSwitch) {
     ParseSuccess(
         "switch ! cmd\n case 1\n  print x\n case 2\n  print x\n default\n  "
         "print y",
-        "switch (! cmd;)\n case 1\n  (print x)\n case 2\n  (print x)\n "
+        "switch (! cmd)\n case 1\n  (print x)\n case 2\n  (print x)\n "
         "default\n  "
         "(print y)");
     ParseSuccess(
         "switch ! cmd\n case ! cmd2\n  print x\n case 2\n  print x\n default\n  "
         "print y",
-        "switch (! cmd;)\n case (! cmd2;)\n  (print x)\n case 2\n  (print x)\n "
+        "switch (! cmd)\n case (! cmd2)\n  (print x)\n case 2\n  (print x)\n "
         "default\n  "
         "(print y)");
     ParseSuccess(

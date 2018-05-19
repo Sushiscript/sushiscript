@@ -40,6 +40,8 @@ boost::optional<Token> RawExitSignal(LexerState &s) {
     case '\n': return UnsafeLineBreak(s);
     case ';': return SkipAndMake(s, Token::Type::kSemicolon);
     case '|': return SkipAndMake(s, Token::Type::kPipe);
+    case ')': return SkipAndMake(s, Token::Type::kRParen);
+    case ',': return SkipAndMake(s, Token::Type::kComma);
     default: return boost::none;
     }
 }

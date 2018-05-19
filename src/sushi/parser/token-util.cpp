@@ -191,7 +191,8 @@ bool IsAtomExprLookahead(Token::Type t) {
 }
 
 bool IsRawExit(lexer::Token::Type t) {
-    TOKEN_IN(t, TT(kSemicolon), TT(kLineBreak), TT(kPipe));
+    TOKEN_IN(
+        t, TT(kSemicolon), TT(kLineBreak), TT(kPipe), TT(kComma), TT(kRParen));
 }
 
 bool IsExpressionLookahead(lexer::Token::Type t) {

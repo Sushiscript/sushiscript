@@ -159,7 +159,7 @@ struct Command2Str : CommandLikeVisitor::Const, Result {
         for (auto &p : c.parameters) {
             params.push_back(ToString(p));
         }
-        result = (boost::format("! %s;") % boost::join(params, " ")).str();
+        result = (boost::format("! %s") % boost::join(params, " ")).str();
     }
 };
 
