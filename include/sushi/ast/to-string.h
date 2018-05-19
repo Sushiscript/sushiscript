@@ -226,7 +226,7 @@ struct Statement2Str : StatementVisitor::Const, Result {
             fd.ret_type ? ": " + ToString(fd.ret_type.get()) : "";
         std::string body = ToString(fd.body, 2 + indent);
         for (auto &param : fd.params) {
-            params.push_back((boost::format("%s : %s") % param.name %
+            params.push_back((boost::format("%s: %s") % param.name %
                               ToString(param.type.get()))
                                  .str());
         }

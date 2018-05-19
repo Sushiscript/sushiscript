@@ -64,7 +64,7 @@ optional<unique_ptr<ast::Statement>> Parser::CurrentBlockStatement() {
 }
 
 int Parser::NextStatementIndent() {
-    Optional(s_.lexer, TokenT::kLineBreak);
+    Optional(s_.lexer, TokenT::kLineBreak, false);
     auto lookahead = Lookahead(s_.lexer, false);
     if (not lookahead) {
         return -1;
@@ -72,11 +72,11 @@ int Parser::NextStatementIndent() {
     if (lookahead->type == TokenT::kIndent) {
         return lookahead->IntData();
     }
-    return lookahead->location.column;
+    return lookahead->location.column - 1;
 }
 
 unique_ptr<ast::Statement> Parser::Statement() {
-    auto lookahead = Lookahead(s_.lexer, true);
+    auto lookahead = SkipSpaceLookahead(s_.lexer);
     if (not lookahead) return nullptr;
     switch (lookahead->type) {
     case TokenT::kExport:
@@ -118,8 +118,11 @@ Parser::VariableDef(bool is_export, optional<std::string> name) {
 }
 
 std::vector<ast::FunctionDef::Parameter> Parser::ParameterList() {
+    if (SkipSpaceNext(s_.lexer)->type == TokenT::kUnit) return {};
+    if (Optional(s_.lexer, TokenT::kRParen, true)) return {};
     std::vector<ast::FunctionDef::Parameter> result;
     for (;;) {
+        // buggy: can't support empty list
         auto ident = s_.AssertLookahead(TokenT::kIdent, true);
         auto colon = s_.AssertLookahead(TokenT::kColon);
         auto type = WithRecovery(
@@ -153,7 +156,8 @@ unique_ptr<ast::Statement> Parser::Definition() {
     auto ident = s_.AssertLookahead(TokenT::kIdent);
     if (not define) ident = none;
     auto ident_name = ident > [](const Token &t) { return t.StrData(); };
-    if (Optional(s_.lexer, TokenT::kLBrace))
+    auto l = LookaheadAsToken(s_.lexer, true);
+    if (l.type == TokenT::kUnit or l.type == TokenT::kLParen)
         return FunctionDef(static_cast<bool>(export_), ident_name);
     return VariableDef(static_cast<bool>(export_), ident_name);
 }
@@ -234,9 +238,11 @@ boost::optional<ast::SwitchStmt::Case> Parser::Case() {
         Optional(s_.lexer, TokenT::kColon, true);
         auto p = Program();
         if (p.statements.empty()) return none;
+        case_.body = std::move(p);
     } else if (Optional(s_.lexer, TokenT::kCase, true)) {
         auto cond = Condition();
         if (cond == nullptr) return none;
+        case_.condition = std::move(cond);
         case_.body = Program(true);
     }
     return std::move(case_);
@@ -262,7 +268,7 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
     auto switched = WithRecovery(
         &Parser::Expression, {TokenT::kCase, TokenT::kDefault}, true);
     auto l = SkipSpaceLookahead(s_.lexer);
-    if (not l or l->type != TokenT::kCase or l->type != TokenT::kDefault)
+    if (not l or (l->type != TokenT::kCase and l->type != TokenT::kDefault))
         return nullptr;
 
     auto indent = NextStatementIndent();
@@ -306,7 +312,7 @@ unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
 }
 
 unique_ptr<ast::Expression> Parser::PrimaryExpr() {
-    auto l = *Lookahead(s_.lexer, true);
+    auto l = *SkipSpaceLookahead(s_.lexer);
     if (l.type == TokenT::kIdent) return StartWithIdentifier();
     if (l.type == TokenT::kLBrace or l.type == TokenT::kLParen or
         IsLiteral(l.type))

@@ -106,6 +106,42 @@ TEST(StatementTest, TestIf) {
         "z)");
 }
 
-TEST(StatementTest, TestSwitch) {}
+TEST(StatementTest, TestSwitch) {
+    ParseSuccess(
+        "switch x\n case 1\n  print x\n case 2\n  print x\n default\n  print y",
+        "switch x\n case 1\n  (print x)\n case 2\n  (print x)\n default\n  "
+        "(print y)");
+    ParseSuccess(
+        "switch ! cmd\n case 1\n  print x\n case 2\n  print x\n default\n  "
+        "print y",
+        "switch (! cmd;)\n case 1\n  (print x)\n case 2\n  (print x)\n "
+        "default\n  "
+        "(print y)");
+    ParseSuccess(
+        "switch ! cmd\n case ! cmd2\n  print x\n case 2\n  print x\n default\n  "
+        "print y",
+        "switch (! cmd;)\n case (! cmd2;)\n  (print x)\n case 2\n  (print x)\n "
+        "default\n  "
+        "(print y)");
+    ParseSuccess(
+        "switch x\n case 1\n case 2\n  print x\n default\n  print y",
+        "switch x\n case 1\n\n case 2\n  (print x)\n default\n  (print y)");
+}
 
-TEST(StatementTest, TestFunctionDef) {}
+TEST(StatementTest, TestFunctionDef) {
+    ParseSuccess("define f() = return 1", "define f() =\n  return 1");
+    ParseSuccess("define f() =\n return 1", "define f() =\n  return 1");
+    ParseSuccess(
+        "export define f() = return 1", "export define f() =\n  return 1");
+    ParseSuccess("define f( ) = return 1", "define f() =\n  return 1");
+    ParseSuccess("define f(): Int = return 1", "define f(): Int =\n  return 1");
+    ParseSuccess(
+        "define f(x: Int): Int = return x",
+        "define f(x: Int): Int =\n  return x");
+    ParseSuccess(
+        "define f(x: Int, y: String): Int = return length y",
+        "define f(x: Int, y: String): Int =\n  return (length y)");
+    ParseSuccess(
+        "define f(x: Int, y: String, z: Array Int): Int =\n return z[x]",
+        "define f(x: Int, y: String, z: (Array Int)): Int =\n  return z[x]");
+}
