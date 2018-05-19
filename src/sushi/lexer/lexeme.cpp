@@ -46,7 +46,7 @@ bool TryJoinLine(LexerState &s) {
 }
 
 Token UnsafeLineBreak(LexerState &s) {
-    s.line_start = true;
+    s.LineStart(true);
     return SkipAndMake(s, Token::Type::kLineBreak);
 }
 
@@ -107,7 +107,7 @@ Token Indentation(LexerState &s) {
     if (TryJoinLine(s) or static_cast<bool>(TryLineBreak(s))) {
         return Indentation(s);
     }
-    s.line_start = false;
+    s.LineStart(false);
     return token(Token::Type::kIndent, indent.size());
 }
 

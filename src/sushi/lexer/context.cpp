@@ -4,6 +4,8 @@
 #include "sushi/lexer/error.h"
 #include "sushi/lexer/token.h"
 
+#include <iostream>
+
 namespace sushi {
 namespace lexer {
 
@@ -73,6 +75,7 @@ LexResult NormalContext::StartOfLine() {
 }
 
 LexResult NormalContext::Lex() {
+    std::cout << "normal context state: "  << &state << '\n';
     if (state.line_start) return StartOfLine();
     SkipSpaces(state);
     TryLineComment(state);
@@ -81,7 +84,8 @@ LexResult NormalContext::Lex() {
 }
 
 LexResult RawContext::Lex() {
-    state.line_start = false;
+    std::cout << "raw context state: " << &state << '\n';
+    state.LineStart(false);
     SkipSpaces(state);
     TryLineComment(state);
     if (not state.input.Lookahead()) return none;
