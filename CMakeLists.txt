@@ -22,6 +22,12 @@ add_executable(sushiscript ${CMAKE_SOURCE_DIR}/src/main.cpp)
 file(GLOB_RECURSE SUSHI_LEXER_SRC ${SUSHI_SRC_DIR}/sushi/lexer/*.cpp)
 file(GLOB LEXER_TEST_SRC ${SUSHI_TEST_DIR}/lexer/*.cpp)
 
+file(GLOB_RECURSE SUSHI_PARSER_SRC ${SUSHI_SRC_DIR}/sushi/parser/*.cpp)
+file(GLOB PARSER_TEST_SRC ${SUSHI_TEST_DIR}/parser/*.cpp)
+
 add_executable(lexer-test ${LEXER_TEST_SRC} ${SUSHI_LEXER_SRC})
+add_executable(parser-test
+    ${PARSER_TEST_SRC} ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC})
 
 target_link_libraries(lexer-test ${CONAN_LIBS_GTEST})
+target_link_libraries(parser-test ${CONAN_LIBS_GTEST})
