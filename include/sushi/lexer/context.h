@@ -167,7 +167,6 @@ class InterpolateContext : public Context {
     }
 
     Context::LexResult Lex() override {
-        std::cout << "lex context state: " << &state << '\n';
         auto &input = state.input;
         auto l = input.NextLocation();
         auto p = ExtractSegment();

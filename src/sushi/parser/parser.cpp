@@ -72,7 +72,7 @@ int Parser::NextStatementIndent() {
     if (lookahead->type == TokenT::kIndent) {
         return lookahead->IntData();
     }
-    return lookahead->location.column;
+    return lookahead->location.column - 1;
 }
 
 unique_ptr<ast::Statement> Parser::Statement() {

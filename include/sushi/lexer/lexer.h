@@ -4,8 +4,8 @@
 #include "./context.h"
 #include "./detail/lookahead-stream.h"
 #include "./token.h"
+#include <memory>
 #include <stack>
-#include <iostream>
 
 namespace sushi {
 namespace lexer {
@@ -13,8 +13,9 @@ namespace lexer {
 class Lexer : public detail::LookaheadStream<Token> {
   public:
     Lexer(std::istream &is, TokenLocation start)
-        : input_(is, start), state_{input_, true} {
-        contexts_.push(NormalContext::Factory(state_));
+        : state_(std::make_shared<detail::LexerState>(
+              detail::SourceStream(is, start), true)) {
+        contexts_.push(NormalContext::Factory(*state_));
     }
 
     // boost::optional<Token> Next() override {
@@ -24,7 +25,7 @@ class Lexer : public detail::LookaheadStream<Token> {
     // }
 
     void NewContext(Context::Factory *f) {
-        contexts_.push(f(state_));
+        contexts_.push(f(*state_));
     }
     bool DestoryContext() {
         if (contexts_.size() <= 1) return false;
@@ -42,12 +43,13 @@ class Lexer : public detail::LookaheadStream<Token> {
   private:
     void ExecuteAction(boost::optional<Context::Factory *> action) {
         if (not action) return;
-        if (*action == nullptr) DestoryContext();
-        else NewContext(*action);
+        if (*action == nullptr)
+            DestoryContext();
+        else
+            NewContext(*action);
     }
 
-    detail::SourceStream input_;
-    detail::LexerState state_;
+    std::shared_ptr<detail::LexerState> state_;
     std::stack<std::unique_ptr<Context>> contexts_;
 };
 
