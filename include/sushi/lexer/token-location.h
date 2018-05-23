@@ -14,6 +14,10 @@ struct TokenLocation {
 
     TokenLocation() = delete;
 
+    static TokenLocation Eof(const std::string &path = "") {
+        return {path, -1, -1};
+    }
+
     bool operator<(const TokenLocation &rhs) const {
         // TODO: take src_path into account
         return std::tie(line, column) < std::tie(rhs.line, rhs.column);
@@ -33,6 +37,18 @@ struct TokenLocation {
     }
     bool operator>=(const TokenLocation &rhs) const {
         return not(*this < rhs);
+    }
+
+    bool IsEof() const {
+        return line == -1 and column == -1;
+    }
+
+    std::string ToString() const {
+        if (IsEof()) return "EOF";
+        std::string path;
+        if (not src_path.empty()) path = "@" + path;
+        return "(ln:" + std::to_string(line) +
+               ",col:" + std::to_string(column) + path + ")";
     }
 
     void NextColumn() {

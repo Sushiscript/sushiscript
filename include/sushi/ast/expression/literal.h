@@ -11,6 +11,7 @@ namespace ast {
 
 struct IntLit;
 struct BoolLit;
+struct CharLit;
 struct UnitLit;
 struct FdLit;
 struct StringLit;
@@ -20,13 +21,15 @@ struct ArrayLit;
 struct MapLit;
 
 using LiteralVisitor = sushi::util::DefineVisitor<
-    IntLit, BoolLit, UnitLit, FdLit, StringLit, PathLit, RelPathLit, ArrayLit,
-    MapLit>;
+    IntLit, CharLit, BoolLit, UnitLit, FdLit, StringLit, PathLit, RelPathLit,
+    ArrayLit, MapLit>;
 
 struct Literal : Expression {
     SUSHI_ACCEPT_VISITOR_FROM(Expression)
 
     SUSHI_VISITABLE(LiteralVisitor);
+
+    virtual ~Literal() = default;
 };
 
 struct IntLit : Literal {
@@ -35,6 +38,14 @@ struct IntLit : Literal {
     IntLit(int value) : value(value) {}
 
     int value;
+};
+
+struct CharLit : Literal {
+    SUSHI_ACCEPT_VISITOR_FROM(Literal);
+
+    CharLit(char value) : value(value) {}
+
+    char value;
 };
 
 struct BoolLit : Literal {

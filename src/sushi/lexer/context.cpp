@@ -17,7 +17,6 @@ namespace {
 
 LexResult NormalDispatch(LexerState &s) {
     char lookahead = *s.input.Lookahead();
-    // if (lookahead == '"') return unsafe::StringLiteral(s);
     if (lookahead == '\n') return UnsafeLineBreak(s);
     if (lookahead == '"')
         return Context::EmitEnter<StringLitContext>(
@@ -26,24 +25,35 @@ LexResult NormalDispatch(LexerState &s) {
     if (isdigit(lookahead)) return IntLiteral(s);
     if (isindenthead(lookahead)) return Identifier(s);
     if (boost::optional<Token> punct = Punctuation(s)) return *punct;
+    if (lookahead == '!')
+        return Context::EmitEnter<RawContext>(
+            SkipAndMake(s, Token::Type::kExclamation));
     if (lookahead == '.' or lookahead == '/' or lookahead == '~')
         return Context::EmitEnter<PathLitContext>(
             Token{Token::Type::kPathLit, s.input.NextLocation(), 0});
     return UnknownCharacter(s);
 }
 
+boost::optional<Token> RawExitSignal(LexerState &s) {
+    char lookahead = *s.input.Lookahead();
+    switch (lookahead) {
+    case '\n': return UnsafeLineBreak(s);
+    case ';': return SkipAndMake(s, Token::Type::kSemicolon);
+    case '|': return SkipAndMake(s, Token::Type::kPipe);
+    case ')': return SkipAndMake(s, Token::Type::kRParen);
+    case ',': return SkipAndMake(s, Token::Type::kComma);
+    default: return boost::none;
+    }
+}
+
 Context::LexResult RawDispatch(LexerState &s) {
     auto token = RecordLocation(s);
     char lookahead = *s.input.Lookahead();
-    if (lookahead == '\n') return UnsafeLineBreak(s);
+    if (boost::optional<Token> quit = RawExitSignal(s))
+        return Context::EmitExit(*quit);
     if (lookahead == '"')
         return Context::EmitEnter<StringLitContext>(
             SkipAndMake(s, Token::Type::kStringLit));
-    if (lookahead == '\'') return CharLiteral(s);
-    if (lookahead == ';') return SkipAndMake(s, Token::Type::kSemicolon);
-    if (lookahead == '.' or lookahead == '/' or lookahead == '~')
-        return Context::EmitEnter<PathLitContext>(
-            token(Token::Type::kPathLit, 0));
     if (RawConfig().Prohibit(lookahead))
         return SkipAndMake(s, Token::Type::kUnknownChar, 1, lookahead);
     return Context::EmitEnter<RawTokenContext>(
@@ -71,12 +81,10 @@ LexResult NormalContext::Lex() {
 }
 
 LexResult RawContext::Lex() {
-    state.line_start = false;
+    state.LineStart(false);
     SkipSpaces(state);
     TryLineComment(state);
     if (not state.input.Lookahead()) return none;
-    if (optional<Token> t = TryLineBreak(state))
-        return LexResult(std::move(*t));
     return RawDispatch(state);
 }
 

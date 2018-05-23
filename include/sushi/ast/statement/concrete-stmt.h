@@ -15,14 +15,10 @@ struct Assignment : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     Assignment(
-        Identifier ident, std::unique_ptr<Expression> index,
-        std::unique_ptr<Expression> value)
-        : ident(std::move(ident)), index(std::move(index)),
-          value(std::move(value)) {}
+        std::unique_ptr<Expression> lvalue, std::unique_ptr<Expression> value)
+        : lvalue(std::move(lvalue)), value(std::move(value)) {}
 
-    Identifier ident;
-    // index is nullptr in a normal assignment
-    std::unique_ptr<Expression> index;
+    std::unique_ptr<Expression> lvalue;
     std::unique_ptr<Expression> value;
 };
 
@@ -52,7 +48,7 @@ struct FunctionDef : Statement {
 
     FunctionDef(
         bool is_export, const std::string &name, std::vector<Parameter> params,
-        std::unique_ptr<TypeExpr> ret_type, std::unique_ptr<Program> body)
+        std::unique_ptr<TypeExpr> ret_type, Program body)
         : is_export(is_export), name(name), params(std::move(params)),
           ret_type(std::move(ret_type)), body(std::move(body)) {}
 
@@ -61,30 +57,30 @@ struct FunctionDef : Statement {
     std::vector<Parameter> params;
     // ret_type can be nullptr
     std::unique_ptr<TypeExpr> ret_type;
-    std::unique_ptr<Program> body;
+    Program body;
 };
 
 struct IfStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     IfStmt(
-        std::unique_ptr<Expression> condition,
-        std::unique_ptr<Program> true_body, std::unique_ptr<Program> false_body)
+        std::unique_ptr<Expression> condition, Program true_body,
+        Program false_body)
         : condition(std::move(condition)), true_body(std::move(true_body)),
           false_body(std::move(false_body)) {}
 
     std::unique_ptr<Expression> condition;
-    std::unique_ptr<Program> true_body;
-    // false_body_ can be nullptr
-    std::unique_ptr<Program> false_body;
+    Program true_body;
+    // false_body_ can be empty
+    Program false_body;
 };
 
 struct ReturnStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
-    ReturnStmt(std::unique_ptr<Expression> value) : value(value) {}
+    ReturnStmt(std::unique_ptr<Expression> value) : value(std::move(value)) {}
 
-    // value can be nullptr, default to be "unit"
+    // value can be empty, default to be "()"(unit)
     std::unique_ptr<Expression> value;
 };
 
@@ -92,16 +88,17 @@ struct SwitchStmt : Statement {
     SUSHI_ACCEPT_VISITOR_FROM(Statement)
 
     struct Case {
+        // nullptr means default case
         std::unique_ptr<Expression> condition;
-        std::unique_ptr<Program> body;
+        Program body;
     };
 
-    SwitchStmt(std::vector<Case> cases, std::unique_ptr<Program> default_)
-        : cases(std::move(cases)), default_(std::move(default_)) {}
+    SwitchStmt(
+        std::unique_ptr<ast::Expression> switched, std::vector<Case> cases)
+        : switched(std::move(switched)), cases(std::move(cases)) {}
 
+    std::unique_ptr<ast::Expression> switched;
     std::vector<Case> cases;
-    // default can be nullptr
-    std::unique_ptr<Program> default_;
 };
 
 struct ForStmt : Statement {
@@ -121,11 +118,11 @@ struct ForStmt : Statement {
         std::unique_ptr<Expression> condition;
     };
 
-    ForStmt(Condition condition, std::unique_ptr<Program> body)
+    ForStmt(Condition condition, Program body)
         : condition(std::move(condition)), body(std::move(body)) {}
 
     Condition condition;
-    std::unique_ptr<Program> body;
+    Program body;
 };
 
 struct LoopControlStmt : Statement {

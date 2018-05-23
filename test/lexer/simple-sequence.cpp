@@ -84,3 +84,58 @@ TEST(SimpleSequence, TestConnected) {
         "./path/and#comment", TK(kPathLit), TD(kSegment, "./path/and"),
         TK(kInterDone));
 }
+
+TEST(SimpleSequence, TestRawModeEnter) {
+    NoIndentStrIsToks(
+        "! --opt", TK(kExclamation), TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone));
+    NoIndentStrIsToks(
+        "! !", TK(kExclamation), TK(kRawString), TD(kSegment, "!"),
+        TK(kInterDone));
+}
+
+TEST(SimpleSequence, TestRawModeExit) {
+    RawStrIsTokens(
+        "--opt  | function call", TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone), TK(kPipe), TD(kIdent, "function"), TD(kIdent, "call"));
+    RawStrIsTokens(
+        "--opt  ; function call", TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone), TK(kSemicolon), TD(kIdent, "function"),
+        TD(kIdent, "call"));
+    RawStrIsTokens(
+        "--opt| function call", TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone), TK(kPipe), TD(kIdent, "function"), TD(kIdent, "call"));
+    RawStrIsTokens(
+        "--opt; function call", TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone), TK(kSemicolon), TD(kIdent, "function"),
+        TD(kIdent, "call"));
+    RawStrIsTokens(
+        "--opt\n function call", TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone), TK(kLineBreak), TD(kIndent, 1), TD(kIdent, "function"),
+        TD(kIdent, "call"));
+    RawStrIsTokens(
+        "--opt   \n function call", TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone), TK(kLineBreak), TD(kIndent, 1), TD(kIdent, "function"),
+        TD(kIdent, "call"));
+}
+
+TEST(SimpleSequence, TestNormalRawSwitch) {
+    NoIndentStrIsToks(
+        "switch ! cmd\n case", TK(kSwitch), TK(kExclamation), TK(kRawString),
+        TD(kSegment, "cmd"), TK(kInterDone), TK(kLineBreak), TD(kIndent, 1),
+        TK(kCase));
+    NoIndentStrIsToks(
+        "(! cmd)", TK(kLParen), TK(kExclamation), TK(kRawString),
+        TD(kSegment, "cmd"), TK(kInterDone), TK(kRParen));
+}
+
+TEST(SimpleSequence, TestRawModeLineJoin) {
+    RawStrIsTokens(
+        "--opt \\\n--still", TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone), TK(kRawString), TD(kSegment, "--still"),
+        TK(kInterDone));
+    RawStrIsTokens(
+        "--opt \\\n --still \\\n --is", TK(kRawString), TD(kSegment, "--opt"),
+        TK(kInterDone), TK(kRawString), TD(kSegment, "--still"), TK(kInterDone),
+        TK(kRawString), TD(kSegment, "--is"), TK(kInterDone));
+}

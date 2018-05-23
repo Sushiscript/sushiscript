@@ -43,7 +43,7 @@ Following punctuations are meaningful:
 
 ```
 <built-in type>
-	= "Unit" | "Bool"    | "Char"  | "Int" | "String"
+	= "()"   | "Bool"    | "Char"  | "Int" | "String"   | "Function"
 	| "Path" | "RelPath" | "Array" | "Map" | "ExitCode" | "FD"
 ```
 
@@ -77,7 +77,7 @@ _TODO: string escaped characters may be incomplete_
 
 ```
 <tradition special> =
-	'\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
+  '\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
 ```
 
 
@@ -88,7 +88,7 @@ The raw mode of lexer is turned on in special contexts (typically when [invoking
 ```
 <raw token>    = <raw char>*
 <raw char>     = [^<raw restrict>] | <raw escape>
-<raw restrict> = ' ' | ';' | '"' | "'" | '\'
+<raw restrict> = ' ' | ';' | '"' | "'" | '\' | '|' | ',' | ')'
 <raw escape>   = '\' (<raw restrict> | <interpolate char>)
 ```
 
@@ -97,8 +97,8 @@ The raw mode of lexer is turned on in special contexts (typically when [invoking
 ```
 <string char> = [^<string restrict>] | <string escape>
 <string escape>
-	= '\' ( <string restrict> | <interpolate char>)
-	| <tradition special>
+  = '\' ( <string restrict> | <interpolate char>)
+  | <tradition special>
 <string restrict> = '"'
 ```
 
@@ -115,7 +115,7 @@ The raw mode of lexer is turned on in special contexts (typically when [invoking
 
 ```
 <bool literal> = "true" | "false"
-<unit literal> = "unit"
+<unit literal> = "()"
 <fd literal>   = "stdin" | "stdout" | "stderr"
 ```
 
@@ -187,7 +187,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.1.1 Array Literal
 
 ```
-<array literal> = '[' <array items>? ']'
+<array literal> = '{' <array items>? '}'
 <array items>   = <expression> (',' <expression>)*
 ```
 
@@ -202,8 +202,9 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 #### 3.1.2 Atom Expression
 
 ```
-<atom expr>  = <literal> | <identifier> | <paren expr>
+<atom expr>  = <literal> | <identifier> | <paren expr> | <atom expr> <index>
 <paren expr> = '(' <expression> ')'
+<index>      = '[' <expression> ']'
 ```
 
 #### 3.1.3 Operator Expression
@@ -231,7 +232,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.3.3 Unary Operator
 
 ```
-<unop expr> = <unary op> <expression>
+<unop expr> = <unary op> <atom expr>
 <unary op> = '+' | '-' | "not"
 ```
 
@@ -240,7 +241,7 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ##### 3.1.4.1 Function Call
 
 ```
-<function call> = <identifier> <atom expr>*
+<function call> = <identifier> <atom expr>+
 ```
 
 ##### 3.1.4.2 Invoking Command
@@ -248,10 +249,10 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <command> = '!' <comamnd param>* <command end>
 <command param>
-	= <interpolation>
-	| <raw token>
-	| <string literal>
-	| <char literal>
+  = <interpolation>
+  | <raw token>
+  | <string literal>
+  | <char literal>
 <command end> = <line break> | ';'
 ```
 
@@ -261,8 +262,8 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 <redirection>   = "redirect" <redirect item> (',' <redirect item>)*
 <redirect item> = <fd literal>? <redirect action>
 <redirect action>
-	= "to" (<expression> "append"? | "here")
-	| "from" <expression>
+  = "to" (<expression> "append"? | "here")
+  | "from" <expression>
 ```
 
 ##### 3.1.4.5 Procedure Call
@@ -272,33 +273,28 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 <pipeline> = '|' <procedure call>
 ```
 
-#### 3.1.5 Indexing
-
-```
-<indexing> = <expression> '[' <expression> ']'
-```
-
-
-#### 3.1.6 Expression
+#### 3.1.5 Expression
 
 ```
 <expression>
-	= <procedure call>
-	| <atom expr>
-	| <binop expr>
-	| <unop expr>
-	| <indexing>
+  = <procedure call>
+  | <atom expr>
+  | <binop expr>
+  | <unop expr>
+  | <indexing>
 ```
 
-#### 3.1.7 Type Expression
+#### 3.1.6 Type Expression
 
 ```
-<type> = <simple type> | <array type> | <map type>
+<type> = <simple type> | <array type> | <map type> | <function type>
 <simple type>
 	= "Int"  | "Bool" | "String"
-	| "Path" | "Unit" | "FD" | "ExitCode"
-<array type>   = "Array" <simple type>
-<map type>     = "Map" <simple type> <simple type>
+	| "Path" | "()"   | "FD" | "ExitCode"
+<array type>    = "Array" <simple type>
+<map type>      = "Map" <simple type> <simple type>
+<function type> = "Function" <atom-type> <atom type>*
+<atom type>     = <simple type> | '(' <type> ')'
 ```
 
 ### 3.2 Statement
@@ -314,6 +310,8 @@ If we say "`<statement>` introduces new block on `<program>`", all indentations 
 
 And all statements within the same innermost block must have same level of indentation.
 
+If there's no line break before `<program>`, the indentation level of that block is the column number of the first token in that `<program>` minus 1.
+
 #### 3.2.1 Definition
 
 ```
@@ -324,14 +322,14 @@ And all statements within the same innermost block must have same level of inden
 
 ```
 <define var> =
-	"export"? "define" <identifier> ( ':' <type> )? '=' <expression>
+  "export"? "define" <identifier> ( ':' <type> )? '=' <expression>
 ```
 
 ##### 3.2.1.2 Function Definition
 
 ```
 <define func> =
-	"export"? "define" <identifier> '(' <param list>? ')' '=' <program>
+  "export"? "define" <identifier> '(' <param list>? ')' '=' <program>
 <param list>  = <param dec> (',' <param dec>)*
 <param dec>   = <identifier> ':' <type>
 ```
@@ -341,12 +339,13 @@ And all statements within the same innermost block must have same level of inden
 #### 3.2.2 Assignment
 
 ```
-<assignment> = (<identifier> | <indexing>) '=' <expression>
+<assignment> = <expression> '=' <expression>
 ```
 
 #### 3.2.3 return
 
 `return` is used for returning from the control flow of current enclosing function.
+
 
 ```
 <return> = return <expression>
@@ -378,8 +377,8 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 ```
 <for> = "for" <loop condition> ':' <loop body>
 <loop condition>
-	= <identifier> "in" <expression>
-	| <expression>
+  = <identifier> "in" <expression>
+  | <expression>
 <loop body> = ( <statement> | <break> | <continue> )*
 ```
 
@@ -396,12 +395,12 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ```
 <statement>
-	= <expression>
-	| <definition>
-	| <assignment>
-	| <if>
-	| <switch>
-	| <for>
+  = <expression>
+  | <definition>
+  | <assignment>
+  | <if>
+  | <switch>
+  | <for>
 <program> = <statement>*
 ```
 
@@ -427,7 +426,7 @@ When we add colon between the angle bracket like `<E : T>`. We means expression 
 
 #### 4.2.3 Simple Types
 
-Simple types (or atom types) are types that doesn't contains other types in itself. 
+Simple types (or atom types) are types that doesn't contains other types in itself.
 
 #### 4.2.4 Parameterized Type
 
@@ -700,12 +699,14 @@ Types that can instantiate both `EqualComparable` and `OrderComparable` can inst
 #### 4.7.6 Indexing
 
 ```
-<array index : T> = <Array T> [ <Int> ]
-<map index : V> = <Map K V> [ <K> ]
+<array index  : T>    = <Array T> [ <Int> ]
+<map index    : V>    = <Map K V> [  <K>  ]
+<string index : Char> = <String>  [ <Int> ]
 ```
 
 - `<array index>` array indexing, index counts from `0`
 - `<map index>` retrieving the mapped value by the key
+- `<string index>` string indexing, index counts from `0`
 
 _todo: what happens when out of range?_
 
@@ -713,6 +714,7 @@ _todo: what happens when out of range?_
 
 ```
 <function call : Ret> = <Function Ret P1 P2 ...> <P1> <P2> ...
+                      | <Function Ret> ()
 ```
 
 - `<call>` calling a defined function and retriving the return value of function
@@ -757,6 +759,7 @@ _todo: what happens when out of range?_
 <return> = return <expr : T>
 ```
 
+- If there is no function parameter, the default function parameter type is `()`.
 - If return type of `func` is explicitly stated, the definition statement generates type requirements on all the `return` statement inside the body of the function with what's represented by type expression `type`. If all requirements are satisfied, `func` is an well-typed expression in the following program.
 - Otherwise, the first `return` statement with no recursive call to `func` (calling `func` is not a sub-expression of `expr`) instantiate the type parameter `T` and generate type requirements on the expression of other return statements accordingly. Only if: **a.** Such `return` statement is found; **b.** All type requirements generated by this `return` statement are satisfied; then `func` becomes a well-typed expression in the following program.
 - If `<expr>` in the return statement is omitted, `<expr>` is `unit` by default.
@@ -797,3 +800,308 @@ The required types of expression following `case` are:
 
 ## 6. Translation
 
+### 6.0 Prologue
+
+#### 6.0.1 Simple Translation Example
+
+```sushi
+for i in [1, 2, 3, 4, 5]:
+  ! ./random.out redirect to ./inputs/in${i}
+  ! ./a.out redirect to ./outputs/out${i} , from ./inputs/in${i}
+```
+
+Traslate to -->
+
+```bash
+for i in ($((0)) $((1)) $((2)) $((3)) $((5))); do
+  ./random.out > ./inputs/in${i}
+  ./a.out > ./outputs/out${i} < ./inputs/in${i}
+done
+```
+
+#### 6.0.2 Wrapped by a `main` function
+
+It might seem weird that all the codes translated are wrapped in a `main` function, and call main function at the end. We do this because we use `local` as many as possible. `local` ensures that the variables are just **in** the function scope.
+
+### 6.1 Definition
+
+|type       |declare option  |translated like                   |
+|:---------:|:--------------:|:--------------------------------:|
+|Int        |-i              |`declare -i a=1`                  |
+|Bool       |-i              |`declare -i a=1`(true)            |
+|String     |                |`declare a="abc"`                 |
+|Path       |                |`declare a="/foo"`                |
+|RelPath    |                |`declare a="./bar"`               |
+|Unit       |                |`declare unit=""`                 |
+|FD         |                |`0`(stdin)/`1`(stdout)/`2`(stderr)|
+|ExitCode   |-i              |`gcc; declare -i code=$?`         |
+|Array      |-a              |`declare -a arr=("a" "b" "c")`    |
+|Map        |-A              |`declare -A map=(["a"]="b")`      |
+|Function   |-f              |`declare -f func="otherfunc"`     |
+|No Specific|                |Inferred from rhs                 |
+
+#### 6.1.1 Variable Definition
+
++ `define` statement will be all translated into `local` statement
++ `export` statement will be all translated into `declare` statement, with option `-gx`
++ If type is not specified in the definition, the variable's type will be infered from the right value
++ For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value.
++ For `Function` type: function name in definition and identifier of Function type are not the same. Identifier of Function type is actually a string. In the translated code, we use `$func` to call the function. Function name in definition can be directly called by `func`.
++ For `Bool` type, we treat it as integer. In translation, false is `0` and true is `1`, which seems opposite to bash's **exit status**.
+
+##### Example
+
+```bash
+# define a : Int = 10
+local -i a=10
+# define s : String = "abc"
+local s="abc"
+# export define ex : String = "def"
+declare -gx ex="def"
+# define arr : Array Int = [1, 2, 3]
+local -ai arr=($((1)) $((2)) $((3)))
+# define map : Map String String = { "a": "abc", "b": "def" }
+local -A map=(
+  ["a"]="abc"
+  ["b"]="def"
+)
+# define b = a
+local -i b=$a
+# define exit : ExitCode = ! gcc
+gcc
+local -i exit=$?
+```
+
+#### 6.1.2 Function Definition
+
++ Both `define` and `export` statement will be translated into the following style
+
+  ```bash
+  func_name() {
+    local first_para_name=$0
+    local second_para_name=$1
+    # func body
+    echo -ne "return_value"
+  }
+  ```
+
++ Return value will be "returned" by using `echo -ne`.
+
++ But for `export`, an `export` follows the function.
+
+##### Example
+
+```bash
+# define Add(a : Int, b : Int) : Int =
+#   return a + b
+Add() {
+  local -i a=$0
+  local -i b=$1
+  echo -ne $((a + b))
+}
+
+# export define Subtract(a : Int, b : Int) : Int =
+#   return a - b
+Subtract() {
+  local -i a=$0
+  local -i b=$1
+  echo -ne $((a - b))
+}
+export -f Subtract
+```
+
+### 6.2 Assignment
+
+#### 6.2.1 Assignment
+
++ For `Int` type, right value of the assignment will be treated as arithmetic. And the right part will be surrounded by `$(())`.
++ For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value. (Just like what's in Definition part)
++ For other type, right value of the assignment will be treated as string. And the right part will be surrounded by `""`.
+
+##### Example
+
+```bash
+# define x : Int = 10
+# x = 20
+# x = 10 + 20
+# define y = 20
+# x = x + y
+# y = "abc"
+local -i x=10
+x=$((20))
+x=$((10 + 20))
+local y=20
+x=$((x + y))
+y="abc"
+
+```
+
+### 6.3 if
+
+#### 6.3.1 if
+
+For convenience, all the "condition"s are surrounded by `[[]]`.
+
+When the condition is `Bool` type, the condition will be translated to `!= 0`, for example
+
+```bash
+# define t : Bool = true
+# define f : Bool = false
+# if t:
+#   ! echo "true"
+# if f:
+#   ! echo "false"
+declare -i t=1
+declare -i f=0
+if [[ $t != 0 ]]; then
+  echo "true"
+fi
+if [[ $f != 0 ]]; then
+  echo "false"
+fi
+```
+
+##### Example
+
+```bash
+# define a : Int = 1
+# define b : Int = 2
+# if a + b == 3:
+#   ! echo "ok"
+# else:
+#   ! echo "no"
+local -i a=1
+local -i b=2
+if [[ $((a + b)) == 3 ]]; then
+  echo "ok"
+else
+  echo "no"
+fi
+
+# define a = "abc"
+# define b = "def"
+# if a + b == "abcdef":
+#   ! echo "ok"
+# else:
+#   ! echo "no"
+local a="abc"
+local b="def"
+if [[ $a$b == "abcdef" ]]; then
+  echo "ok"
+else
+  echo "no"
+fi
+```
+
+### 6.4 switch
+
+#### 6.4.1 switch
+
+`switch` will be translated into `case`, every case ends with `;;`.
+
+##### Example
+
+```bash
+# switch input
+# case "y":
+#   ! echo "ok"
+# case "n":
+#   ! echo "no"
+# default:
+#   ! echo "Input again"
+case $input in
+  "y")
+    echo "ok"
+    ;;
+  "n")
+    echo "no"
+    ;;
+  *)
+    echo "Input again"
+    ;;
+esac
+```
+
+### 6.5 for
+
+#### 6.5.1 for
+
+`for` statement has 2 types
+
++ `for <identifier> in <expression>`, this is to iterate the expression
++ `for <expression>`, this is equal to `while` in other language
++ `break`, `continue` will be traslated as it is
+
+##### Example
+
+```bash
+# define arr = [4, 5, 6]
+# for i in arr:
+#   ! echo "${i}"
+declare -a arr=(4 5 6)
+for i in ${arr[@]}; do
+  echo ${i}
+done
+# for i in arr:
+#   if i == 2:
+#     break
+#   ! echo "${i}"
+for i in ${arr[@]}; do
+  if [[ $i == "5" ]]; then
+    break
+  fi
+  echo ${i}
+done
+
+# define cnt = 5
+# for cnt > 0: # Used as `while`
+#   ! echo "${cnt}"
+#   cnt = cnt - 1
+local -i cnt=5
+while [[ $cnt > 0 ]]; do
+  echo "${cnt}"
+  cnt=$(($cnt-1))
+done
+# for cnt < 5:
+#   if cnt < 4:
+#     ! echo "continue"
+#     cnt = cnt + 1
+#     continue
+#   ! echo "not continue"
+#   break
+while [[ $cnt < 5 ]]; do
+  if [[ $cnt < 4 ]]; then
+    echo "continue"
+    cnt=$(($cnt + 1))
+    continue
+  fi
+  echo "not continue"
+  break
+done
+```
+
+### 6.6 Scope
+
+#### 6.6.1 Scope
+
+Scope here is a scope of identifiers. In sushi, one program has one scope. The difference from bash is that only **function** has a scope in bash, while **if** can also introduce a program (with a scope). This difference force sushi to manage the scope itself.
+
+Only when **duplicate** identifier name is used, sushi will rename the identifier denpending on the duplicate times, and finally `unset` it at the end of scope.
+
+```bash
+# define a = 1
+# if true:
+#   define a = 2
+#   for false:
+#     define a = 3
+local -i a=1
+if [[ 1 != 0 ]]; then
+  local -i a_1=2
+  while [[ 0 != 0 ]]; do
+    local -i a_2=3
+    unset a_2
+  done
+  unset a_1
+fi
+unset a
+```

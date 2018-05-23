@@ -8,8 +8,19 @@ namespace lexer {
 namespace detail {
 
 struct LexerState {
-    SourceStream &input;
+    LexerState(SourceStream input, bool line_start)
+        : input(std::move(input)), line_start(line_start) {}
+
+    SourceStream input;
+
     bool line_start;
+
+    void LineStart(bool b) {
+        line_start = b;
+    }
+    bool LineStart() const {
+        return line_start;
+    }
 };
 
 } // namespace detail

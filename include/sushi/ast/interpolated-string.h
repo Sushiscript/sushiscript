@@ -17,7 +17,7 @@ class InterpolatedString {
 
         void Traverse(
             std::function<void(const std::string &s)> fs,
-            std::function<void(const Expression &)> fe) {
+            std::function<void(const Expression &)> fe) const {
             Visit(fs, fe);
             if (next != nullptr) {
                 next->Traverse(std::move(fs), std::move(fe));
@@ -27,7 +27,7 @@ class InterpolatedString {
 
         virtual void Visit(
             std::function<void(const std::string &)> &,
-            std::function<void(const Expression &)> &) = 0;
+            std::function<void(const Expression &)> &) const = 0;
     };
 
     void Append(std::string s) {
@@ -40,7 +40,7 @@ class InterpolatedString {
 
     void Traverse(
         std::function<void(const std::string &)> fs,
-        std::function<void(const Expression &)> fe) {
+        std::function<void(const Expression &)> fe) const {
         if (node_ != nullptr) {
             node_->Traverse(std::move(fs), std::move(fe));
         }
@@ -53,7 +53,7 @@ class InterpolatedString {
       private:
         virtual void Visit(
             std::function<void(const std::string &)> &fs,
-            std::function<void(const Expression &)> &) override {
+            std::function<void(const Expression &)> &) const override {
             fs(s);
         }
 
@@ -67,7 +67,7 @@ class InterpolatedString {
       private:
         virtual void Visit(
             std::function<void(const std::string &)> &,
-            std::function<void(const Expression &)> &fe) override {
+            std::function<void(const Expression &)> &fe) const override {
             fe(*expr);
         };
     };
