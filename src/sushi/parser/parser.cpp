@@ -273,7 +273,7 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
 
     auto indent = NextStatementIndent();
     if (indent < s_.CurrentIndent())
-        return s_.ExpectToken(ErrorT::kExpectToken);
+        return s_.ExpectToken(TokenT::kCase);
 
     auto cases = WithBlock(indent, &Parser::Cases);
     if (switched == nullptr or cases.empty()) return nullptr;
