@@ -800,308 +800,162 @@ The required types of expression following `case` are:
 
 ## 6. Translation
 
-### 6.0 Prologue
+TODO:
++ Scope
++ CommandLike
++ Indexing
 
-#### 6.0.1 Simple Translation Example
+### 6.1 Assignment
 
-```sushi
-for i in [1, 2, 3, 4, 5]:
-  ! ./random.out redirect to ./inputs/in${i}
-  ! ./a.out redirect to ./outputs/out${i} , from ./inputs/in${i}
+### 6.2 Expression
+
+Except **Variable** and **Indexing**, the following expressions only have **right value** translation.
+
+`<expr>` is expression in sushi, `<t_expr>` is the translated expression **"value"** in bash.
+
+Because `<expr>` may be translated to multiple statements in bash, `<t_expr>` is only the **final identifier**;
+Another situation is that `<expr>` can be translated directly to one expression in bash, then it will be the **expression** in bash (like `"string"`, `$((2 + 2))` and etc).
+
+#### 6.2.1 Interpolation
+Interpolation is that expressions can be interpolated in PathLit, RelPathLit, StringLit.
+`<expr>` -> ``` $<t_expr> ```
+`<t_expr>` is the identifier which `<expr>` finally becomes, but interpolation is usually translated to a few lines. Interpolations are traversed with post-order. Each expression in an interpolation will be translated and stored in a temporary variable. Finally, a temporary variable will replace the interpolation. An example is following.
+```plain
+define a = "c"
+define b = "d"
+define c = "0" + "${"a" + "b" + ${a + b}}"
 ```
 
-Traslate to -->
+-->
 
 ```bash
-for i in ($((0)) $((1)) $((2)) $((3)) $((5))); do
-  ./random.out > ./inputs/in${i}
-  ./a.out > ./outputs/out${i} < ./inputs/in${i}
-done
+a="c"
+b="d"
+_sushi_t_0_="${a}${b}" # With post-order, the interpolation `${a + b}` is firstly translated and stored in a temporary variable _sushi_t_0_
+_sushi_t_1_="ab${_sushi_t_0_}" # Then the interpolation `${"a" + "b" + ${a + b}}` is translated and stored in _sushi_t_1_, and this is the identifier the interpolation finally becomes
+c="0${_sushi_t_1_}" # Use _sushi_t_1_ to replace the interpolation, this is like translating `define c = "0" + _sushi_t_1_`
 ```
+#### 6.2.2 Variable
+Asleft value: `<identifier>` -> `<identifier>`
+As right value: `<identifier>` -> `$<identifier>`
 
-#### 6.0.2 Wrapped by a `main` function
+Exception:
++ Bool type as condition wrapped in `[[ ]]`: `<identifier>` -> `$<identifier> != 0`
 
-It might seem weird that all the codes translated are wrapped in a `main` function, and call main function at the end. We do this because we use `local` as many as possible. `local` ensures that the variables are just **in** the function scope.
+#### 6.2.3 Literal
 
-### 6.1 Definition
+##### ArrayLit
+`[<expr>, <expr>, ...]` -> `($<t_expr> $<t_expr> ...)`
+ArrayLit of `<expr>` is translated to **Indexed Array** in bash. It's `<expr>s` wrapped by `( )` and split by space character. `<expr>s` can only be simple types and they have the same types.
 
-|type       |declare option  |translated like                   |
-|:---------:|:--------------:|:--------------------------------:|
-|Int        |-i              |`declare -i a=1`                  |
-|Bool       |-i              |`declare -i a=1`(true)            |
-|String     |                |`declare a="abc"`                 |
-|Path       |                |`declare a="/foo"`                |
-|RelPath    |                |`declare a="./bar"`               |
-|Unit       |                |`declare unit=""`                 |
-|FD         |                |`0`(stdin)/`1`(stdout)/`2`(stderr)|
-|ExitCode   |-i              |`gcc; declare -i code=$?`         |
-|Array      |-a              |`declare -a arr=("a" "b" "c")`    |
-|Map        |-A              |`declare -A map=(["a"]="b")`      |
-|Function   |-f              |`declare -f func="otherfunc"`     |
-|No Specific|                |Inferred from rhs                 |
+##### BoolLit
+Ascondition wrapped in `[[ ]]`: `true` -> `(1 != 0)`, `false` -> `(0 != 0)`
+As right value in assignment: `true` -> `1`, `false` -> `0`
 
-#### 6.1.1 Variable Definition
+##### CharLit
+`'c'` -> `"c"`
+CharLit will be translated directly into string.
 
-+ `define` statement will be all translated into `local` statement
-+ `export` statement will be all translated into `declare` statement, with option `-gx`
-+ If type is not specified in the definition, the variable's type will be infered from the right value
-+ For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value.
-+ For `Function` type: function name in definition and identifier of Function type are not the same. Identifier of Function type is actually a string. In the translated code, we use `$func` to call the function. Function name in definition can be directly called by `func`.
-+ For `Bool` type, we treat it as integer. In translation, false is `0` and true is `1`, which seems opposite to bash's **exit status**.
+##### FdLit
+`stdin` -> `0`
+`stdout` -> `1`
+`stderr` -> `2`
+FdLit will be translated to the relative number.
 
-##### Example
+##### IntLit
+`100` -> `$((100))`
+IntLit will be translated to "arithmetic" in bash. Int literal will be wrapped by `$(( ))`.
 
-```bash
-# define a : Int = 10
-local -i a=10
-# define s : String = "abc"
-local s="abc"
-# export define ex : String = "def"
-declare -gx ex="def"
-# define arr : Array Int = [1, 2, 3]
-local -ai arr=($((1)) $((2)) $((3)))
-# define map : Map String String = { "a": "abc", "b": "def" }
-local -A map=(
-  ["a"]="abc"
-  ["b"]="def"
-)
-# define b = a
-local -i b=$a
-# define exit : ExitCode = ! gcc
-gcc
-local -i exit=$?
-```
+##### MapLit
+`{ <expr> : <expr>, <expr> : <expr>, ... }` -> `([$<t_expr>]=$<t_expr> [$<t_expr>]=$<t_expr> ...)`
+MapLit of `<expr>` is translated to **Associative Array** in bash. K-V pairs are like `[<key>]=<value>`, and they are wrapped by `( )` and split by space character.
 
-#### 6.1.2 Function Definition
+##### PathLit
+This is an interpolated string, refer to **Interpolation** part.
 
-+ Both `define` and `export` statement will be translated into the following style
+##### RelPathLit
+This is an interpolated string, refer to **Interpolation** part.
 
-  ```bash
-  func_name() {
-    local first_para_name=$0
-    local second_para_name=$1
-    # func body
-    echo -ne "return_value"
-  }
-  ```
+##### StringLit
+This is an interpolated string, refer to **Interpolation** part.
 
-+ Return value will be "returned" by using `echo -ne`.
+##### UnitLit
+`Unit` is a type in sushi. It will be translated to a special variable in bash named `_sushi_unit_`.
 
-+ But for `export`, an `export` follows the function.
+#### 6.2.4 UnaryExpr
+##### Not (`not`)
+`not <expr>`
++ **Bool** not:
+	+ As condition wrapped in `[[ ]]`: `! ($<t_expr> != 0)`
+		`not` will be translated to `!`.
+	+ As right value in assignment: `$((1 - $<t_expr>))`
+##### Pos (`+`)
++ **Int** abs: `+<expr>` -> ``` `_sushi_abs_ $<t_expr>` ```
+	`_sushi_abs_` is a function that return absolute value of the 1st parameter.
+	`+` is only applied to Int type. It will be translated to "pass `<t_expr>` to a built-in function `_sushi_abs_` and get its output" like above.
+##### Neg (`-`)
++ **Int** neg: `-<expr>` -> `$((-$<t_expr>))`
+`-` is only applied to Int type. It will be translated to "a `$(( ))` wraps `-$<t_expr>`" like above.
 
-##### Example
+#### 6.2.5 BinaryExpr
+##### Add (`+`)
+`<expr> + <expr>` ->
++ **Int** addition: `$(($<t_expr> + $<t_expr>))`
++ **String** concat: `"${<t_expr>}${<t_expr>}"`
++ **Array** concat: `<expr>` may be ArrayLit/Variable.
+	+ ArrayLit: `<t_expr>` without `( )`. `<t_expr>` will be elements in array split by space.
+		e.g. `[1, 2, 3]` -> `1 2 3` (ArrayLit is translated to `(1 2 3)` in general, but different here.)
+	+ Variable: `${<t_expr>[@]}`. `<t_expr>` will be an identifier in bash.
+		e.g. `arr` -> `${arr[@]}`
++ **Map** merge: `<expr>` may be MapLit/Variable
+	+ MapLit: `<t_expr>` without `( )`. `<t_expr>` will be elements in array split by space.
+		e.g. `{"k0": 1, "k1": 2}` -> `["k0"]=1 ["k1"]=2` (ArrayLit is translated to `(["k0"]=1 ["k1"]=2)` in general, but different here.)
+	+ Variable: `${<t_expr>[@]}`. `<t_expr>` will be an identifier in bash.
+		e.g. `arr` -> `${arr[@]}`
 
-```bash
-# define Add(a : Int, b : Int) : Int =
-#   return a + b
-Add() {
-  local -i a=$0
-  local -i b=$1
-  echo -ne $((a + b))
-}
+##### Minus (`-`)
+`<expr_0> - <expr_0>` ->
++ **Int** subtraction: `$(($<t_expr_0> - $<t_expr_1>))`
 
-# export define Subtract(a : Int, b : Int) : Int =
-#   return a - b
-Subtract() {
-  local -i a=$0
-  local -i b=$1
-  echo -ne $((a - b))
-}
-export -f Subtract
-```
+##### Multiply (`*`)
+`<expr_0> * <expr_1>` ->
++ **Int** multiplication: `$(($<t_expr_0> - $<t_expr_1>))`
++ **String** duplication: ``` `_sushi_dup_str_ $<t_expr_0> $<t_expr_1>` ```
+	`_sushi_dup_str_` is a function that duplicate string.
+	`<expr_0>` should be String type and `<expr_1>` should be Int type.
 
-### 6.2 Assignment
+##### Divide (`//`)
+`<expr_0> // <expr_1>` ->
++ **Integer** division: `$(($<t_expr_0> / $<t_expr_1>))`
++ **Path** concat: ``` `_sushi_path_concat_ $<t_expr_0> $<t_expr_1>` ```
+	`_sushi_path_concat_` is a function that concat paths.
 
-#### 6.2.1 Assignment
+##### Mod (`%`)
+`<expr_0> % <expr_1>` ->
++ **Int** modulo operation: `$(($<t_expr_0> % $<t_expr_1>))`
 
-+ For `Int` type, right value of the assignment will be treated as arithmetic. And the right part will be surrounded by `$(())`.
-+ For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value. (Just like what's in Definition part)
-+ For other type, right value of the assignment will be treated as string. And the right part will be surrounded by `""`.
+##### Less than (`<`), Greater than (`>`), Less / Equal (`<=`), Greater / Equal (`>=`), Equal (`==`), NotEqual (`!=`)
+`<expr_0> {<|>|<=|>=|==|!=} <expr_1>` ->
+The translation result is always wrapped in `[[ ]]`.
++ **Char** ascii comparison / Int comparison / String lexical order comparison
+	+ As condition wrapped in `[[ ]]`: `$<t_expr_0> {<|>|<=|>=|==|!=} $<t_expr_1>`
+	+ As right value in assignment:
+		``` `_sushi_test_ $<t_expr_0> -{lt|gt|le|ge|eq|ne} $<t_expr_1>` ```
+		`_sushi_test_` is a function that echos `"1"` if condition is **true**, otherwise `"0"`.
 
-##### Example
+##### And (`and`), Or (`or`)
+`<expr_0> {and|or} <expr_1>` ->
++ **Bool** logical operation
+	+ As condition wrapped in `[[]]`: `$<t_expr_0> {&& | ||} $<t_expr_1>`
+		`<expr_0>`
+	+ As right value in assignment:
+		``` `_sushi_and_or_ $<t_expr_0> {-and|-or} $<t_expr_1>` ```
+		`_sushi_and_or_` is a function that echos `"1"` if the logical result is **true**, otherwise `"0"`
 
-```bash
-# define x : Int = 10
-# x = 20
-# x = 10 + 20
-# define y = 20
-# x = x + y
-# y = "abc"
-local -i x=10
-x=$((20))
-x=$((10 + 20))
-local y=20
-x=$((x + y))
-y="abc"
+#### 6.2.5 CommandLike
 
-```
+##### Command
 
-### 6.3 if
+##### FunctionCall
 
-#### 6.3.1 if
-
-For convenience, all the "condition"s are surrounded by `[[]]`.
-
-When the condition is `Bool` type, the condition will be translated to `!= 0`, for example
-
-```bash
-# define t : Bool = true
-# define f : Bool = false
-# if t:
-#   ! echo "true"
-# if f:
-#   ! echo "false"
-declare -i t=1
-declare -i f=0
-if [[ $t != 0 ]]; then
-  echo "true"
-fi
-if [[ $f != 0 ]]; then
-  echo "false"
-fi
-```
-
-##### Example
-
-```bash
-# define a : Int = 1
-# define b : Int = 2
-# if a + b == 3:
-#   ! echo "ok"
-# else:
-#   ! echo "no"
-local -i a=1
-local -i b=2
-if [[ $((a + b)) == 3 ]]; then
-  echo "ok"
-else
-  echo "no"
-fi
-
-# define a = "abc"
-# define b = "def"
-# if a + b == "abcdef":
-#   ! echo "ok"
-# else:
-#   ! echo "no"
-local a="abc"
-local b="def"
-if [[ $a$b == "abcdef" ]]; then
-  echo "ok"
-else
-  echo "no"
-fi
-```
-
-### 6.4 switch
-
-#### 6.4.1 switch
-
-`switch` will be translated into `case`, every case ends with `;;`.
-
-##### Example
-
-```bash
-# switch input
-# case "y":
-#   ! echo "ok"
-# case "n":
-#   ! echo "no"
-# default:
-#   ! echo "Input again"
-case $input in
-  "y")
-    echo "ok"
-    ;;
-  "n")
-    echo "no"
-    ;;
-  *)
-    echo "Input again"
-    ;;
-esac
-```
-
-### 6.5 for
-
-#### 6.5.1 for
-
-`for` statement has 2 types
-
-+ `for <identifier> in <expression>`, this is to iterate the expression
-+ `for <expression>`, this is equal to `while` in other language
-+ `break`, `continue` will be traslated as it is
-
-##### Example
-
-```bash
-# define arr = [4, 5, 6]
-# for i in arr:
-#   ! echo "${i}"
-declare -a arr=(4 5 6)
-for i in ${arr[@]}; do
-  echo ${i}
-done
-# for i in arr:
-#   if i == 2:
-#     break
-#   ! echo "${i}"
-for i in ${arr[@]}; do
-  if [[ $i == "5" ]]; then
-    break
-  fi
-  echo ${i}
-done
-
-# define cnt = 5
-# for cnt > 0: # Used as `while`
-#   ! echo "${cnt}"
-#   cnt = cnt - 1
-local -i cnt=5
-while [[ $cnt > 0 ]]; do
-  echo "${cnt}"
-  cnt=$(($cnt-1))
-done
-# for cnt < 5:
-#   if cnt < 4:
-#     ! echo "continue"
-#     cnt = cnt + 1
-#     continue
-#   ! echo "not continue"
-#   break
-while [[ $cnt < 5 ]]; do
-  if [[ $cnt < 4 ]]; then
-    echo "continue"
-    cnt=$(($cnt + 1))
-    continue
-  fi
-  echo "not continue"
-  break
-done
-```
-
-### 6.6 Scope
-
-#### 6.6.1 Scope
-
-Scope here is a scope of identifiers. In sushi, one program has one scope. The difference from bash is that only **function** has a scope in bash, while **if** can also introduce a program (with a scope). This difference force sushi to manage the scope itself.
-
-Only when **duplicate** identifier name is used, sushi will rename the identifier denpending on the duplicate times, and finally `unset` it at the end of scope.
-
-```bash
-# define a = 1
-# if true:
-#   define a = 2
-#   for false:
-#     define a = 3
-local -i a=1
-if [[ 1 != 0 ]]; then
-  local -i a_1=2
-  while [[ 0 != 0 ]]; do
-    local -i a_2=3
-    unset a_2
-  done
-  unset a_1
-fi
-unset a
-```
+#### 6.2.6 Indexing
