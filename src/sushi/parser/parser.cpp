@@ -28,10 +28,10 @@ using ErrorT = Error::Type;
 ast::Program Parser::Program(bool emptyable) {
     int indent = NextStatementIndent();
     auto loc = LookaheadAsToken(s_.lexer, false);
-    if (indent <= s_.CurrentIndent()) {
-        return {};
+    ast::Program p;
+    if (indent > s_.CurrentIndent()) {
+        p = WithBlock(indent, &Parser::Block);
     }
-    auto p = WithBlock(indent, &Parser::Block);
     if (p.statements.empty() and not emptyable)
         s_.RecordError(ErrorT::kEmptyBlock, loc);
     return p;
@@ -271,8 +271,7 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
         return nullptr;
 
     auto indent = NextStatementIndent();
-    if (indent < s_.CurrentIndent())
-        return s_.ExpectToken(TokenT::kCase);
+    if (indent < s_.CurrentIndent()) return s_.ExpectToken(TokenT::kCase);
 
     auto cases = WithBlock(indent, &Parser::Cases);
     if (switched == nullptr or cases.empty()) return nullptr;
@@ -282,15 +281,16 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
 unique_ptr<ast::LoopControlStmt> Parser::LoopControlStmt() {
     auto ctrl = *SkipSpaceNext(s_.lexer);
     auto v = LoopControlTokToAst(ctrl.type);
-    if (OptionalStatementEnd()) return make_unique<ast::LoopControlStmt>(v, 1);
-
-    auto level = s_.AssertLookahead(TokenT::kIntLit);
-    if (not level) return RecoverFromStatement();
-    if (not AssertStatementEnd()) return nullptr;
-    auto lv = level->IntData();
-    if (lv < s_.LoopLevel())
-        return s_.RecordError(ErrorT::kInvalidLoopLevel, *level);
-    return make_unique<ast::LoopControlStmt>(v, lv);
+    int loop_level = 1;
+    if (not OptionalStatementEnd()) {
+        auto level = s_.AssertLookahead(TokenT::kIntLit);
+        if (not level) return RecoverFromStatement();
+        if (not AssertStatementEnd()) return nullptr;
+        loop_level = level->IntData();
+    }
+    if (loop_level > s_.LoopLevel())
+        return s_.RecordError(ErrorT::kInvalidLoopLevel, ctrl);
+    return make_unique<ast::LoopControlStmt>(v, loop_level);
 }
 
 unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
@@ -309,7 +309,7 @@ unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
 }
 
 unique_ptr<ast::Expression> Parser::PrimaryExpr() {
-    auto l = *SkipSpaceLookahead(s_.lexer);
+    auto l = LookaheadAsToken(s_.lexer, true);
     if (l.type == TokenT::kIdent) return StartWithIdentifier();
     if (l.type == TokenT::kLBrace or l.type == TokenT::kLParen or
         IsLiteral(l.type))
@@ -577,6 +577,8 @@ unique_ptr<ast::Expression> Parser::AtomExpr() {
         expr = Literal();
     else if (l->type == TokenT::kLBrace)
         expr = MapArrayLiteral();
+    else
+        return s_.RecordErrorOnLookahead(ErrorT::kExpectExpression, false);
 
     auto indices = Indices();
     if (not indices) return nullptr;
@@ -878,8 +880,7 @@ nullptr_t Parser::RecoverFromExpression(std::vector<lexer::Token::Type> extra) {
 optional<TokenT> Parser::SkipToken() {
     auto t = s_.lexer.Next();
     if (not t) return none;
-    if (IsInterpolatable(t->type))
-        Interpolatable();
+    if (IsInterpolatable(t->type)) Interpolatable();
     return t->type;
 }
 
