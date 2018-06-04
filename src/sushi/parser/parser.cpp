@@ -122,7 +122,6 @@ std::vector<ast::FunctionDef::Parameter> Parser::ParameterList() {
     if (Optional(s_.lexer, TokenT::kRParen, true)) return {};
     std::vector<ast::FunctionDef::Parameter> result;
     for (;;) {
-        // buggy: can't support empty list
         auto ident = s_.AssertLookahead(TokenT::kIdent, true);
         auto colon = s_.AssertLookahead(TokenT::kColon);
         auto type = WithRecovery(
@@ -491,9 +490,8 @@ boost::optional<ast::InterpolatedString> Parser::CommandArg() {
     }
     if (l.type == TokenT::kRawString) {
         s_.lexer.Next();
-        return Interpolatable(false);
+        return Interpolatable();
     }
-    if (IsError(l.type)) s_.RecordError(ErrorT::kLexicalError, std::move(l));
     return none;
 }
 
@@ -765,12 +763,7 @@ std::unique_ptr<ast::Expression> Parser::InterExpr() {
 }
 
 bool Parser::InterpolateAction(
-    Token t, bool exit_on_err, ast::InterpolatedString &inter_str, bool &err) {
-    if (IsError(t.type)) {
-        s_.RecordError(ErrorT::kLexicalError, std::move(t));
-        err = true;
-        return exit_on_err;
-    }
+    Token t, ast::InterpolatedString &inter_str, bool &err) {
     if (t.type == TokenT::kInterDone) return true;
 
     if (t.type == TokenT::kInterStart) {
@@ -784,12 +777,12 @@ bool Parser::InterpolateAction(
     return false;
 }
 
-optional<ast::InterpolatedString> Parser::Interpolatable(bool exit_on_err) {
+optional<ast::InterpolatedString> Parser::Interpolatable() {
     ast::InterpolatedString inter_str;
     optional<lexer::Token> t;
     bool err = false;
     for (; (t = s_.lexer.Next());) {
-        auto finish = InterpolateAction(*t, exit_on_err, inter_str, err);
+        auto finish = InterpolateAction(*t, inter_str, err);
         if (finish) break;
     }
     if (err) return none;
@@ -797,7 +790,7 @@ optional<ast::InterpolatedString> Parser::Interpolatable(bool exit_on_err) {
 }
 
 unique_ptr<ast::StringLit> Parser::StringLiteral() {
-    auto content = Interpolatable(true);
+    auto content = Interpolatable();
     if (not content) return nullptr;
     return std::make_unique<ast::StringLit>(std::move(*content));
 }
@@ -817,7 +810,7 @@ bool IsRelativePath(ast::InterpolatedString &s) {
 } // namespace
 
 unique_ptr<ast::Literal> Parser::PathLiteral() {
-    auto content = Interpolatable(false);
+    auto content = Interpolatable();
     if (not content) {
         return nullptr;
     }
@@ -886,7 +879,7 @@ optional<TokenT> Parser::SkipToken() {
     auto t = s_.lexer.Next();
     if (not t) return none;
     if (IsInterpolatable(t->type))
-        Interpolatable(t->type == TokenT::kStringLit);
+        Interpolatable();
     return t->type;
 }
 

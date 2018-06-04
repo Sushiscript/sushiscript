@@ -166,10 +166,9 @@ class Parser {
 
     std::unique_ptr<ast::Expression> InterExpr();
 
-    bool InterpolateAction(
-        lexer::Token, bool exit_on_err, ast::InterpolatedString &, bool &err);
+    bool InterpolateAction(lexer::Token, ast::InterpolatedString &, bool &err);
 
-    boost::optional<ast::InterpolatedString> Interpolatable(bool exit_on_err);
+    boost::optional<ast::InterpolatedString> Interpolatable();
 
     std::unique_ptr<ast::StringLit> StringLiteral();
 
