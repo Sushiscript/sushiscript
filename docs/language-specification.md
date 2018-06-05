@@ -47,9 +47,94 @@ Following punctuations are meaningful:
 	| "Path" | "RelPath" | "Array" | "Map" | "ExitCode" | "FD"
 ```
 
-### 2.4 Interpolation
+### 2.4 Character
 
-Interpolation is a lexical construct that embed expression in some special contexts (typically string interpolation). If  `identifier` is provided after `$` , lexer suspend the enclosing context and eagerly recognize the first possible identifier.
+```
+<line break> = '\n'
+<whitespace> = ' ' | '\t'
+```
+
+#### 2.4.1 Character Escaping
+
+Special characters inside string-like token can be expressed by escaping character, by putting a `\\` before a character to escape it. There are different meaningful escaped character in different context (specified below).  **Escaping a character that doesn't have special meaning in current context preserves the original character.** In some contexts there are characters that have to be escaped to avoid lexical ambiguity.
+
+_TODO: string escaped characters may be incomplete_
+
+```
+<tradition special> =
+  '\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
+```
+
+
+#### 2.4.2 Raw Mode
+
+The raw mode of lexer is turned on in special contexts (typically when [invoking shell command](#3.1.4.2 Invoking Command)) where getting rid of the "lexical restriction" conforms better to the tradition of shell and is more intuitive and convenient for users.
+
+```
+<raw token>    = <raw char>*
+<raw char>     = [^<raw restrict>] | <raw escape>
+<raw restrict> = ' ' | ';' | '"' | "'" | '\' | '|' | ',' | ')'
+<raw escape>   = '\' (<raw restrict> | <interpolate char>)
+```
+
+#### 2.4.3 Character inside `String` literal
+
+```
+<string char> = [^<string restrict>] | <string escape>
+<string escape>
+  = '\' ( <string restrict> | <interpolate char>)
+  | <tradition special>
+<string restrict> = '"'
+```
+
+#### 2.4.4 Character inside `Char` literal
+
+```
+<char char> = [^<char restrict>] | <tradition special>
+<char restrict> = "'"
+```
+
+### 2.5 Literals
+
+#### 2.5.1 Bool & Unit & FD
+
+```
+<bool literal> = "true" | "false"
+<unit literal> = "()"
+<fd literal>   = "stdin" | "stdout" | "stderr"
+```
+
+#### 2.5.2 Integer
+
+_TODO: integer literal of various radix support_
+
+```
+<integer> = ('+' | '-')? <digit>+
+```
+
+#### 2.5.3 Character
+
+```
+<char literal> = "'" <char char> "'"
+```
+
+#### 2.5.4 String
+
+```
+<string literal> = '"' ( <string char> | <interpolation> ) * '"'
+```
+
+#### 2.5.5 Path
+
+```
+<path literal> = "~" ('/' <path tail>)? | '/' <path tail>?
+<relpath literal> = '.'+ ('/' <path tail>)?
+<path tail>    = (<raw char> | <interpolation>)*
+```
+
+### 2.6 Interpolation
+
+Interpolation is a lexical construct that embed expression in some special contexts (typically string interpolation).
 
 ```
 <interpolation> = "${" ... "}"
@@ -62,90 +147,44 @@ ${ ... "${ ... }" ... }
 "${ ... "${ ... }" ... }"
 ```
 
-### 2.5 Character
+#### 2.6.1 Interpolation Context
+
+There are various contexts where interpolation can appear (such as `string literal`). The lexer yield control tokens to interact with the parser, so that the parser know when to:
+
+1. Enter a interpolation context
+2. Extract a "normal" string segment
+3. Start parsing an interpolated expression
+4. Exit the interpolation context
+
+##### 2.6.1.1 Enter a Context
+
+Each context has its unique indicator of entering its interpolation context. So the parser can start to parse corresponding literal.
+
+##### 2.6.1.2 Extract a Segment
+
+Depending on the character configuration of context, the lexer try to extract as many consecutive normal characters as possible to form a segment for the interpolation context.
+
+##### 2.6.1.3 Start of Interpolated Expression
+
+In all interpolation contexts, character sequence `${` is recognized as an indicator of the start of an interpolated expression. Then lexer enters the normal context for recognizing tokens for the following expression, until the parser recognizes a matching `}` for `${`, the interpolation context is resumed.
+
+##### 2.6.1.4 Exit the Context
+
+Depending on the character configuration of context, the lexer yields a control token to indicate the end of the interpolation context typically when a restricted character of the context is found, such as `"` for `string literal` and `<space>` for `path literal`.
+
+##### 2.6.1.5 Example
 
 ```
-<line break> = '\n'
-<whitespace> = ' ' | '\t'
+"hello${a + b}!"
 ```
 
-#### 2.5.1 Character Escaping
-
-Special characters inside string-like token can be expressed by escaping character, by putting a `\\` before a character to escape it. There are different meaningful escaped character in different context (specified below).  **Escaping a character that doesn't have special meaning in current context preserves the original character.** In some contexts there are characters that have to be escaped to avoid lexical ambiguity.
-
-_TODO: string escaped characters may be incomplete_
-
-```
-<tradition special> =
-  '\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
-```
-
-
-#### 2.5.2 Raw Mode
-
-The raw mode of lexer is turned on in special contexts (typically when [invoking shell command](#3.1.4.2 Invoking Command)) where getting rid of the "lexical restriction" conforms better to the tradition of shell and is more intuitive and convenient for users.
-
-```
-<raw token>    = <raw char>*
-<raw char>     = [^<raw restrict>] | <raw escape>
-<raw restrict> = ' ' | ';' | '"' | "'" | '\' | '|' | ',' | ')'
-<raw escape>   = '\' (<raw restrict> | <interpolate char>)
-```
-
-#### 2.5.3 Character inside `String` literal
-
-```
-<string char> = [^<string restrict>] | <string escape>
-<string escape>
-  = '\' ( <string restrict> | <interpolate char>)
-  | <tradition special>
-<string restrict> = '"'
-```
-
-#### 2.5.4 Character inside `Char` literal
-
-```
-<char char> = [^<char restrict>] | <tradition special>
-<char restrict> = "'"
-```
-
-### 2.6 Literals
-
-#### 2.6.1 Bool & Unit & FD
-
-```
-<bool literal> = "true" | "false"
-<unit literal> = "()"
-<fd literal>   = "stdin" | "stdout" | "stderr"
-```
-
-#### 2.6.2 Integer
-
-_TODO: integer literal of various radix support_
-
-```
-<integer> = ('+' | '-')? <digit>+
-```
-
-#### 2.6.3 Character
-
-```
-<char literal> = "'" <char char> "'"
-```
-
-#### 2.6.4 String
-
-```
-<string literal> = '"' ( <string char> | <interpolation> ) * '"'
-```
-
-#### 2.6.5 Path
-
-```
-<path literal> = "~" ('/' <path tail>)? | '/' <path tail>?
-<relpath literal> = '.'+ ('/' <path tail>)?
-<path tail>    = (<raw char> | <interpolation>)*
-```
+1. The first `"` is recognized as the start of an `string literal`
+2. The segment `hello` is recognized.
+3. `${` is recognized as the start of interpolated expression.
+4. Then the normal context of lexer recognized `identifier: a`, `+` , `identifier: b` and `}`.
+5. `}` is considered the end of interpolation expression. The parser tells lexer to resumed the interpolation context.
+6. The segment `!` is recognized.
+7. `"` is recognized as the end of the `string literal` and a control token is yielded.
 
 ### 2.7 Misc
 
@@ -249,11 +288,10 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <command> = '!' <comamnd param>* <command end>
 <command param>
-  = <interpolation>
-  | <raw token>
+  = <raw token>
   | <string literal>
   | <char literal>
-<command end> = <line break> | ';'
+<command end> = <line break> | ','
 ```
 
 ##### 3.1.4.4 Redirection
@@ -329,7 +367,7 @@ If there's no line break before `<program>`, the indentation level of that block
 
 ```
 <define func> =
-  "export"? "define" <identifier> '(' <param list>? ')' '=' <program>
+  "export"? "define" <identifier> '(' <param list>? ')' (':' <type>)? '=' <program>
 <param list>  = <param dec> (',' <param dec>)*
 <param dec>   = <identifier> ':' <type>
 ```
@@ -354,7 +392,7 @@ If there's no line break before `<program>`, the indentation level of that block
 #### 3.2.4 if
 
 ```
-<if>   = "if" <expression> ':' <program> <else>?
+<if>   = "if" <expression> (':' | <line break>) <program> <else>?
 <else> = "else" ':'? <program>
 ```
 
@@ -366,11 +404,13 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ```
 <switch>  = "switch" <expression> <case>+ <default>?
-<case>    = "case" <expression> ':' <program>
+<case>    = "case" <expression> (':' | <line break>) <program>
 <default> = "default" ':'? <program>
 ```
 
 `<case>` and `<default>` both introduce new block on corresponding `<program>`.
+
+Indentations of `<case>`s must be equal or more than `<switch>`, and all indentations of `<case>`s must be identical.
 
 #### 3.2.6 for
 
