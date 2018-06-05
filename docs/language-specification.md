@@ -802,8 +802,6 @@ The required types of expression following `case` are:
 
 TODO:
 + Scope
-+ CommandLike
-+ Indexing
 
 ### 6.1 Assignment
 
@@ -907,11 +905,31 @@ This is an interpolated string, refer to **Interpolation** part.
 		e.g. `[1, 2, 3]` -> `1 2 3` (ArrayLit is translated to `(1 2 3)` in general, but different here.)
 	+ Variable: `${<t_expr>[@]}`. `<t_expr>` will be an identifier in bash.
 		e.g. `arr` -> `${arr[@]}`
+	+ The final result will be stored in a temp variable, and `<t_expr>` is its identifier. For example,
+```
+define arr = [1, 2]
+define res = arr + [3, 4] + [5, 6]
+-->
+local -a arr=(1 2)
+_sushi_t_0_=(${arr[@]} 3 4)
+_sushi_t_1_=(${_sushi_t_0_[@]} 5 6)
+local -a res=(${_sushi_t_1_[@]})
+```
 + **Map** merge: `<expr>` may be MapLit/Variable
 	+ MapLit: `<t_expr>` without `( )`. `<t_expr>` will be elements in array split by space.
 		e.g. `{"k0": 1, "k1": 2}` -> `["k0"]=1 ["k1"]=2` (ArrayLit is translated to `(["k0"]=1 ["k1"]=2)` in general, but different here.)
-	+ Variable: `${<t_expr>[@]}`. `<t_expr>` will be an identifier in bash.
+	+ Variable: ``` `_sushi_extract_map_ ${!<t_expr>[@]} ${<t_expr>[@]}` ```. `<t_expr>` will be an identifier in bash. (`_sushi_extract_map_` is a built-in function. It receives the keys and values from parameter, and return a string like `["key0"]=val0 ["key1"]=val1 ["key2"]=val2 ...`)
 		e.g. `arr` -> `${arr[@]}`
+	+ The final result will be stored in a temp variable, and `<t_expr>` is its identifier. For example,
+```bash
+define map = {"a": 1, "b": "c"}
+define res = map + {"c": 3, "d": 4} + {"e": 5, "f": 6}
+-->
+local -A map=(["a"]=$((1)) ["b"]="c")
+_sushi_t_0_=(`_sushi_extract_map_ ${!map[@]} ${map[@]}` ["c"]=$((3)) ["d"]=$((4)))
+_sushi_t_1_=(`_sushi_extract_map_ ${!_sushi_t_0_[@]} ${_sushi_t_0_[@]}` ["e"]=$((5)) ["f"]=$((6)))
+local -A res=(`_sushi_extract_map_ ${!_sushi_t_1_[@]} ${_sushi_t_1_[@]}`)
+```
 
 ##### Minus (`-`)
 `<expr_0> - <expr_0>` ->
@@ -954,8 +972,50 @@ The translation result is always wrapped in `[[ ]]`.
 
 #### 6.2.5 CommandLike
 
+##### Redirection
+
+> As described in **4.7.8 Redirection**
+```plain
+<redirect to here : String> = (<function call : Ret> | command) redirect to here
+<redirect output> = redirect <FdLit>? to <Path | FD>
+<redirect input>  = redirect <FdLit>? from <Path>
+```
+
++ **redirect to here**
+	+ CommandLike with **redirect to here** will be wrapped by double ``` ` ```. It's like ``` `<t_func_call>` ``` or ``` `<t_command>` ```.
++ **redirect input/output**
+	`redirect <FdLit> {to|from} <Path | FD> {append}?` ->
+	+ `<t_FdLit> > <t_Path | t_FD>` if redirect **to** without "append"
+	+ `<t_FdLit> >> <t_Path | t_FD>` if redirect **to** with "append"
+	+ `<t_FdLit> < <t_Path | t_FD>` if redirect **from** (always without "append")
+	+ `<t_FdLit>` and `<t_FD>` above is the relative number and `<t_Path>` above is the translated path.
+
 ##### Command
+
+`! <cmd> <params> <redirection>` ->
++ `<t_cmd> <t_params> <t_redir>; _sushi_t_0_=$?` if not "to here"
++ ```_sushi_t_0_=`<t_cmd> <t_params> <t_redir>` ``` if not "to here"
+
+The final identifier is `"_sushi_t_0_"` (0 may be changed to other number depending on the current temp variables count).
+
+`<cmd>` is an interpolation and `<params>` is a group of interpolation, so they are translated as how interpolations are translated. `<redirection>` is translated as described above.
 
 ##### FunctionCall
 
+`<func> <params> <redirection>` ->
++ `<func>`
+	+ Function identifier name.
++ `<params>`
+	+ Array: ``` "`echo -ne ${<t_expr>[@]}`" ```
+	+ Map: ``` "`_sushi_extract_map_ ${!<t_expr>[@]} ${<t_expr>[@]}`" ```
+	+ Other types: Translated as right value.
++ `<redirection>`
+	+ See above.
+
 #### 6.2.6 Indexing
+
+`<expr0>[<expr1>]` ->
++ **Array**: `${<t_expr0>[<t_expr1>]}`
+	+ `<expr1>` must be Int type.
++ **Map**: `${t_expr0}[<t_expr1>]`
+	+ `<expr1>` must be String type.
