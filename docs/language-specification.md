@@ -869,13 +869,6 @@ Temporary variables are like `_sushi_t_<num>_`. They are maintained by sushi.
 	+ `_sushi_path_concat_`: Concat 2 path.
 		+ Parameters: **2** parameters. 2 paths to concat.
 		+ Return: The concat res of 2 paths.
-	+ `_sushi_test_`: Compare 2 values.
-		+ Parameters: **3** parameters. The 1st is the lhs. The 2nd is one of -lt/-gt/-lt/-ge/-eq/-ne. The 3rd is the rhs.
-		+ Return: 1 if true, 0 if false. (Exit status: 0 if true, 1 if false)
-	+ `_sushi_and_or_`: Logically compute 2 bool values.
-		+ Parameters: **3** parameters. The 1st is the lhs. The 2nd is one of -and/-or. The 3rd is the rhs.
-		+ Return: 1 if true, 0 if false. (Exit status: 0 if true, 1 if false)
-	+ 
 
 ### 6.1 Assignment
 
@@ -1042,20 +1035,22 @@ local -A res=(`_sushi_extract_map_ ${!_sushi_t_1_[@]} ${_sushi_t_1_[@]}`)
 ##### Less than (`<`), Greater than (`>`), Less / Equal (`<=`), Greater / Equal (`>=`), Equal (`==`), NotEqual (`!=`)
 `<expr_0> {<|>|<=|>=|==|!=} <expr_1>` ->
 The translation result is always wrapped in `[[ ]]`.
-+ **Char** ascii comparison / Int comparison / String lexical order comparison
-	+ As condition wrapped in `[[ ]]`: `$<t_expr_0> {<|>|<=|>=|==|!=} $<t_expr_1>`
++ **Char** ascii comparison  / **String** lexical order comparison
+  + As condition wrapped in `[[ ]]`: `$<t_expr_0> {<|>|<=|>=|==|!=} $<t_expr_1>`
+  + As right value in assignment:
+    ``` $(($<t_expr_0> {<|>|<=|>=|==|!=} $<t_expr_1>)) ```
++ **Int** comparison
+	+ As condition wrapped in `[[ ]]`: `$<t_expr_0> -{lt|gt|le|ge|eq|ne} $<t_expr_1>`
 	+ As right value in assignment:
-		``` `_sushi_test_ $<t_expr_0> -{lt|gt|le|ge|eq|ne} $<t_expr_1>` ```
-		`_sushi_test_` is a function that echos `"1"` if condition is **true**, otherwise `"0"`.
+		``` $(($<t_expr_0> {<|>|<=|>=|==|!=} $<t_expr_1>)) ```
 
 ##### And (`and`), Or (`or`)
 `<expr_0> {and|or} <expr_1>` ->
 + **Bool** logical operation
-	+ As condition wrapped in `[[]]`: `$<t_expr_0> {&& | ||} $<t_expr_1>`
-		`<expr_0>`
-	+ As right value in assignment:
-		``` `_sushi_and_or_ $<t_expr_0> {-and|-or} $<t_expr_1>` ```
-		`_sushi_and_or_` is a function that echos `"1"` if the logical result is **true**, otherwise `"0"`
+  + As condition wrapped in `[[]]`: `$<t_expr_0> {&& | ||} $<t_expr_1>`
+    `<expr_0>`
+  + As right value in assignment:
+    ``` $(($<t_expr_0> {&& | ||} $<t_expr_1>)) ```
 
 #### 6.2.5 CommandLike
 
