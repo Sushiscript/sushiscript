@@ -800,10 +800,92 @@ The required types of expression following `case` are:
 
 ## 6. Translation
 
-TODO:
-+ Scope
+### 6.0 Before Statements
+
+#### 6.0.1 Scope
+
+Unlike bash, statements like `if` / `for` have scope in sushi. To implement this, 
+
+1. Sushi records all the definition in a scope, and when the scope exits, sushi does `unset` to all the variables.
+
+	```bash
+	if true:
+	  define a : Int = 1
+	  define b = "test"
+	  
+	-->
+	
+	if [[ 1 != 0 ]]; then
+	  local a=$((1))
+	  local b="test"
+	  unset a
+	  unset b
+	fi
+	```
+
+	
+
+2. If there are identifiers having the same name, sushi will translate them into different names by adding suffix `_scope_<num>`. (`<num>` is a number.)
+
+	```bash
+	define a = 1
+	if true:
+	  define a = 2
+	  define b = "test"
+	
+	-->
+	
+	local a=$((1))
+	if [[ 1 != 0 ]]; then
+	  local a_scope_1=$((2))
+	  local b="test"
+	  unset a_scope_1
+	  unset b
+	fi
+	```
+
+#### 6.0.2 Temporary Variable
+
+Temporary variables are like `_sushi_t_<num>_`. They are maintained by sushi.
+
+#### 6.0.3 Built-in Variables/Functions
+
++ Identifiers with prefix `_sushi_` are usually a variable maintained by sushi. It's not recommended to use such identifiers directly.
+
++ Variables
+	+ `_sushi_unit_`: A special variable represent `Unit` in sushi. It has a read-only default value `0`.
+	+ `_sushi_func_ret_`: A variable temporarily store the function return.
+
++ Functions: **Return** means "echo ..."
+	+ `_sushi_extract_map_`: Extract the map (the associative array).
+		+ Parameters: First **n** params are keys and the following **n** params are values. Totally **2n** params.
+		+ Return: A string like `["key0"]=val0 ["key1"]=val1 ["key2"]=val2 ...`
+	+ `_sushi_abs_`: Get the absolute value of the parameter
+		+ Parameters: **1** parameter means the number to get abs.
+		+ Return: The absolute value of the parameter.
+	+ `_sushi_dup_str_`: Duplicate a string for particular times.
+		+ Parameters: **2** parameters. The 1st for the string to duplicate. The 2nd for times to duplicate.
+		+ Return: String par1 duplicated for par2 times.
+	+ `_sushi_path_concat_`: Concat 2 path.
+		+ Parameters: **2** parameters. 2 paths to concat.
+		+ Return: The concat res of 2 paths.
+	+ `_sushi_test_`: Compare 2 values.
+		+ Parameters: **3** parameters. The 1st is the lhs. The 2nd is one of -lt/-gt/-lt/-ge/-eq/-ne. The 3rd is the rhs.
+		+ Return: 1 if true, 0 if false. (Exit status: 0 if true, 1 if false)
+	+ `_sushi_and_or_`: Logically compute 2 bool values.
+		+ Parameters: **3** parameters. The 1st is the lhs. The 2nd is one of -and/-or. The 3rd is the rhs.
+		+ Return: 1 if true, 0 if false. (Exit status: 0 if true, 1 if false)
+	+ 
 
 ### 6.1 Assignment
+
+##### `<variable | indexing> = <expr>`
+
+Refer to **6.2.2 Variable** , **6.2.3 Literal** and **6.2.6 Indexing**.
+
+**Note** that assignments on **Map** are different in "MapLit as right value" and "Map Variable as right value".
+
+
 
 ### 6.2 Expression
 
@@ -834,11 +916,16 @@ _sushi_t_1_="ab${_sushi_t_0_}" # Then the interpolation `${"a" + "b" + ${a + b}}
 c="0${_sushi_t_1_}" # Use _sushi_t_1_ to replace the interpolation, this is like translating `define c = "0" + _sushi_t_1_`
 ```
 #### 6.2.2 Variable
-Asleft value: `<identifier>` -> `<identifier>`
-As right value: `<identifier>` -> `$<identifier>`
+As left value: `<identifier>` -> `<identifier>`
+As right value: `<identifier>` -> 
+
+- **Array type** as right value: `<identifier>` -> `(${<identifier>[@]})`
+- **Map type** as right value: for assignment statement `<id> = <map>`
+	- ```eval "<id>=(`_sushi_extract_map_ ${!<map>[@]} ${<map>[@]}`)"```
+- **Simple type**: `<identifier>` -> `$<identifier>`
 
 Exception:
-+ Bool type as condition wrapped in `[[ ]]`: `<identifier>` -> `$<identifier> != 0`
++ **Bool type** as condition (translation will be wrapped in `[[ ]]`): `<identifier>` -> `$<identifier> != 0`
 
 #### 6.2.3 Literal
 
@@ -906,7 +993,7 @@ This is an interpolated string, refer to **Interpolation** part.
 	+ Variable: `${<t_expr>[@]}`. `<t_expr>` will be an identifier in bash.
 		e.g. `arr` -> `${arr[@]}`
 	+ The final result will be stored in a temp variable, and `<t_expr>` is its identifier. For example,
-```
+```bash
 define arr = [1, 2]
 define res = arr + [3, 4] + [5, 6]
 -->
@@ -994,28 +1081,212 @@ The translation result is always wrapped in `[[ ]]`.
 
 `! <cmd> <params> <redirection>` ->
 + `<t_cmd> <t_params> <t_redir>; _sushi_t_0_=$?` if not "to here"
-+ ```_sushi_t_0_=`<t_cmd> <t_params> <t_redir>` ``` if not "to here"
++ ```_sushi_t_0_=`<t_cmd> <t_params> <t_redir>` ``` if "to here"
 
-The final identifier is `"_sushi_t_0_"` (0 may be changed to other number depending on the current temp variables count).
+The final identifier(`<t_expr>`) is `"_sushi_t_0_"` (0 may be changed to other number depending on the current temp variables count).
 
 `<cmd>` is an interpolation and `<params>` is a group of interpolation, so they are translated as how interpolations are translated. `<redirection>` is translated as described above.
 
 ##### FunctionCall
 
 `<func> <params> <redirection>` ->
+
+- `<t_func> <t_params> <t_redir>; _sushi_t_0_=$_sushi_func_ret_` if not "to here"`
+	- `_sushi_t_0_` 's assignment may be different depending on the **return type**
+- ```_sushi_t_0_=`<t_func> <t_params> <t_redir>` ``` if "to here"
+
+The final identifier(`<t_expr>`) is `"_sushi_t_0_"` (0 may be changed to other number depending on the current temp variables count).
+
+Detail:
+
 + `<func>`
-	+ Function identifier name.
+  + Function identifier name.
 + `<params>`
-	+ Array: ``` "`echo -ne ${<t_expr>[@]}`" ```
-	+ Map: ``` "`_sushi_extract_map_ ${!<t_expr>[@]} ${<t_expr>[@]}`" ```
-	+ Other types: Translated as right value.
+  + Array: ``` "`echo -ne ${<t_expr>[@]}`" ```
+  + Map: ``` "`_sushi_extract_map_ ${!<t_expr>[@]} ${<t_expr>[@]}`" ```
+  + Simple types: Translated as right value.
 + `<redirection>`
-	+ See above.
+  + See above.
++ Function's return will be restored in a global variable `_sushi_func_ret_`
+
+##### As right value
+
+
 
 #### 6.2.6 Indexing
 
 `<expr0>[<expr1>]` ->
-+ **Array**: `${<t_expr0>[<t_expr1>]}`
-	+ `<expr1>` must be Int type.
-+ **Map**: `${t_expr0}[<t_expr1>]`
-	+ `<expr1>` must be String type.
+
++ As right value
+	+ **Array**: `${<t_expr0>[<t_expr1>]}`
+	  + `<expr1>` must be Int type.
+	+ **Map**: `${t_expr0}[<t_expr1>]`
+	  + `<expr1>` must be String type.
++ As left value
+	+ `<t_expr0>[<t_expr1>]`
+
+
+
+### 6.3 VariableDef
+
+`export? define <id> (: <type>)? = <expr>` ->
+
++ `local <id>=<t_expr>` if not export
++ `declare -gx <id>=<t_expr>` if export
++ `<type>` is ignored in translation. `<t_expr>` is the translation's final identifier like described before.
++ Declaration with assignment is relative to assignment. Refer to **6.1 Assignment**
+
+Exception:
+
++ **Map**: Declare and then assignment. If right value is variable, translation result declare the variable first, and use `eval` to assign. Otherwise, if right value is MapLit, no `eval` is needed (Refer to **6.1 Assignment**) For example
+
+```bash
+define m : Map String Int = { "a": 1, "b": 2 }
+define m_0 : Map String Int = m
+
+-->
+
+local -A m=(["a"]=1 ["b"]=2)
+local -A m_0; eval "m_0=(`_sushi_extract_map_ ${!<m>[@]} ${<m>[@]}`)"
+```
+
+### 6.4 FunctionDef
+
+```
+export? define <id> (<params>) =
+  <program>
+```
+
+->
+
++ Function name is `<id>`.
++ Parameters' translation depends on type:
+  + **Array**: ``` local <param_id>=($1)```
+  + **Map**: ``` local -A <param_id>=(); eval "<param_id>=($1)" ```
+  	+ `eval` is for avoiding "must use subscript when assigning associative array" error
+  + Simple type: `local <param_id>=$1`
++ Parameters are acquired inside the function body and before all the other statement
++ `export -f <id>` will be below the function definition if "export"
+
+For example,
+
+```bash
+export define foo (a : Int, b : Array Int, c : String Int) =
+  ! echo "${a}"
+
+-->
+
+foo () {
+  local a=$1
+  local b=($2)
+  local c=(); eval "c=($3)"
+  local _sushi_t_0_=${a}
+  echo "${_sushi_t_0_}"
+}
+```
+
+
+
+### 6.5 ReturnStmt
+
+`return <expr>` ->
+
++ Return type is not Bool`_sushi_func_ret_=<t_expr>; return true`
+
++ Return type is Bool 
+
+	```bash
+	_sushi_func_ret_=<t_expr>
+	if [[ _sushi_func_ret_ != 0 ]]; then
+	  return 0
+	else
+	  return 1
+	fi
+	```
+
+Assignment may be different depending on `<expr>` type.
+
+### 6.6 IfStmt
+
+```plain
+if <expr>: <program>
+else: <program>?
+```
+
+-->
+
+```bash
+if [[ <t_expr> ]]; then
+  <t_program>
+else
+  <t_program>
+fi
+```
+
+`<expr>` can only be Bool type.
+
+### 6.7 Switch
+
+```
+switch <val : T>
+case <cond : T>:
+  <program0>
+case <cond_func : Function Bool T>:
+  <program1>
+default:
+  <program2>
+```
+
+-->
+
+```bash
+if [[ <t_val> == <t_cond> ]]; then
+  <t_program0>
+elif <t_cond_func> <t_val>
+  <t_program1>
+else
+  <t_program2>
+fi
+```
+
+
+
+### 6.8 ForStmt
+
+#### For as while
+
+```
+for <expr>:
+  <program>
+```
+-->
+```bash
+while [[ <t_expr> ]]; do
+  <t_program>
+done
+```
+
+`<expr>` above can only be Bool type.
+
+#### For to iterate
+
+```
+for <ident> in <expr>:
+  <program>
+```
+-->
+```bash
+for <ident> in ${<t_expr>[@]}; do
+  <t_program>
+done
+```
+
+`<expr>` above can only be Array type.
+
+
+
+### 6.9 LoopControlStmt
+
+`break <num>` -> `break <num>`
+
+`continue <num>` -> `continue <num>`
