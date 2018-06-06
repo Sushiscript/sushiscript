@@ -815,7 +815,7 @@ Unlike bash, statements like `if` / `for` have scope in sushi. To implement this
 	  
 	-->
 	
-	if [[ 1 != 0 ]]; then
+	if [[ 1 -ne 0 ]]; then
 	  local a=$((1))
 	  local b="test"
 	  unset a
@@ -927,7 +927,7 @@ Exception:
 ArrayLit of `<expr>` is translated to **Indexed Array** in bash. It's `<expr>s` wrapped by `( )` and split by space character. `<expr>s` can only be simple types and they have the same types.
 
 ##### BoolLit
-Ascondition wrapped in `[[ ]]`: `true` -> `(1 != 0)`, `false` -> `(0 != 0)`
+Ascondition wrapped in `[[ ]]`: `true` -> `(1 -ne 0)`, `false` -> `(0 -ne 0)`
 As right value in assignment: `true` -> `1`, `false` -> `0`
 
 ##### CharLit
@@ -964,9 +964,9 @@ This is an interpolated string, refer to **Interpolation** part.
 ##### Not (`not`)
 `not <expr>`
 + **Bool** not:
-	+ As condition wrapped in `[[ ]]`: `! ($<t_expr> != 0)`
-		`not` will be translated to `!`.
-	+ As right value in assignment: `$((1 - $<t_expr>))`
+  + As condition wrapped in `[[ ]]`: `! ($<t_expr> -ne 0)`
+    `not` will be translated to `!`.
+  + As right value in assignment: `$((! $<t_expr>))`
 ##### Pos (`+`)
 + **Int** abs: `+<expr>` -> ``` `_sushi_abs_ $<t_expr>` ```
 	`_sushi_abs_` is a function that return absolute value of the 1st parameter.
@@ -1186,13 +1186,13 @@ foo () {
 
 `return <expr>` ->
 
-+ Return type is not Bool`_sushi_func_ret_=<t_expr>; return true`
++ Return type is not Bool`_sushi_func_ret_=<t_expr>; return 0`
 
 + Return type is Bool 
 
 	```bash
 	_sushi_func_ret_=<t_expr>
-	if [[ _sushi_func_ret_ != 0 ]]; then
+	if [[ _sushi_func_ret_ -ne 0 ]]; then
 	  return 0
 	else
 	  return 1
