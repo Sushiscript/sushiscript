@@ -1,16 +1,15 @@
 #include "sushi/lexer/detail/lexeme.h"
-#include "sushi/util/optional.h"
 #include "sushi/lexer/error.h"
+#include "sushi/util/optional.h"
 
-using boost::optional;
 using boost::none;
+using boost::optional;
 
 namespace sushi {
 namespace lexer {
 namespace detail {
 
 namespace {
-
 
 optional<Token> TryDoubleOperator(LexerState &s) {
     std::string op = s.input.LookaheadMany(2);
@@ -29,7 +28,7 @@ optional<Token> TrySingleOperator(LexerState &s) {
     return SkipAndMake(s, iter->second, 1);
 }
 
-}
+} // namespace
 
 Token SkipAndMake(LexerState &s, Token::Type t, int n, Token::Data d) {
     auto l = s.input.NextLocation();

@@ -1,5 +1,8 @@
 # Sushiscript
 
+[![Build Status](https://travis-ci.org/Sushiscript/sushiscript.svg?branch=master)](https://travis-ci.org/Sushiscript/sushiscript)
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/Sushiscript/sushiscrip/issues)
+
 Sushiscript is new programming language based on shell, we want to offer a better experience when use shell.
 
 ## Build
@@ -15,7 +18,7 @@ conan install ..
 
 # if in ubuntu maybe install gtest need
 conan remote add lasote https://api.bintray.com/conan/lasote/conan-repo
-conan install .. -s compiler=gcc -s compiler.libcxx=libstdc++11 --build gtest
+conan install ..  -s compiler.libcxx=libstdc++11 --build=missing
 
 cmake ..
 make

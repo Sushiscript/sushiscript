@@ -1,9 +1,9 @@
 #ifndef SUSHI_AST_STATEMENT_STATEMENT_H_
 #define SUSHI_AST_STATEMENT_STATEMENT_H_
 
-#include "sushi/util/visitor.h"
 #include "boost/optional.hpp"
 #include "sushi/lexer/token-location.h"
+#include "sushi/util/visitor.h"
 #include <memory>
 #include <vector>
 
@@ -21,8 +21,8 @@ struct Expression;
 struct Assignment;
 
 using StatementVisitor = sushi::util::DefineVisitor<
-    Assignment, VariableDef, FunctionDef, IfStmt, ReturnStmt, SwitchStmt, ForStmt,
-    LoopControlStmt, Expression>;
+    Assignment, VariableDef, FunctionDef, IfStmt, ReturnStmt, SwitchStmt,
+    ForStmt, LoopControlStmt, Expression>;
 
 struct Statement {
     SUSHI_VISITABLE(StatementVisitor)
