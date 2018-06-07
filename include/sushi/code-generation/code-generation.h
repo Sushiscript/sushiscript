@@ -31,7 +31,7 @@ class CodeGenerator {
   public:
     std::string GenCode(
         const ast::Program & program,
-        const Environment & environment);
+        const scope::Environment & environment);
 };
 
 constexpr char kVarDedTemplate[] = "\nlocal -%1% %2%=%3%";
@@ -42,11 +42,11 @@ constexpr char kReturnStmtTemplate[] = "\nreturn %1%";
 
 struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     std::string code;
-    const Environment & environment;
+    const scope::Environment & environment;
     const ast::Program & program;
 
     CodeGenStmtVisitor(
-        const Environment & environment, const ast::Program & program)
+        const scope::Environment & environment, const ast::Program & program)
         : environment(environment), program(program) {}
 
     SUSHI_VISITING(ast::VariableDef, var_def) {
