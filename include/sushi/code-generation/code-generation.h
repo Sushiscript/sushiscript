@@ -3,10 +3,12 @@
 
 #include <string>
 #include <map>
+#include <algorithm>
 #include "sushi/ast.h"
 #include "sushi/scope.h"
 #include "boost/format.hpp"
 #include "boost/algorithm/string.hpp"
+#include "./scope-manager.h"
 
 namespace sushi {
 
@@ -22,9 +24,12 @@ struct CodeGenTypeExprVisitor : public ast::TypeExprVisitor::Const {
 struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
     std::string val;
     std::string code_before;
-    // bool is_lit;
+    std::string expr_type;
 
-    CodeGenExprVisitor(bool is_left_value = false) : is_left_value(is_left_value) {}
+    CodeGenExprVisitor(
+        std::shared_ptr<ScopeManager> scope_manager,
+        bool is_left_value = false
+        ) : is_left_value(is_left_value), scope_manager(scope_manager) {}
 
     SUSHI_VISITING(ast::Variable, variable);
     SUSHI_VISITING(ast::Literal, literal);
@@ -34,59 +39,7 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
     SUSHI_VISITING(ast::Indexing, indexing);
   private:
     bool is_left_value;
-};
-
-class ScopeManager {
-    std::map<const std::string &, int> origin_name_to_int;
-    std::map<std::pair<const Scope *, const std::string &>, std::string> new_names_map;
-  public:
-    ScopeManager() {
-        origin_name_to_int["_sushi_t_"] = -1;
-    }
-
-    std::string GetNewTemp(const Scope * scope) {
-        std::string str = "_sushi_t_";
-        int new_int = origin_name_to_int[str];
-        ++origin_name_to_int[str];
-        if (new_int == -1) {
-            return str;
-        } else {
-            auto new_name = str + std::to_string(new_int) + '_';
-            return new_name;
-        }
-    }
-
-    std::string GetNewName(const std::string & identifier, const Scope * scope) {
-        if (origin_name_to_int.find(identifier) != origin_name_to_int.end()
-        || origin_name_to_int[identifier] == -1) {
-            new_names_map[std::make_pair(scope, identifier)] = identifier;
-            return identifier;
-        } else {
-            int new_int = origin_name_to_int[identifier];
-            auto new_name = identifier + "_scope_" + std::to_string(new_int);
-            new_names_map[std::make_pair(scope, identifier)] = new_name;
-            ++origin_name_to_int[identifier];
-            return new_name;
-        }
-    }
-
-    void UnsetTemp(const std::string & new_name) {
-        --origin_name_to_int[new_name];
-    }
-
-    void UnsetName(const std::string & new_name) {
-        --origin_name_to_int[new_name];
-        origin_name_to_int.erase(new_name);
-    }
-
-    std::string FindNewName(const std::string & identifier, const Scope * scope) {
-        auto find_res = new_names_map.find(std::make_pair(scope, identifier));
-        if (find_res != new_names_map.end()) {
-            return find_res->second;
-        } else {
-            throw "Cannot find the identifier";
-        }
-    }
+    std::shared_ptr<ScopeManager> scope_manager;
 };
 
 class CodeGenerator {
@@ -121,8 +74,8 @@ if [[ _sushi_func_ret_ -ne 0 ]]; then
 else
     return 1
 fi)";
-constexpr char kIfStmtPartTemplate[] = "if (%1%); then\n%2%\nfi";
-constexpr char kIfStmtFullTemplate[] = "if (%1%); then\n%2%\nelse\n%3%\nfi";
+constexpr char kIfStmtPartTemplate[] = "if [[ %1% ]]; then\n%2%\nfi";
+constexpr char kIfStmtFullTemplate[] = "if [[ %1% ]]; then\n%2%\nelse\n%3%\nfi";
 
 struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     std::string code;
@@ -137,9 +90,9 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         : environment(environment), program(program), scope_manager(scope_manager) {}
 
     SUSHI_VISITING(ast::Assignment, assignment) {
-        CodeGenExprVisitor lvalue_expr_visitor(true);
+        CodeGenExprVisitor lvalue_expr_visitor(scope_manager, true);
         assignment.lvalue->AcceptVisitor(lvalue_expr_visitor);
-        CodeGenExprVisitor rvalue_expr_visitor(false);
+        CodeGenExprVisitor rvalue_expr_visitor(scope_manager, false);
         assignment.value->AcceptVisitor(rvalue_expr_visitor);
         code += lvalue_expr_visitor.code_before + '\n' + rvalue_expr_visitor.code_before + '\n';
         code += (boost::format(kAssignTemplate) % lvalue_expr_visitor.val
@@ -152,7 +105,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         identifiers_to_unset.push_back(new_name);
         CodeGenTypeExprVisitor type_visitor;
         var_def.type->AcceptVisitor(type_visitor);
-        CodeGenExprVisitor expr_visitor;
+        CodeGenExprVisitor expr_visitor(scope_manager);
         var_def.value->AcceptVisitor(expr_visitor);
         code += expr_visitor.code_before;
         if (type_visitor.type_expr_str != "") {
@@ -209,7 +162,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
 
         // Program
         CodeGenerator code_gen;
-        std::string program_code = code_gen.GenCode(program, environment, scope_manager);
+        std::string program_code = code_gen.GenCode(func_def.body, environment, scope_manager);
         program_code = CodeGenerator::AddIndentToEachLine(program_code);
 
         auto all_code = param_assign_part + "\n\n" + program_code;
@@ -217,14 +170,103 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     }
     SUSHI_VISITING(ast::ReturnStmt, return_stmt) {
         // Like assignment
-        CodeGenExprVisitor value_expr_visitor(false);
+        CodeGenExprVisitor value_expr_visitor(scope_manager, false);
         return_stmt.value->AcceptVisitor(value_expr_visitor);
         code += value_expr_visitor.code_before;
         // TODO: Judge whether return value is Bool type
         code += (boost::format(kReturnStmtBoolTemplate) % value_expr_visitor.val).str();
     }
-    SUSHI_VISITING(ast::IfStmt, if_stmt);
-    SUSHI_VISITING(ast::SwitchStmt, switch_stmt);
+    SUSHI_VISITING(ast::IfStmt, if_stmt) {
+        CodeGenExprVisitor condition_visitor(scope_manager);
+        if_stmt.condition->AcceptVisitor(condition_visitor);
+
+        CodeGenerator true_body_gen;
+        std::string true_body = true_body_gen.GenCode(if_stmt.true_body, environment, scope_manager);
+        true_body = CodeGenerator::AddIndentToEachLine(true_body);
+
+        if (if_stmt.false_body.statements.empty()) {
+            code += condition_visitor.code_before;
+            code += (boost::format(kIfStmtPartTemplate) % condition_visitor.val
+                                                        % true_body).str();
+        } else {
+            code += condition_visitor.code_before;
+            CodeGenerator false_body_gen;
+            std::string false_body = false_body_gen.GenCode(if_stmt.false_body, environment, scope_manager);
+            false_body = CodeGenerator::AddIndentToEachLine(false_body);
+
+            code += condition_visitor.code_before;
+            code += (boost::format(kIfStmtFullTemplate) % condition_visitor.val
+                                                        % true_body
+                                                        % false_body).str();
+        }
+    }
+    struct SwitchCaseExprVisitor : public ast::ExpressionVisitor::Const {
+        /*
+         * Translate Bool to `[[ condition ]]`
+         * Function Bool to `func_name <t_Bool>`
+         */
+        std::string val;
+        std::string code_before;
+
+        SwitchCaseExprVisitor(
+            std::shared_ptr<ScopeManager> scope_manager
+            ) : scope_manager(scope_manager) {}
+
+        SUSHI_VISITING(ast::Variable, variable);
+        SUSHI_VISITING(ast::Literal, literal);
+        SUSHI_VISITING(ast::UnaryExpr, unary_expr);
+        SUSHI_VISITING(ast::BinaryExpr, binary_expr);
+        SUSHI_VISITING(ast::CommandLike, cmd_like);
+        SUSHI_VISITING(ast::Indexing, indexing);
+      private:
+        std::shared_ptr<ScopeManager> scope_manager;
+    };
+    SUSHI_VISITING(ast::SwitchStmt, switch_stmt) {
+        CodeGenExprVisitor switched_visitor(scope_manager, false);
+        switch_stmt.switched->AcceptVisitor(switched_visitor);
+
+        bool is_first_case = true;
+
+        auto default_case =  &*std::find(
+            switch_stmt.cases.begin(),
+            switch_stmt.cases.end(),
+            [](const ast::SwitchStmt::Case & case_) -> bool {
+                return case_.condition == nullptr;
+            }
+        );
+
+        std::string code_before;
+        // each case
+        for (auto & case_ : switch_stmt.cases) {
+            if (default_case == &case_) continue;
+            SwitchCaseExprVisitor case_visitor(scope_manager);
+            case_.condition->AcceptVisitor(case_visitor);
+            code_before += case_visitor.code_before;
+            if (is_first_case) {
+                is_first_case = false;
+                constexpr char template_[] = "if %1%; then";
+                code += (boost::format(template_) % case_visitor.val).str();
+                CodeGenerator body_gen;
+                auto body_code = body_gen.GenCode(case_.body, environment, scope_manager);
+                code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+            } else {
+                constexpr char template_[] = "elif %1%";
+                code += (boost::format(template_) % case_visitor.val).str();
+                CodeGenerator body_gen;
+                auto body_code = body_gen.GenCode(case_.body, environment, scope_manager);
+                code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+            }
+        }
+        // default case
+        {
+            code += "else";
+            CodeGenerator body_gen;
+            auto body_code = body_gen.GenCode(default_case->body, environment, scope_manager);
+            code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+        }
+        // fi
+        code += "\nfi";
+    }
     SUSHI_VISITING(ast::ForStmt, for_stmt);
     SUSHI_VISITING(ast::LoopControlStmt, loop_control_stmt) {
         if (loop_control_stmt.control_type == ast::LoopControlStmt::Value::kBreak) {
