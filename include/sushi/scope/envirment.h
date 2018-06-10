@@ -15,6 +15,11 @@ namespace scope {
 
 class Environment {
   public:
+    Environment(ast::Program program) {
+        for (auto & statement : program.statements) {
+            // pass
+        }
+    }
     bool
     Insert(const ast::Identifier *ident, std::shared_ptr<Scope> def_scope) {
         if (idents_.count(ident)) {
