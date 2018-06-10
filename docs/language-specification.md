@@ -1182,7 +1182,7 @@ define m_0 : Map String Int = m
 -->
 
 local -A m=(["a"]=1 ["b"]=2)
-local -A m_0; eval "m_0=(`_sushi_extract_map_ ${!<m>[@]} ${<m>[@]}`)"
+local -A m_0=(); eval "m_0=(`_sushi_extract_map_ ${!<m>[@]} ${<m>[@]}`)"
 ```
 
 ### 6.4 FunctionDef
