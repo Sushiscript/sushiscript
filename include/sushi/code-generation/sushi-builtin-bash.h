@@ -6,15 +6,15 @@ namespace sushi {
 // Variable Definitions
 
 // _sushi_unit_
-const char kSushiUnitDef[] = R"(_sushi_unit_=0)";
+constexpr char kSushiUnitDef[] = R"(declare -r _sushi_unit_=0)";
 // _sushi_func_ret_
-const char kSushiFuncRetDef[] = R"(_sushi_func_ret_=0)";
+constexpr char kSushiFuncRetDef[] = R"(declare _sushi_func_ret_=0)";
 
 
 // Function Definitions
 
 // _sushi_extract_map_
-const char kSushiExtractMapFuncDef[] =
+constexpr char kSushiExtractMapFuncDef[] =
 R"foo(_sushi_extract_map_() {
     local args=($@)
     local args_len=$#
@@ -28,7 +28,7 @@ R"foo(_sushi_extract_map_() {
 })foo";
 
 // _sushi_abs_
-const char kSushiAbsFuncDef[] =
+constexpr char kSushiAbsFuncDef[] =
 R"foo(_sushi_abs_() {
     local arg=$1
     local ret=0
@@ -41,7 +41,7 @@ R"foo(_sushi_abs_() {
 })foo";
 
 // _sushi_dup_str_
-const char kSushiDupStrFuncDef[] =
+constexpr char kSushiDupStrFuncDef[] =
 R"foo(_sushi_dup_str_() {
     local str=$1
     local times=$2
@@ -54,7 +54,7 @@ R"foo(_sushi_dup_str_() {
 })foo";
 
 // _sushi_path_concat_
-const char kSushiPathConcatFuncDef[] =
+constexpr char kSushiPathConcatFuncDef[] =
 R"foo(_sushi_path_concat_() {
     echo -ne $1/$2
 })foo";
