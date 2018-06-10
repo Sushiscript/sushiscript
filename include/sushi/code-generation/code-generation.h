@@ -76,6 +76,8 @@ else
 fi)";
 constexpr char kIfStmtPartTemplate[] = "if [[ %1% ]]; then\n%2%\nfi";
 constexpr char kIfStmtFullTemplate[] = "if [[ %1% ]]; then\n%2%\nelse\n%3%\nfi";
+constexpr char kForStmtIterTemplate[] = "for %1% in %2%; do\n%3%\ndone";
+constexpr char kForStmtWhileTemplate[] = "while %1%; do\n%2%\ndone";
 
 struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     std::string code;
@@ -267,7 +269,34 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         // fi
         code += "\nfi";
     }
-    SUSHI_VISITING(ast::ForStmt, for_stmt);
+    SUSHI_VISITING(ast::ForStmt, for_stmt) {
+        if (for_stmt.condition.IsRange()) {
+            // For to iterate
+            auto scope = environment.LookUp(&program);
+            auto new_name = scope_manager->GetNewName(for_stmt.condition.ident_name, scope);
+            CodeGenExprVisitor expr_visitor(scope_manager, false);
+            for_stmt.condition.condition->AcceptVisitor(expr_visitor);
+            CodeGenerator code_gen;
+            auto for_body = code_gen.GenCode(for_stmt.body, environment, scope_manager);
+            for_body = CodeGenerator::AddIndentToEachLine(for_body);
+            auto code_before = expr_visitor.code_before;
+            code += code_before;
+            code += '\n' + (boost::format(kForStmtIterTemplate) % new_name
+                                                                % expr_visitor.val
+                                                                % for_body).str();
+        } else {
+            // For as while
+            CodeGenExprVisitor expr_visitor(scope_manager, false);
+            for_stmt.condition.condition->AcceptVisitor(expr_visitor);
+            CodeGenerator code_gen;
+            auto for_body = code_gen.GenCode(for_stmt.body, environment, scope_manager);
+            for_body = CodeGenerator::AddIndentToEachLine(for_body);
+            auto code_before = expr_visitor.code_before;
+            code += code_before;
+            code += '\n' + (boost::format(kForStmtWhileTemplate) % expr_visitor.val
+                                                                 % for_body).str();
+        }
+    }
     SUSHI_VISITING(ast::LoopControlStmt, loop_control_stmt) {
         if (loop_control_stmt.control_type == ast::LoopControlStmt::Value::kBreak) {
             code = "break " + std::to_string(loop_control_stmt.level);
