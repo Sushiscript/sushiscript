@@ -6,6 +6,7 @@
 #include "boost/format.hpp"
 #include "./scope-manager.h"
 #include "./literal-visitor.h"
+#include "./cmdlike-visitor.h"
 
 namespace sushi {
 
@@ -13,8 +14,6 @@ namespace sushi {
     const CodeGenExprVisitor & lhs_visitor,                     \
     const CodeGenExprVisitor & rhs_visitor,                     \
     const ST & type)
-
-#define EXPR_VISITOR_TRANSLATE_IMPL
 
 struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
     std::string val;
@@ -117,8 +116,29 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
 
         #undef TRANSLATE_OP
     }
-    SUSHI_VISITING(ast::CommandLike, cmd_like);
-    SUSHI_VISITING(ast::Indexing, indexing);
+    SUSHI_VISITING(ast::CommandLike, cmd_like) {
+        CodeGenCmdLikeVisitor cmdlike_visitor(scope_manager, environment, scope);
+        cmd_like.AcceptVisitor(cmdlike_visitor);
+        code_before = cmdlike_visitor.code_before;
+        val = cmdlike_visitor.val;
+    }
+    SUSHI_VISITING(ast::Indexing, indexing) {
+        CodeGenExprVisitor indexable_visitor(
+            scope_manager,
+            environment,
+            scope,
+            true);
+        CodeGenExprVisitor index_visitor(
+            scope_manager,
+            environment,
+            scope,
+            false);
+        indexing.indexable->AcceptVisitor(indexable_visitor);
+        indexing.index->AcceptVisitor(index_visitor);
+
+        code_before += indexable_visitor.code_before + '\n' + index_visitor.code_before;
+        val = indexable_visitor.val + '[' + index_visitor.val + ']';
+    }
 
   protected:
     bool is_left_value;
