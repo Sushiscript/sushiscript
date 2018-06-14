@@ -114,14 +114,16 @@ struct InterpolateConfig {
 
 struct StrInterCfg : InterpolateConfig<StringConfig> {
     Context::LexResult Finish(LexerState &s, TokenLocation l) {
+        if (suspended_finish) return *suspended_finish;
         auto tail = s.input.Lookahead();
         if (not tail or *tail != '"') {
-            return Context::EmitExit(
-                Token::Error(std::move(l), Error::kUnclosedStringQuote));
+            suspended_finish = Super::Finish(s, l);
+            return Token::Error(std::move(l), Error::kUnclosedStringQuote);
         }
         s.input.Next();
         return Super::Finish(s, std::move(l));
     }
+    boost::optional<Context::LexResult> suspended_finish;
 };
 
 using RawInterCfg = InterpolateConfig<RawConfig>;

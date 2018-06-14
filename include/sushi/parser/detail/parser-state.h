@@ -2,6 +2,7 @@
 #define SUSHI_PARSER_DETAIL_PARSER_STATE_H_
 
 #include "sushi/lexer/lexer.h"
+#include "sushi/parser/detail/error-record-lexer.h"
 #include "sushi/parser/detail/lexer-util.h"
 #include "sushi/parser/error.h"
 #include <functional>
@@ -55,7 +56,7 @@ struct ParserState {
         ParserState &s;
     };
 
-    ParserState(lexer::Lexer l) : lexer(std::move(l)) {}
+    ParserState(lexer::Lexer l) : lexer(std::move(l), MakeErrorCallback()) {}
 
     int CurrentIndent() const {
         return indents.top();
@@ -63,6 +64,12 @@ struct ParserState {
 
     int LoopLevel() const {
         return loop_level;
+    }
+
+    ErrorRecordLexer::ErrorCallback MakeErrorCallback() {
+        return [this](lexer::Token token) {
+            RecordError(Error::Type::kLexicalError, std::move(token));
+        };
     }
 
     nullptr_t RecordError(Error::Type t, lexer::Token tok) {
@@ -110,7 +117,7 @@ struct ParserState {
         return AssertLookahead(lexer::Token::Type::kLineBreak, false);
     }
 
-    lexer::Lexer lexer;
+    ErrorRecordLexer lexer;
     std::vector<Error> errors;
     std::stack<int> indents;
     int loop_level = 0;

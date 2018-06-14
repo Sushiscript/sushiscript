@@ -28,10 +28,10 @@ using ErrorT = Error::Type;
 ast::Program Parser::Program(bool emptyable) {
     int indent = NextStatementIndent();
     auto loc = LookaheadAsToken(s_.lexer, false);
-    if (indent <= s_.CurrentIndent()) {
-        return {};
+    ast::Program p;
+    if (indent > s_.CurrentIndent()) {
+        p = WithBlock(indent, &Parser::Block);
     }
-    auto p = WithBlock(indent, &Parser::Block);
     if (p.statements.empty() and not emptyable)
         s_.RecordError(ErrorT::kEmptyBlock, loc);
     return p;
@@ -122,7 +122,6 @@ std::vector<ast::FunctionDef::Parameter> Parser::ParameterList() {
     if (Optional(s_.lexer, TokenT::kRParen, true)) return {};
     std::vector<ast::FunctionDef::Parameter> result;
     for (;;) {
-        // buggy: can't support empty list
         auto ident = s_.AssertLookahead(TokenT::kIdent, true);
         auto colon = s_.AssertLookahead(TokenT::kColon);
         auto type = WithRecovery(
@@ -272,8 +271,7 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
         return nullptr;
 
     auto indent = NextStatementIndent();
-    if (indent < s_.CurrentIndent())
-        return s_.ExpectToken(TokenT::kCase);
+    if (indent < s_.CurrentIndent()) return s_.ExpectToken(TokenT::kCase);
 
     auto cases = WithBlock(indent, &Parser::Cases);
     if (switched == nullptr or cases.empty()) return nullptr;
@@ -283,15 +281,16 @@ unique_ptr<ast::SwitchStmt> Parser::Switch() {
 unique_ptr<ast::LoopControlStmt> Parser::LoopControlStmt() {
     auto ctrl = *SkipSpaceNext(s_.lexer);
     auto v = LoopControlTokToAst(ctrl.type);
-    if (OptionalStatementEnd()) return make_unique<ast::LoopControlStmt>(v, 1);
-
-    auto level = s_.AssertLookahead(TokenT::kIntLit);
-    if (not level) return RecoverFromStatement();
-    if (not AssertStatementEnd()) return nullptr;
-    auto lv = level->IntData();
-    if (lv < s_.LoopLevel())
-        return s_.RecordError(ErrorT::kInvalidLoopLevel, *level);
-    return make_unique<ast::LoopControlStmt>(v, lv);
+    int loop_level = 1;
+    if (not OptionalStatementEnd()) {
+        auto level = s_.AssertLookahead(TokenT::kIntLit);
+        if (not level) return RecoverFromStatement();
+        if (not AssertStatementEnd()) return nullptr;
+        loop_level = level->IntData();
+    }
+    if (loop_level > s_.LoopLevel())
+        return s_.RecordError(ErrorT::kInvalidLoopLevel, ctrl);
+    return make_unique<ast::LoopControlStmt>(v, loop_level);
 }
 
 unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
@@ -310,7 +309,7 @@ unique_ptr<ast::Statement> Parser::ExpressionOrAssignment() {
 }
 
 unique_ptr<ast::Expression> Parser::PrimaryExpr() {
-    auto l = *SkipSpaceLookahead(s_.lexer);
+    auto l = LookaheadAsToken(s_.lexer, true);
     if (l.type == TokenT::kIdent) return StartWithIdentifier();
     if (l.type == TokenT::kLBrace or l.type == TokenT::kLParen or
         IsLiteral(l.type))
@@ -491,9 +490,8 @@ boost::optional<ast::InterpolatedString> Parser::CommandArg() {
     }
     if (l.type == TokenT::kRawString) {
         s_.lexer.Next();
-        return Interpolatable(false);
+        return Interpolatable();
     }
-    if (IsError(l.type)) s_.RecordError(ErrorT::kLexicalError, std::move(l));
     return none;
 }
 
@@ -579,6 +577,8 @@ unique_ptr<ast::Expression> Parser::AtomExpr() {
         expr = Literal();
     else if (l->type == TokenT::kLBrace)
         expr = MapArrayLiteral();
+    else
+        return s_.RecordErrorOnLookahead(ErrorT::kExpectExpression, false);
 
     auto indices = Indices();
     if (not indices) return nullptr;
@@ -765,12 +765,7 @@ std::unique_ptr<ast::Expression> Parser::InterExpr() {
 }
 
 bool Parser::InterpolateAction(
-    Token t, bool exit_on_err, ast::InterpolatedString &inter_str, bool &err) {
-    if (IsError(t.type)) {
-        s_.RecordError(ErrorT::kLexicalError, std::move(t));
-        err = true;
-        return exit_on_err;
-    }
+    Token t, ast::InterpolatedString &inter_str, bool &err) {
     if (t.type == TokenT::kInterDone) return true;
 
     if (t.type == TokenT::kInterStart) {
@@ -784,12 +779,12 @@ bool Parser::InterpolateAction(
     return false;
 }
 
-optional<ast::InterpolatedString> Parser::Interpolatable(bool exit_on_err) {
+optional<ast::InterpolatedString> Parser::Interpolatable() {
     ast::InterpolatedString inter_str;
     optional<lexer::Token> t;
     bool err = false;
     for (; (t = s_.lexer.Next());) {
-        auto finish = InterpolateAction(*t, exit_on_err, inter_str, err);
+        auto finish = InterpolateAction(*t, inter_str, err);
         if (finish) break;
     }
     if (err) return none;
@@ -797,7 +792,7 @@ optional<ast::InterpolatedString> Parser::Interpolatable(bool exit_on_err) {
 }
 
 unique_ptr<ast::StringLit> Parser::StringLiteral() {
-    auto content = Interpolatable(true);
+    auto content = Interpolatable();
     if (not content) return nullptr;
     return std::make_unique<ast::StringLit>(std::move(*content));
 }
@@ -817,7 +812,7 @@ bool IsRelativePath(ast::InterpolatedString &s) {
 } // namespace
 
 unique_ptr<ast::Literal> Parser::PathLiteral() {
-    auto content = Interpolatable(false);
+    auto content = Interpolatable();
     if (not content) {
         return nullptr;
     }
@@ -885,8 +880,7 @@ nullptr_t Parser::RecoverFromExpression(std::vector<lexer::Token::Type> extra) {
 optional<TokenT> Parser::SkipToken() {
     auto t = s_.lexer.Next();
     if (not t) return none;
-    if (IsInterpolatable(t->type))
-        Interpolatable(t->type == TokenT::kStringLit);
+    if (IsInterpolatable(t->type)) Interpolatable();
     return t->type;
 }
 
