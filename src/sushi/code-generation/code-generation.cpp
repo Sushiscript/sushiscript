@@ -1,4 +1,6 @@
 #include "sushi/code-generation/code-generation.h"
+#include "sushi/code-generation/stmt-visitor.h"
+
 
 namespace sushi {
 
