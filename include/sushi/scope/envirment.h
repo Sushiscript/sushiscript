@@ -6,6 +6,7 @@
 #include "sushi/lexer/token-location.h"
 #include "sushi/type-system.h"
 #include "scope.h"
+#include "util.h"
 #include <memory>
 #include <unordered_map>
 
@@ -16,8 +17,12 @@ namespace scope {
 class Environment {
   public:
     Environment(ast::Program program) {
+        idents_ = Table<const ast::Identifier *, std::shared_ptr<Scope>>();
+        blocks_ = Table<const ast::Program *, std::shared_ptr<Scope>>();
+        typings_ = Table<const ast::Expression *, std::unique_ptr<type::Type>>();
+
         for (auto & statement : program.statements) {
-            // pass
+            // todo
         }
     }
     bool
@@ -56,9 +61,9 @@ class Environment {
     }
 
   private:
-    std::unordered_map<const ast::Identifier *, std::shared_ptr<Scope>> idents_;
-    std::unordered_map<const ast::Program *, std::shared_ptr<Scope>> blocks_;
-    std::unordered_map<const ast::Expression *, std::unique_ptr<type::Type>>
+    Table<const ast::Identifier *, std::shared_ptr<Scope>> idents_;
+    Table<const ast::Program *, std::shared_ptr<Scope>> blocks_;
+    Table<const ast::Expression *, std::unique_ptr<type::Type>>
         typings_;
 };
 

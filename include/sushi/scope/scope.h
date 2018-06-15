@@ -5,12 +5,12 @@
 #include "sushi/ast/statement.h"
 #include "sushi/lexer/token-location.h"
 #include "sushi/type-system.h"
+#include "util.h"
 #include <memory>
 #include <unordered_map>
 
 namespace sushi {
 namespace scope {
-
 
 
 /// ownership: (=> means `own`)
@@ -28,7 +28,9 @@ class Scope {
         // bool is_const; // not useful currently
     };
 
-    Scope(std::shared_ptr<Scope> outer) : outer_(outer) {}
+    Scope(std::shared_ptr<Scope> outer) : outer_(outer) {
+        bindings_ = Table<std::string, IdentInfo>();
+    }
 
     const Scope::IdentInfo *LookUp(const std::string &identifier) const {
         auto iter = bindings_.find(identifier);
@@ -38,7 +40,7 @@ class Scope {
         if (outer_ == nullptr) {
             return nullptr;
         }
-        return outer_->LookUp(identifier);
+        return (const Scope::IdentInfo *)(outer_->LookUp(identifier));
     }
 
     const Scope::IdentInfo *
@@ -50,7 +52,7 @@ class Scope {
         if (outer_ == nullptr) {
             return nullptr;
         }
-        return outer_->LookUp(identifier, use_loc);
+        return (const Scope::IdentInfo *)(outer_->LookUp(identifier, use_loc));
     }
 
     bool Insert(const std::string &identifier, IdentInfo t) {
@@ -67,7 +69,7 @@ class Scope {
 
   private:
     std::shared_ptr<Scope> outer_;
-    std::unordered_map<std::string, IdentInfo> bindings_;
+    Table<std::string, IdentInfo> bindings_;
 };
 
 } // namespace scope
