@@ -2,7 +2,7 @@
 #define SUSHI_SCOPE_H_
 
 #include "sushi/scope/scope.h"
-#include "sushi/scope/envirment.h"
+#include "sushi/scope/environment.h"
 
 /// what scope do ? 
 /// scope part is between the lexer part and code-generation part, it will 
