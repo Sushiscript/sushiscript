@@ -7,12 +7,10 @@
 using namespace sushi::scope;
 
 TEST(SCOPE_TEST_1, ASSRET_TRUE) {
-    // sushi::ast::Program program;
     // std::string s("for i < 4: i = i + 1");
     // std::istringstream iss(s);
     // sushi::lexer::Lexer lexer(iss, {"", 1, 1});
     // sushi::parser::Parser p(std::move(lexer));
-
 
     // Environment environment(p.Parse().program);
     Environment environment;

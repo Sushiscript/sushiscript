@@ -60,7 +60,7 @@ script:
   - cmake ..
   - make -j4
   # run test
-  - ./bin/lexer-test
+  - ./bin/lexer-test && ./bin/parser-test && ./bin/scope-test
 
 after_success:
   # so, pass the test...
