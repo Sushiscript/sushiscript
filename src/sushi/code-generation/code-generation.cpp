@@ -1,10 +1,11 @@
 #include "sushi/code-generation/code-generation.h"
+#include "sushi/code-generation/stmt-visitor.h"
 
 namespace sushi {
 
 std::string CodeGenerator::GenCode(
     const ast::Program & program,
-    const Environment & environment,
+    const scope::Environment & environment,
     std::shared_ptr<ScopeManager> scope_manager) {
     if (!scope_manager) {
         scope_manager = std::make_shared<ScopeManager>(new ScopeManager());

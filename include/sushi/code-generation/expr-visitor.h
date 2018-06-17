@@ -21,8 +21,8 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
 
     CodeGenExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
-        const Environment & environment,
-        const Scope * scope,
+        const scope::Environment & environment,
+        const scope::Scope * scope,
         bool is_left_value = false
         ) : is_left_value(is_left_value),
             scope_manager(scope_manager),
@@ -143,8 +143,8 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
   protected:
     bool is_left_value;
     std::shared_ptr<ScopeManager> scope_manager;
-    const Environment & environment;
-    const Scope * scope;
+    const scope::Environment & environment;
+    const scope::Scope * scope;
 
     EXPR_VISITOR_TRANSLATE_DEF(Add);
     EXPR_VISITOR_TRANSLATE_DEF(Minus);
@@ -168,8 +168,8 @@ struct ConditionExprVisitor : public CodeGenExprVisitor {
      */
     ConditionExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
-        const Environment & environment,
-        const Scope * scope
+        const scope::Environment & environment,
+        const scope::Scope * scope
         ) : CodeGenExprVisitor(
             scope_manager,
             environment,
@@ -259,8 +259,8 @@ struct SwitchCaseExprVisitor : public CodeGenExprVisitor {
      */
     SwitchCaseExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
-        const Environment & environment,
-        const Scope * scope
+        const scope::Environment & environment,
+        const scope::Scope * scope
         ) : CodeGenExprVisitor(
             scope_manager,
             environment,

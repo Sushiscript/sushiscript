@@ -14,7 +14,7 @@ class CodeGenerator {
   public:
     std::string GenCode(
         const ast::Program & program,
-        const Environment & environment,
+        const scope::Environment & environment,
         std::shared_ptr<ScopeManager> scope_manager = nullptr);
 
     static std::string AddIndentToEachLine(const std::string & str) {

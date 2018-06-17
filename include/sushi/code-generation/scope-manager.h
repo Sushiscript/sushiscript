@@ -9,13 +9,13 @@ namespace sushi {
 
 class ScopeManager {
     std::map<const std::string &, int> origin_name_to_int;
-    std::map<std::pair<const Scope *, const std::string &>, std::string> new_names_map;
+    std::map<std::pair<const scope::Scope *, const std::string &>, std::string> new_names_map;
   public:
     ScopeManager() {
         origin_name_to_int["_sushi_t_"] = -1;
     }
 
-    std::string GetNewTemp(const Scope * scope) {
+    std::string GetNewTemp(const scope::Scope * scope) {
         std::string str = "_sushi_t_";
         int new_int = origin_name_to_int[str];
         ++origin_name_to_int[str];
@@ -27,7 +27,7 @@ class ScopeManager {
         }
     }
 
-    std::string GetNewName(const std::string & identifier, const Scope * scope) {
+    std::string GetNewName(const std::string & identifier, const scope::Scope * scope) {
         if (origin_name_to_int.find(identifier) != origin_name_to_int.end()
         || origin_name_to_int[identifier] == -1) {
             new_names_map[std::make_pair(scope, identifier)] = identifier;
@@ -50,7 +50,7 @@ class ScopeManager {
         origin_name_to_int.erase(new_name);
     }
 
-    std::string FindNewName(const std::string & identifier, const Scope * scope) {
+    std::string FindNewName(const std::string & identifier, const scope::Scope * scope) {
         auto find_res = new_names_map.find(std::make_pair(scope, identifier));
         if (find_res != new_names_map.end()) {
             return find_res->second;

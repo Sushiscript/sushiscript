@@ -29,15 +29,15 @@ constexpr char kForStmtWhileTemplate[] = "while %1%; do\n%2%\ndone";
 
 struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     std::string code;
-    const Environment & environment;
+    const scope::Environment & environment;
     const ast::Program & program;
     std::shared_ptr<ScopeManager> scope_manager;
-    const Scope * scope;
+    const scope::Scope * scope;
 
     std::vector<std::string> identifiers_to_unset;
 
     CodeGenStmtVisitor(
-        const Environment & environment, const ast::Program & program, std::shared_ptr<ScopeManager> scope_manager)
+        const scope::Environment & environment, const ast::Program & program, std::shared_ptr<ScopeManager> scope_manager)
         : environment(environment), program(program), scope_manager(scope_manager) {
             scope = environment.LookUp(&program);
         }
@@ -87,7 +87,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         code += '\n' + expr_visitor.val;
     }
     SUSHI_VISITING(ast::VariableDef, var_def) {
-        const Scope * scope = environment.LookUp(&program);
+        const scope::Scope * scope = environment.LookUp(&program);
         auto new_name = scope_manager->GetNewName(var_def.name, scope);
         identifiers_to_unset.push_back(new_name);
         CodeGenTypeExprVisitor type_visitor;
@@ -117,7 +117,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         }
     }
     SUSHI_VISITING(ast::FunctionDef, func_def) {
-        const Scope * scope = environment.LookUp(&program);
+        const scope::Scope * scope = environment.LookUp(&program);
         CodeGenTypeExprVisitor ret_type_visitor;
         func_def.ret_type->AcceptVisitor(ret_type_visitor);
         auto new_name = scope_manager->GetNewName(func_def.name, scope);
