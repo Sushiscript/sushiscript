@@ -1072,17 +1072,65 @@ local -A res=(`_sushi_extract_map_ ${!_sushi_t_1_[@]} ${_sushi_t_1_[@]}`)
 `<expr_0> % <expr_1>` ->
 + **Int** modulo operation: `$(($<t_expr_0> % $<t_expr_1>))`
 
-##### Less than (`<`), Greater than (`>`), Less / Equal (`<=`), Greater / Equal (`>=`), Equal (`==`), NotEqual (`!=`)
-`<expr_0> {<|>|<=|>=|==|!=} <expr_1>` ->
-The translation result is always wrapped in `[[ ]]`.
+##### Less than (`<`), Greater than (`>`), Less / Equal (`<=`), Greater / Equal (`>=`)
+
+`<expr_0> {<|>|<=|>=} <expr_1>` ->
 + **Char** ascii comparison  / **String** lexical order comparison
-  + As condition wrapped in `[[ ]]`: `$<t_expr_0> {-lt|-gt|-le|-ge|-eq|-ne} $<t_expr_1>`
+  + As condition wrapped in `[[ ]]`: `$<t_expr_0> {<|>|<=|>=} $<t_expr_1>`
   + As right value in assignment:
-    ``` $(($<t_expr_0> {-lt|-gt|-le|-ge|-eq|-ne} $<t_expr_1>)) ```
+    ``` $(($<t_expr_0> {<|>|<=|>=} $<t_expr_1>)) ```
 + **Int** comparison
-	+ As condition wrapped in `[[ ]]`: `$<t_expr_0> -{lt|gt|le|ge|eq|ne} $<t_expr_1>`
-	+ As right value in assignment:
-		``` $(($<t_expr_0> {<|>|<=|>=|==|!=} $<t_expr_1>)) ```
+  + As condition wrapped in `[[ ]]`: `$<t_expr_0> -{lt|gt|le|ge} $<t_expr_1>`
+  + As right value in assignment:
+    ``` $(($<t_expr_0> {<|>|<=|>=} $<t_expr_1>)) ```
+
+##### Equal (`==`), NotEqual (`!=`)
+
+`<expr_0> {==|!=} <expr_1>` ->
+
++ **Unit**
+	+ As condition wrapped in `[[ ]]`:
+		+ `==`: `(1 -ne 0)`
+		+ `!=`: `(0 -ne 0)`
+	+ As right value:
+		+ `==`: `1`
+		+ `!=`: `0`
+
++ **Bool/Char/Int/String/ExitCode/FD**
+
+	+ As condition wrapped in `[[ ]]`: `(<t_expr_0> {==|!=} <t_expr_1>)`
+	+ As right value: `$((<t_expr_0> {==|!=} <t_expr_1>))`
+
++ **Path**
+
+	+ As condition wrapped in `[[ ]]`: `(<t_expr_0> -ef <t_expr_1>)`
+	+ As right value:``` `_sushi_file_eq_ <t_expr_0> <t_expr_1>` ```
+
++ **Array**
+
+	+ As condition wrapped in `[[ ]]`:
+
+		```bash
+		# code before
+		_sushi_t_0_=0
+		if [[ ${#<t_expr_0>[@]} -eq ${#<t_expr_1>[@]} ]]; then _sushi_t_0_=1; fi
+		if [[ _sushi_t_0_ -eq 1 ]]; then
+		  for ((i = 0; i < ${#<t_expr_0>[@]}; i++)); do
+		    if [[ <t_expr_0>[i] != <t_expr_1>[i] ]]; then
+		      _sushi_t_0_=0
+		      break
+		    fi
+		  done
+		fi
+		
+		# val
+		(_sushi_t_0_ -ne 0)
+		```
+
+	+ As right value:
+
+		Code before is the same, val is only `_sushi_t_0_`
+
 
 ##### And (`and`), Or (`or`)
 `<expr_0> {and|or} <expr_1>` ->

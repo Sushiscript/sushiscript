@@ -13,8 +13,8 @@ struct CodeGenCmdLikeVisitor : public ast::CommandLikeVisitor::Const {
 
     CodeGenCmdLikeVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
-        const Environment & environment,
-        const Scope * scope,
+        const scope::Environment & environment,
+        const scope::Scope * scope,
         bool is_left_value = false
         ) : is_left_value(is_left_value),
             scope_manager(scope_manager),
@@ -27,8 +27,8 @@ struct CodeGenCmdLikeVisitor : public ast::CommandLikeVisitor::Const {
   protected:
     bool is_left_value;
     std::shared_ptr<ScopeManager> scope_manager;
-    const Environment & environment;
-    const Scope * scope;
+    const scope::Environment & environment;
+    const scope::Scope * scope;
 };
 
 } // namespace sushi

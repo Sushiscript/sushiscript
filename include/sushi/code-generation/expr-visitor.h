@@ -260,13 +260,17 @@ struct SwitchCaseExprVisitor : public CodeGenExprVisitor {
     SwitchCaseExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
         const scope::Environment & environment,
-        const scope::Scope * scope
+        const scope::Scope * scope,
+        const std::string & case_val
         ) : CodeGenExprVisitor(
             scope_manager,
             environment,
             scope,
             false
-        ) {}
+        ), case_val(case_val) {}
+
+  protected:
+    const std::string & case_val;
 };
 
 } // namespace sushi

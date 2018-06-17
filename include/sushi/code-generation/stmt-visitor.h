@@ -206,9 +206,9 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         // each case
         for (auto & case_ : switch_stmt.cases) {
             if (default_case == &case_) continue;
-            SwitchCaseExprVisitor case_visitor(scope_manager, environment, scope);
+            SwitchCaseExprVisitor case_visitor(scope_manager, environment, scope, switched_visitor.val);
             case_.condition->AcceptVisitor(case_visitor);
-            code_before += case_visitor.code_before;
+            code_before += case_visitor.code_before + '\n';
             if (is_first_case) {
                 is_first_case = false;
                 constexpr char template_[] = "if %1%; then";
