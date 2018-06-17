@@ -183,12 +183,72 @@ struct ConditionExprVisitor : public CodeGenExprVisitor {
         val = (boost::format(template_) % new_name).str();
     }
     SUSHI_VISITING(ast::Literal, literal) {
-
+        ConditionLiteralVisitor literal_visitor;
+        literal.AcceptVisitor(literal_visitor);
+        code_before = literal_visitor.code_before;
+        val = literal_visitor.val;
     }
-    SUSHI_VISITING(ast::UnaryExpr, unary_expr);
-    SUSHI_VISITING(ast::BinaryExpr, binary_expr);
-    SUSHI_VISITING(ast::CommandLike, cmd_like);
-    SUSHI_VISITING(ast::Indexing, indexing);
+    SUSHI_VISITING(ast::UnaryExpr, unary_expr) {
+        CodeGenExprVisitor expr_visitor(scope_manager, environment, scope);
+        unary_expr.expr->AcceptVisitor(expr_visitor);
+        code_before = expr_visitor.code_before;
+        // Only ! will be here
+        using UOP = ast::UnaryExpr::Operator;
+        switch (unary_expr.op) {
+        case UOP::kNot:
+            val = (boost::format("(! %1% -ne 0)") % expr_visitor.val).str();
+        }
+    }
+    SUSHI_VISITING(ast::BinaryExpr, binary_expr) {
+        CodeGenExprVisitor lhs_visitor(scope_manager, environment, scope);
+        CodeGenExprVisitor rhs_visitor(scope_manager, environment, scope);
+        binary_expr.lhs->AcceptVisitor(lhs_visitor);
+        binary_expr.rhs->AcceptVisitor(rhs_visitor);
+
+        // Get whole expression's type or (lhs or rhs)'s type?
+        auto type = environment.LookUp(&binary_expr);
+        CodeGenTypeVisitor type_visitor;
+        type->AcceptVisitor(type_visitor);
+
+        using BOP = ast::BinaryExpr::Operator;
+        // Use macro to make code short...
+        #define TRANSLATE_OP(op) Translate##op(lhs_visitor, rhs_visitor, type_visitor.type)
+
+        // < > <= >= == != and or
+        switch (binary_expr.op) {
+        case BOP::kLess:    TRANSLATE_OP(Less); break;
+        case BOP::kGreat:   TRANSLATE_OP(Great); break;
+        case BOP::kLessEq:  TRANSLATE_OP(LessEq); break;
+        case BOP::kGreatEq: TRANSLATE_OP(GreatEq); break;
+        case BOP::kEqual:   TRANSLATE_OP(Equal); break;
+        case BOP::kNotEq:   TRANSLATE_OP(NotEq); break;
+        case BOP::kAnd:     TRANSLATE_OP(And); break;
+        case BOP::kOr:      TRANSLATE_OP(Or); break;
+        }
+
+        #undef TRANSLATE_OP
+    }
+    // CommanLike can be condition directly
+    // SUSHI_VISITING(ast::CommandLike, cmd_like);
+
+    SUSHI_VISITING(ast::Indexing, indexing) {
+        // indexable is Array Bool
+        CodeGenExprVisitor indexable_visitor(
+            scope_manager,
+            environment,
+            scope,
+            true);
+        CodeGenExprVisitor index_visitor(
+            scope_manager,
+            environment,
+            scope,
+            false);
+        indexing.indexable->AcceptVisitor(indexable_visitor);
+        indexing.index->AcceptVisitor(index_visitor);
+
+        code_before += indexable_visitor.code_before + '\n' + index_visitor.code_before;
+        val = (boost::format("%1%[%2%] -ne 0") % indexable_visitor.val % index_visitor.val).str();
+    }
 };
 
 struct SwitchCaseExprVisitor : public CodeGenExprVisitor {

@@ -21,6 +21,10 @@ struct CodeGenLiteralVisitor : public ast::LiteralVisitor::Const {
     SUSHI_VISITING(ast::MapLit, map_lit);
 };
 
+struct ConditionLiteralVisitor : public CodeGenLiteralVisitor {
+    SUSHI_VISITING(ast::BoolLit, bool_lit);
+};
+
 } // namespace sushi
 
 #endif

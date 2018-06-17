@@ -164,7 +164,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         code += (boost::format(kReturnStmtBoolTemplate) % value_expr_visitor.val).str();
     }
     SUSHI_VISITING(ast::IfStmt, if_stmt) {
-        CodeGenExprVisitor condition_visitor(scope_manager, environment, scope);
+        ConditionExprVisitor condition_visitor(scope_manager, environment, scope);
         if_stmt.condition->AcceptVisitor(condition_visitor);
 
         CodeGenerator true_body_gen;
@@ -251,7 +251,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
                                                                 % for_body).str();
         } else {
             // For as while
-            CodeGenExprVisitor expr_visitor(scope_manager, environment, scope, false);
+            ConditionExprVisitor expr_visitor(scope_manager, environment, scope);
             for_stmt.condition.condition->AcceptVisitor(expr_visitor);
             CodeGenerator code_gen;
             auto for_body = code_gen.GenCode(for_stmt.body, environment, scope_manager);

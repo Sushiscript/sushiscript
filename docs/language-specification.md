@@ -1004,7 +1004,7 @@ This is an interpolated string, refer to **Interpolation** part.
 ##### Not (`not`)
 `not <expr>`
 + **Bool** not:
-  + As condition wrapped in `[[ ]]`: `! ($<t_expr> -ne 0)`
+  + As condition wrapped in `[[ ]]`: `(! $<t_expr> -ne 0)`
     `not` will be translated to `!`.
   + As right value in assignment: `$((! $<t_expr>))`
 ##### Pos (`+`)
@@ -1076,9 +1076,9 @@ local -A res=(`_sushi_extract_map_ ${!_sushi_t_1_[@]} ${_sushi_t_1_[@]}`)
 `<expr_0> {<|>|<=|>=|==|!=} <expr_1>` ->
 The translation result is always wrapped in `[[ ]]`.
 + **Char** ascii comparison  / **String** lexical order comparison
-  + As condition wrapped in `[[ ]]`: `$<t_expr_0> {<|>|<=|>=|==|!=} $<t_expr_1>`
+  + As condition wrapped in `[[ ]]`: `$<t_expr_0> {-lt|-gt|-le|-ge|-eq|-ne} $<t_expr_1>`
   + As right value in assignment:
-    ``` $(($<t_expr_0> {<|>|<=|>=|==|!=} $<t_expr_1>)) ```
+    ``` $(($<t_expr_0> {-lt|-gt|-le|-ge|-eq|-ne} $<t_expr_1>)) ```
 + **Int** comparison
 	+ As condition wrapped in `[[ ]]`: `$<t_expr_0> -{lt|gt|le|ge|eq|ne} $<t_expr_1>`
 	+ As right value in assignment:
