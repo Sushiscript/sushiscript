@@ -8,11 +8,11 @@
 namespace sushi {
 namespace code_generation {
 
-struct CodeGenCmdLikeVisitor : public ast::CommandLikeVisitor::Const {
+struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
     std::string val;
     std::string code_before;
 
-    CodeGenCmdLikeVisitor(
+    CmdLikeVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
         const scope::Environment & environment,
         const scope::Scope * scope,

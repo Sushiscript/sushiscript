@@ -13,7 +13,7 @@ std::string CodeGenerator::GenCode(
     }
     std::string ret;
     for (auto &statement : program.statements) {
-        CodeGenStmtVisitor visitor(environment, program, scope_manager);
+        StmtVisitor visitor(environment, program, scope_manager);
         statement->AcceptVisitor(visitor);
         ret += visitor.code + "\n";
     }

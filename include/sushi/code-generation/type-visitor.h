@@ -6,7 +6,7 @@
 namespace sushi {
 namespace code_generation {
 
-struct CodeGenTypeExprVisitor : public ast::TypeExprVisitor::Const {
+struct TypeExprVisitor : public ast::TypeExprVisitor::Const {
     std::string type_expr_str;
 
     SUSHI_VISITING(ast::TypeLit, type_lit) {}
@@ -21,7 +21,7 @@ struct CodeGenTypeExprVisitor : public ast::TypeExprVisitor::Const {
 
 
 
-struct CodeGenTypeVisitor : public type::TypeVisitor::Const {
+struct TypeVisitor : public type::TypeVisitor::Const {
     enum class SimplifiedType {
         kInt,
         kBool,

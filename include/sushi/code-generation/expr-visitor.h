@@ -11,16 +11,22 @@
 namespace sushi {
 namespace code_generation {
 
-#define EXPR_VISITOR_TRANSLATE_DEF(op) void Translate##op(      \
-    const CodeGenExprVisitor & lhs_visitor,                     \
-    const CodeGenExprVisitor & rhs_visitor,                     \
-    const ST & type)
+#define EXPR_VISITOR_TRANSLATE_DEF(T, op) void Translate##op(      \
+                        const T & lhs_visitor,                     \
+                        const T & rhs_visitor,                     \
+                        const ST & type)
 
-struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
+constexpr char kMapVarCodeBeforeTemplate[] =
+R"(local %1%=`declare -p %2%`
+%1%=${%1%#*=}
+%1%=${%1%:1:-1}
+)";
+
+struct ExprVisitor : public ast::ExpressionVisitor::Const {
     std::string val;
     std::string code_before;
 
-    CodeGenExprVisitor(
+    ExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
         const scope::Environment & environment,
         const scope::Scope * scope,
@@ -30,14 +36,14 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
             environment(environment),
             scope(scope) {}
 
-    using ST = CodeGenTypeVisitor::SimplifiedType;
+    using ST = TypeVisitor::SimplifiedType;
     SUSHI_VISITING(ast::Variable, variable) {
         auto new_name = scope_manager->FindNewName(variable.var.name, scope);
         if (is_left_value) {
             val = new_name;
         } else {
             auto type = environment.LookUp(&variable);
-            CodeGenTypeVisitor type_visitor;
+            TypeVisitor type_visitor;
             type->AcceptVisitor(type_visitor);
             switch (type_visitor.type) {
             case ST::kInt:
@@ -53,22 +59,24 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
                 val = '$' + new_name;
                 break;
             case ST::kArray:
-                val = (boost::format("`echo -ne ${%1%[@]}`") % new_name).str();
+                val = (boost::format("\"${%1%[@]}\"") % new_name).str();
                 break;
             case ST::kMap:
-                val = (boost::format("`_sushi_extract_map_ ${!%1%[@]} ${%1%[@]}`") % new_name).str();
+                auto temp = scope_manager->GetNewTemp(scope);
+                code_before = (boost::format(kMapVarCodeBeforeTemplate) % temp % new_name).str();
+                val = (boost::format("\"$%1%\"") % temp).str();
                 break;
             }
         }
     }
     SUSHI_VISITING(ast::Literal, literal) {
-        CodeGenLiteralVisitor literal_visitor;
+        LiteralVisitor literal_visitor;
         literal.AcceptVisitor(literal_visitor);
         code_before = literal_visitor.code_before;
         val = literal_visitor.val;
     }
     SUSHI_VISITING(ast::UnaryExpr, unary_expr) {
-        CodeGenExprVisitor expr_visitor(scope_manager, environment, scope);
+        ExprVisitor expr_visitor(scope_manager, environment, scope);
         unary_expr.expr->AcceptVisitor(expr_visitor);
         code_before = expr_visitor.code_before;
         using UOP = ast::UnaryExpr::Operator;
@@ -85,14 +93,14 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
         }
     }
     SUSHI_VISITING(ast::BinaryExpr, binary_expr) {
-        CodeGenExprVisitor lhs_visitor(scope_manager, environment, scope);
-        CodeGenExprVisitor rhs_visitor(scope_manager, environment, scope);
+        ExprVisitor lhs_visitor(scope_manager, environment, scope);
+        ExprVisitor rhs_visitor(scope_manager, environment, scope);
         binary_expr.lhs->AcceptVisitor(lhs_visitor);
         binary_expr.rhs->AcceptVisitor(rhs_visitor);
 
         // Get whole expression's type or (lhs or rhs)'s type?
         auto type = environment.LookUp(&binary_expr);
-        CodeGenTypeVisitor type_visitor;
+        TypeVisitor type_visitor;
         type->AcceptVisitor(type_visitor);
 
         using BOP = ast::BinaryExpr::Operator;
@@ -118,18 +126,18 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
         #undef TRANSLATE_OP
     }
     SUSHI_VISITING(ast::CommandLike, cmd_like) {
-        CodeGenCmdLikeVisitor cmdlike_visitor(scope_manager, environment, scope);
+        CmdLikeVisitor cmdlike_visitor(scope_manager, environment, scope);
         cmd_like.AcceptVisitor(cmdlike_visitor);
         code_before = cmdlike_visitor.code_before;
         val = cmdlike_visitor.val;
     }
     SUSHI_VISITING(ast::Indexing, indexing) {
-        CodeGenExprVisitor indexable_visitor(
+        ExprVisitor indexable_visitor(
             scope_manager,
             environment,
             scope,
             true);
-        CodeGenExprVisitor index_visitor(
+        ExprVisitor index_visitor(
             scope_manager,
             environment,
             scope,
@@ -147,22 +155,22 @@ struct CodeGenExprVisitor : public ast::ExpressionVisitor::Const {
     const scope::Environment & environment;
     const scope::Scope * scope;
 
-    EXPR_VISITOR_TRANSLATE_DEF(Add);
-    EXPR_VISITOR_TRANSLATE_DEF(Minus);
-    EXPR_VISITOR_TRANSLATE_DEF(Mult);
-    EXPR_VISITOR_TRANSLATE_DEF(Div);
-    EXPR_VISITOR_TRANSLATE_DEF(Mod);
-    EXPR_VISITOR_TRANSLATE_DEF(Less);
-    EXPR_VISITOR_TRANSLATE_DEF(Great);
-    EXPR_VISITOR_TRANSLATE_DEF(LessEq);
-    EXPR_VISITOR_TRANSLATE_DEF(GreatEq);
-    EXPR_VISITOR_TRANSLATE_DEF(Equal);
-    EXPR_VISITOR_TRANSLATE_DEF(NotEq);
-    EXPR_VISITOR_TRANSLATE_DEF(And);
-    EXPR_VISITOR_TRANSLATE_DEF(Or);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Add);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Minus);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Mult);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Div);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Mod);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Less);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Great);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, LessEq);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, GreatEq);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Equal);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, NotEq);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, And);
+    EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Or);
 };
 
-struct ConditionExprVisitor : public CodeGenExprVisitor {
+struct ConditionExprVisitor : public ExprVisitor {
     /*
      * Translate
      * Bool to `condition`, it is wrapped in `[[ ]]`
@@ -171,7 +179,7 @@ struct ConditionExprVisitor : public CodeGenExprVisitor {
         std::shared_ptr<ScopeManager> scope_manager,
         const scope::Environment & environment,
         const scope::Scope * scope
-        ) : CodeGenExprVisitor(
+        ) : ExprVisitor(
             scope_manager,
             environment,
             scope,
@@ -190,7 +198,7 @@ struct ConditionExprVisitor : public CodeGenExprVisitor {
         val = literal_visitor.val;
     }
     SUSHI_VISITING(ast::UnaryExpr, unary_expr) {
-        CodeGenExprVisitor expr_visitor(scope_manager, environment, scope);
+        ExprVisitor expr_visitor(scope_manager, environment, scope);
         unary_expr.expr->AcceptVisitor(expr_visitor);
         code_before = expr_visitor.code_before;
         // Only ! will be here
@@ -201,14 +209,14 @@ struct ConditionExprVisitor : public CodeGenExprVisitor {
         }
     }
     SUSHI_VISITING(ast::BinaryExpr, binary_expr) {
-        CodeGenExprVisitor lhs_visitor(scope_manager, environment, scope);
-        CodeGenExprVisitor rhs_visitor(scope_manager, environment, scope);
+        ExprVisitor lhs_visitor(scope_manager, environment, scope);
+        ExprVisitor rhs_visitor(scope_manager, environment, scope);
         binary_expr.lhs->AcceptVisitor(lhs_visitor);
         binary_expr.rhs->AcceptVisitor(rhs_visitor);
 
         // Get whole expression's type or (lhs or rhs)'s type?
         auto type = environment.LookUp(&binary_expr);
-        CodeGenTypeVisitor type_visitor;
+        TypeVisitor type_visitor;
         type->AcceptVisitor(type_visitor);
 
         using BOP = ast::BinaryExpr::Operator;
@@ -234,12 +242,12 @@ struct ConditionExprVisitor : public CodeGenExprVisitor {
 
     SUSHI_VISITING(ast::Indexing, indexing) {
         // indexable is Array Bool
-        CodeGenExprVisitor indexable_visitor(
+        ExprVisitor indexable_visitor(
             scope_manager,
             environment,
             scope,
             true);
-        CodeGenExprVisitor index_visitor(
+        ExprVisitor index_visitor(
             scope_manager,
             environment,
             scope,
@@ -252,7 +260,7 @@ struct ConditionExprVisitor : public CodeGenExprVisitor {
     }
 };
 
-struct SwitchCaseExprVisitor : public CodeGenExprVisitor {
+struct SwitchCaseExprVisitor : public ExprVisitor {
     /*
      * Translate
      * Bool to `[[ condition ]]`
@@ -263,7 +271,7 @@ struct SwitchCaseExprVisitor : public CodeGenExprVisitor {
         const scope::Environment & environment,
         const scope::Scope * scope,
         const std::string & case_val
-        ) : CodeGenExprVisitor(
+        ) : ExprVisitor(
             scope_manager,
             environment,
             scope,

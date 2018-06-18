@@ -29,7 +29,7 @@ constexpr char kIfStmtFullTemplate[] = "if [[ %1% ]]; then\n%2%\nelse\n%3%\nfi";
 constexpr char kForStmtIterTemplate[] = "for %1% in %2%; do\n%3%\ndone";
 constexpr char kForStmtWhileTemplate[] = "while %1%; do\n%2%\ndone";
 
-struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
+struct StmtVisitor : public ast::StatementVisitor::Const {
     std::string code;
     const scope::Environment & environment;
     const ast::Program & program;
@@ -38,24 +38,24 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
 
     std::vector<std::string> identifiers_to_unset;
 
-    CodeGenStmtVisitor(
+    StmtVisitor(
         const scope::Environment & environment, const ast::Program & program, std::shared_ptr<ScopeManager> scope_manager)
         : environment(environment), program(program), scope_manager(scope_manager) {
             scope = environment.LookUp(&program);
         }
 
     SUSHI_VISITING(ast::Assignment, assignment) {
-        CodeGenExprVisitor lvalue_expr_visitor(scope_manager, environment, scope, true);
+        ExprVisitor lvalue_expr_visitor(scope_manager, environment, scope, true);
         assignment.lvalue->AcceptVisitor(lvalue_expr_visitor);
-        CodeGenExprVisitor rvalue_expr_visitor(scope_manager, environment, scope, false);
+        ExprVisitor rvalue_expr_visitor(scope_manager, environment, scope, false);
         assignment.value->AcceptVisitor(rvalue_expr_visitor);
 
         auto type = environment.LookUp(assignment.value.get());
 
-        CodeGenTypeVisitor type_visitor;
+        TypeVisitor type_visitor;
         type->AcceptVisitor(type_visitor);
 
-        using ST = CodeGenTypeVisitor::SimplifiedType;
+        using ST = TypeVisitor::SimplifiedType;
         code += lvalue_expr_visitor.code_before + '\n' + rvalue_expr_visitor.code_before + '\n';
         switch (type_visitor.type) {
         case ST::kInt:
@@ -83,7 +83,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
 
     }
     SUSHI_VISITING(ast::Expression, expression) {
-        CodeGenExprVisitor expr_visitor(scope_manager, environment, scope);
+        ExprVisitor expr_visitor(scope_manager, environment, scope);
         expression.AcceptVisitor(expr_visitor);
         code += expr_visitor.code_before;
         code += '\n' + expr_visitor.val;
@@ -92,9 +92,9 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         const scope::Scope * scope = environment.LookUp(&program);
         auto new_name = scope_manager->GetNewName(var_def.name, scope);
         identifiers_to_unset.push_back(new_name);
-        CodeGenTypeExprVisitor type_visitor;
+        TypeExprVisitor type_visitor;
         var_def.type->AcceptVisitor(type_visitor);
-        CodeGenExprVisitor expr_visitor(scope_manager, environment, scope);
+        ExprVisitor expr_visitor(scope_manager, environment, scope);
         var_def.value->AcceptVisitor(expr_visitor);
         code += expr_visitor.code_before;
         if (type_visitor.type_expr_str != "") {
@@ -120,7 +120,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     }
     SUSHI_VISITING(ast::FunctionDef, func_def) {
         const scope::Scope * scope = environment.LookUp(&program);
-        CodeGenTypeExprVisitor ret_type_visitor;
+        TypeExprVisitor ret_type_visitor;
         func_def.ret_type->AcceptVisitor(ret_type_visitor);
         auto new_name = scope_manager->GetNewName(func_def.name, scope);
 
@@ -148,7 +148,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     }
     SUSHI_VISITING(ast::ReturnStmt, return_stmt) {
         // Like assignment
-        CodeGenExprVisitor value_expr_visitor(scope_manager, environment, scope, false);
+        ExprVisitor value_expr_visitor(scope_manager, environment, scope, false);
         return_stmt.value->AcceptVisitor(value_expr_visitor);
         code += value_expr_visitor.code_before;
         // TODO: Judge whether return value is Bool type
@@ -180,7 +180,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     }
 
     SUSHI_VISITING(ast::SwitchStmt, switch_stmt) {
-        CodeGenExprVisitor switched_visitor(scope_manager, environment, scope, false);
+        ExprVisitor switched_visitor(scope_manager, environment, scope, false);
         switch_stmt.switched->AcceptVisitor(switched_visitor);
 
         bool is_first_case = true;
@@ -230,7 +230,7 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
             // For to iterate
             auto scope = environment.LookUp(&program);
             auto new_name = scope_manager->GetNewName(for_stmt.condition.ident_name, scope);
-            CodeGenExprVisitor expr_visitor(scope_manager, environment, scope, false);
+            ExprVisitor expr_visitor(scope_manager, environment, scope, false);
             for_stmt.condition.condition->AcceptVisitor(expr_visitor);
             CodeGenerator code_gen;
             auto for_body = code_gen.GenCode(for_stmt.body, environment, scope_manager);

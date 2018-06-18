@@ -6,7 +6,7 @@
 namespace sushi {
 namespace code_generation {
 
-struct CodeGenLiteralVisitor : public ast::LiteralVisitor::Const {
+struct LiteralVisitor : public ast::LiteralVisitor::Const {
     std::string val;
     std::string code_before;
 
@@ -22,7 +22,7 @@ struct CodeGenLiteralVisitor : public ast::LiteralVisitor::Const {
     SUSHI_VISITING(ast::MapLit, map_lit);
 };
 
-struct ConditionLiteralVisitor : public CodeGenLiteralVisitor {
+struct ConditionLiteralVisitor : public LiteralVisitor {
     SUSHI_VISITING(ast::BoolLit, bool_lit);
 };
 
