@@ -893,22 +893,54 @@ Temporary variables are like `_sushi_t_<num>_`. They are maintained by sushi.
 + Identifiers with prefix `_sushi_` are usually a variable maintained by sushi. It's not recommended to use such identifiers directly.
 
 + Variables
-	+ `_sushi_unit_`: A special variable represent `Unit` in sushi. It has a read-only default value `0`.
-	+ `_sushi_func_ret_`: A variable temporarily store the function return.
+  + `_sushi_unit_`: A special variable represent `Unit` in sushi. It has a read-only default value `0`.
+  + `_sushi_func_ret_`: A variable temporarily store the function return.
 
 + Functions: **Return** means "echo ..."
-	+ `_sushi_extract_map_`: Extract the map (the associative array).
-		+ Parameters: First **n** params are keys and the following **n** params are values. Totally **2n** params.
-		+ Return: A string like `["key0"]=val0 ["key1"]=val1 ["key2"]=val2 ...`
-	+ `_sushi_abs_`: Get the absolute value of the parameter
-		+ Parameters: **1** parameter means the number to get abs.
-		+ Return: The absolute value of the parameter.
-	+ `_sushi_dup_str_`: Duplicate a string for particular times.
-		+ Parameters: **2** parameters. The 1st for the string to duplicate. The 2nd for times to duplicate.
-		+ Return: String par1 duplicated for par2 times.
-	+ `_sushi_path_concat_`: Concat 2 path.
-		+ Parameters: **2** parameters. 2 paths to concat.
-		+ Return: The concat res of 2 paths.
+  + `_sushi_abs_`: Get the absolute value of the parameter
+    + Parameters: **1** parameter means the number to get abs.
+    + Return: The absolute value of the parameter.
+  + `_sushi_dup_str_`: Duplicate a string for particular times.
+    + Parameters: **2** parameters. The 1st for the string to duplicate. The 2nd for times to duplicate.
+    + Return: String par1 duplicated for par2 times.
+  + `_sushi_path_concat_`: Concat 2 path.
+    + Parameters: **2** parameters. 2 paths to concat.
+    + Return: The concat res of 2 paths.
+  + `_sushi_file_eq_`: Compare 2 file path.
+  	+ Parameters: **2** parameters. 2 path to compare.
+  	+ Return: `1` if 2 path refer to the same file, otherwise `0`. Besides, exit status will be `0` if they are the same, otherwise exit status will be `1 `(Opposite to the "echo return").
+
+#### 6.0.4 "Code before"
+
+One expression in sushi can be translated to a few lines bash script. To make it easier to explain, the translation is separated to 2 parts, which is "code before" and "value"(or "val").
+
+"code before" means the code before "val", usually a few lines, and "val" is an expression of bash. "val" can be just an identifier. For example, to translate interpolation,
+
+```
+define a = "c"
+define b = "d"
+define c = "0" + "${"ab" + ${a + b}}"
+```
+
+-->
+
+```bash
+a="c"
+b="d"
+_sushi_t_0_="${a}${b}" # With post-order, the interpolation `${a + b}` is firstly translated and stored in a temporary variable _sushi_t_0_
+_sushi_t_1_="ab${_sushi_t_0_}" # Then the interpolation `${"a" + "b" + ${a + b}}` is translated and stored in _sushi_t_1_, and this is the identifier the interpolation finally becomes
+c="0${_sushi_t_1_}" # Use _sushi_t_1_ to replace the interpolation, this is like translating `define c = "0" + _sushi_t_1_`
+```
+
+For the interpolation `${"a" + "b" + ${a + b}}`,
+
+```bash
+# code before
+_sushi_t_0_="${a}${b}"
+_sushi_t_1_="ab${_sushi_t_0_}"
+# val
+${_sushi_t_1_} # this is what in "c=" assignment statement
+```
 
 ### 6.1 Assignment
 
@@ -918,7 +950,17 @@ Refer to **6.2.2 Variable** , **6.2.3 Literal** and **6.2.6 Indexing**.
 
 **Note** that assignments on **Map** are different in "MapLit as right value" and "Map Variable as right value".
 
+#### 6.1.1 Simple Type Assignment
 
+`<t_lhs>=<t_rhs>`
+
+#### 6.1.2 Array Assignment
+
+`<t_lhs>=(<t_rhs>)`
+
+#### 6.1.3 Map Assignment
+
+`eval "<t_lhs>=(<t_rhs>)"`
 
 ### 6.2 Expression
 
@@ -936,7 +978,7 @@ Interpolation is that expressions can be interpolated in PathLit, RelPathLit, St
 ```plain
 define a = "c"
 define b = "d"
-define c = "0" + "${"a" + "b" + ${a + b}}"
+define c = "0" + "${"ab" + ${a + b}}"
 ```
 
 -->
@@ -952,9 +994,21 @@ c="0${_sushi_t_1_}" # Use _sushi_t_1_ to replace the interpolation, this is like
 As left value: `<identifier>` -> `<identifier>`
 As right value: `<identifier>` -> 
 
-- **Array type** as right value: `<identifier>` -> `(${<identifier>[@]})`
-- **Map type** as right value: for assignment statement `<id> = <map>`
-	- ```eval "<id>=(`_sushi_extract_map_ ${!<map>[@]} ${<map>[@]}`)"```
+- **Array type** as right value: `"${<t_id>[@]}"`
+
+- **Map type** as right value:
+  ```bash
+  # code before
+  _sushi_t_0_=`declare -p t_map`
+  _sushi_t_0_=${_sushi_t_0_#*=}
+  _sushi_t_0_=${_sushi_t_0_:1:-1}
+  
+  # val
+  $_sushi_t_0_
+  ```
+
+  
+
 - **Simple type**: `<identifier>` -> `$<identifier>`
 
 Exception:
@@ -963,8 +1017,8 @@ Exception:
 #### 6.2.3 Literal
 
 ##### ArrayLit
-`[<expr>, <expr>, ...]` -> `($<t_expr> $<t_expr> ...)`
-ArrayLit of `<expr>` is translated to **Indexed Array** in bash. It's `<expr>s` wrapped by `( )` and split by space character. `<expr>s` can only be simple types and they have the same types.
+`[<expr>, <expr>, ...]` -> `$<t_expr> $<t_expr> ...`
+ArrayLit of `<expr>` is translated to **Indexed Array** in bash. It's `<expr>s` split by space character. `<expr>s` can only be simple types and they have the same types.
 
 ##### BoolLit
 Ascondition wrapped in `[[ ]]`: `true` -> `(1 -ne 0)`, `false` -> `(0 -ne 0)`
@@ -985,8 +1039,8 @@ FdLit will be translated to the relative number.
 IntLit will be translated to "arithmetic" in bash. Int literal will be wrapped by `$(( ))`.
 
 ##### MapLit
-`{ <expr> : <expr>, <expr> : <expr>, ... }` -> `([$<t_expr>]=$<t_expr> [$<t_expr>]=$<t_expr> ...)`
-MapLit of `<expr>` is translated to **Associative Array** in bash. K-V pairs are like `[<key>]=<value>`, and they are wrapped by `( )` and split by space character.
+`{ <expr> : <expr>, <expr> : <expr>, ... }` -> `[$<t_expr>]=$<t_expr> [$<t_expr>]=$<t_expr> ...`
+MapLit of `<expr>` is translated to **Associative Array** in bash. K-V pairs are like `[<key>]=<value>`, and they are split by space character.
 
 ##### PathLit
 This is an interpolated string, refer to **Interpolation** part.
@@ -1116,7 +1170,7 @@ local -A res=(`_sushi_extract_map_ ${!_sushi_t_1_[@]} ${_sushi_t_1_[@]}`)
 		if [[ ${#<t_expr_0>[@]} -eq ${#<t_expr_1>[@]} ]]; then _sushi_t_0_=1; fi
 		if [[ _sushi_t_0_ -eq 1 ]]; then
 		  for ((i = 0; i < ${#<t_expr_0>[@]}; i++)); do
-		    if [[ <t_expr_0>[i] != <t_expr_1>[i] ]]; then
+		    if [[ <t_expr_0>[i] -ne <t_expr_1>[i] ]]; then
 		      _sushi_t_0_=0
 		      break
 		    fi
@@ -1185,16 +1239,15 @@ Detail:
 + `<func>`
   + Function identifier name.
 + `<params>`
-  + Array: ``` "`echo -ne ${<t_expr>[@]}`" ```
-  + Map: ``` "`_sushi_extract_map_ ${!<t_expr>[@]} ${<t_expr>[@]}`" ```
-  + Simple types: Translated as right value.
+  + All the params will be translated to variable in bash, and be used as reference in function.
+  + If Literal is used in function call, it will be stored in a temp variable first.
 + `<redirection>`
   + See above.
 + Function's return will be restored in a global variable `_sushi_func_ret_`
 
 ##### As right value
 
-
+Code before is like above, val is `_sushi_t_0_`
 
 #### 6.2.6 Indexing
 
@@ -1243,11 +1296,8 @@ export? define <id> (<params>) =
 ->
 
 + Function name is `<id>`.
-+ Parameters' translation depends on type:
-  + **Array**: ``` local <param_id>=($1)```
-  + **Map**: ``` local -A <param_id>=(); eval "<param_id>=($1)" ```
-  	+ `eval` is for avoiding "must use subscript when assigning associative array" error
-  + Simple type: `local <param_id>=$1`
++ Parameters' translations are to get parameters' references:
+  + `local -n <param_id>=$1`
 + Parameters are acquired inside the function body and before all the other statement
 + `export -f <id>` will be below the function definition if "export"
 
@@ -1260,12 +1310,13 @@ export define foo (a : Int, b : Array Int, c : String Int) =
 -->
 
 foo () {
-  local a=$1
-  local b=($2)
-  local c=(); eval "c=($3)"
+  local -n a=$1
+  local -n b=$2
+  local -n c=$3
   local _sushi_t_0_=${a}
   echo "${_sushi_t_0_}"
 }
+export foo
 ```
 
 

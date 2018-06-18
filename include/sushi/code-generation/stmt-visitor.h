@@ -9,7 +9,7 @@ namespace sushi {
 
 constexpr char kAssignTemplate[] = "%1%=%2%";
 constexpr char kAssignArrayTemplate[] = "%1%=(%2%)";
-constexpr char kAssignMapTemplate[] = "%1%=(); eval \"%1%=(%2%)\"";
+constexpr char kAssignMapTemplate[] = "eval \"%1%=(%2%)\"";
 constexpr char kVarDefFullTemplate[] = "local -%1% %2%=%3%";
 constexpr char kVarDefPartTemplate[] = "local %1%=%2%";
 constexpr char kVarDefExpoTemplate[] = "declare -x%1% %2%=%3%";

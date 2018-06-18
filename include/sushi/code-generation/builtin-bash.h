@@ -13,20 +13,6 @@ constexpr char kSushiFuncRetDef[] = R"(declare _sushi_func_ret_=0)";
 
 // Function Definitions
 
-// _sushi_extract_map_
-constexpr char kSushiExtractMapFuncDef[] =
-R"foo(_sushi_extract_map_() {
-    local args=($@)
-    local args_len=$#
-    local ret=""
-    local half=$(($args_len / 2))
-    local i=0;
-    for (( ; i < half; i++ )); do
-        ret="${ret}[${args[i]}]=${args[$((i + $half))]} "
-    done
-    echo -ne $ret
-})foo";
-
 // _sushi_abs_
 constexpr char kSushiAbsFuncDef[] =
 R"foo(_sushi_abs_() {
@@ -57,6 +43,18 @@ R"foo(_sushi_dup_str_() {
 constexpr char kSushiPathConcatFuncDef[] =
 R"foo(_sushi_path_concat_() {
     echo -ne $1/$2
+})foo";
+
+// _sushi_file_eq_
+constexpr char kSushiFileEqFuncDef[] =
+R"foo(_sushi_file_eq_() {
+    if [[ $1 -ef $2 ]]; then
+        echo -n '1'
+        return 0
+    else
+        echo -n '0'
+        return 1
+    fi
 })foo";
 
 };
