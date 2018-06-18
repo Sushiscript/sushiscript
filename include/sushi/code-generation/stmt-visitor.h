@@ -14,6 +14,7 @@ constexpr char kVarDefFullTemplate[] = "local -%1% %2%=%3%";
 constexpr char kVarDefPartTemplate[] = "local %1%=%2%";
 constexpr char kVarDefExpoTemplate[] = "declare -x%1% %2%=%3%";
 constexpr char kFuncDefTemplate[] = "%1% () {\n%2%\n}";
+constexpr char kFuncDefExpoTemplate[] = "%1% () {\n%2%\n}\nexport %1%";
 constexpr char kReturnStmtNotBoolTemplate[] = "_sushi_func_ret_=%1%; return 0";
 constexpr char kReturnStmtBoolTemplate[] =
 R"(_sushi_func_ret_=%1%
@@ -124,26 +125,11 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
 
         // Params assignment
         std::string param_assign_part;
+        constexpr char kParamAssignTemplate[] = "local -n %1%=%2%";
         for (int i = 0; i < func_def.params.size(); ++i) {
             auto & param = func_def.params[i];
             std::string line;
-            CodeGenTypeExprVisitor type_visitor;
-            param.type->AcceptVisitor(type_visitor);
-            if (type_visitor.type_expr_str != "") {
-                std::string param_right;
-                if (type_visitor.type_expr_str == "a") {
-                    param_right = "($" + std::to_string(i + 1) + ")";
-                } else if (type_visitor.type_expr_str == "A") {
-                    constexpr char template_[] = R"foo((); eval "%1%=($%2%)")foo";
-                    param_right = (boost::format(template_) % param.name
-                                                            % (i + 1)).str();
-                } else {
-                    param_right = "$" + std::to_string(i + 1);
-                }
-                line += (boost::format(kVarDefFullTemplate) % type_visitor.type_expr_str
-                                                            % param.name
-                                                            % param_right).str();
-            }
+            line = (boost::format(kParamAssignTemplate) % param.name % std::to_string(i + 1)).str();
             param_assign_part += line + '\n';
         }
 
@@ -153,7 +139,11 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
         program_code = CodeGenerator::AddIndentToEachLine(program_code);
 
         auto all_code = param_assign_part + "\n\n" + program_code;
-        code += (boost::format(kFuncDefTemplate) % new_name % all_code).str();
+        if (func_def.is_export) {
+            code += (boost::format(kFuncDefExpoTemplate) % new_name % all_code).str();
+        } else {
+            code += (boost::format(kFuncDefTemplate) % new_name % all_code).str();
+        }
     }
     SUSHI_VISITING(ast::ReturnStmt, return_stmt) {
         // Like assignment
