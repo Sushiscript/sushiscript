@@ -9,6 +9,7 @@
 #include "./cmdlike-visitor.h"
 
 namespace sushi {
+namespace code_generation {
 
 #define EXPR_VISITOR_TRANSLATE_DEF(op) void Translate##op(      \
     const CodeGenExprVisitor & lhs_visitor,                     \
@@ -273,6 +274,7 @@ struct SwitchCaseExprVisitor : public CodeGenExprVisitor {
     const std::string & case_val;
 };
 
+} // namespace code_generation
 } // namespace sushi
 
 

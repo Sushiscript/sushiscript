@@ -2,6 +2,7 @@
 #define SUSHI_BUILTIN_BASH_H_
 
 namespace sushi {
+namespace code_generation {
 
 // Variable Definitions
 
@@ -57,6 +58,7 @@ R"foo(_sushi_file_eq_() {
     fi
 })foo";
 
-};
+} // namespace code_generation
+} // namespace sushi
 
 #endif

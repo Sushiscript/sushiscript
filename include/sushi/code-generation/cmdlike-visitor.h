@@ -6,6 +6,7 @@
 #include "./scope-manager.h"
 
 namespace sushi {
+namespace code_generation {
 
 struct CodeGenCmdLikeVisitor : public ast::CommandLikeVisitor::Const {
     std::string val;
@@ -31,6 +32,7 @@ struct CodeGenCmdLikeVisitor : public ast::CommandLikeVisitor::Const {
     const scope::Scope * scope;
 };
 
+} // namespace code_generation
 } // namespace sushi
 
 #endif

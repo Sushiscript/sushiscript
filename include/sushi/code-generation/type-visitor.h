@@ -4,6 +4,7 @@
 #include "sushi/ast.h"
 
 namespace sushi {
+namespace code_generation {
 
 struct CodeGenTypeExprVisitor : public ast::TypeExprVisitor::Const {
     std::string type_expr_str;
@@ -69,6 +70,7 @@ struct CodeGenTypeVisitor : public type::TypeVisitor::Const {
     }
 };
 
+} // namespace code_generation
 } // namespace sushi
 
 #endif

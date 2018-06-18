@@ -2,6 +2,7 @@
 #include "sushi/code-generation/stmt-visitor.h"
 
 namespace sushi {
+namespace code_generation {
 
 std::string CodeGenerator::GenCode(
     const ast::Program & program,
@@ -19,4 +20,5 @@ std::string CodeGenerator::GenCode(
     return ret;
 }
 
-};
+}
+}

@@ -6,6 +6,7 @@
 #include "./code-generation.h"
 
 namespace sushi {
+namespace code_generation {
 
 constexpr char kAssignTemplate[] = "%1%=%2%";
 constexpr char kAssignArrayTemplate[] = "%1%=(%2%)";
@@ -261,7 +262,8 @@ struct CodeGenStmtVisitor : public ast::StatementVisitor::Const {
     }
 };
 
-} // sushi
+} // namespace code_generation
+} // namespace sushi
 
 
 #endif

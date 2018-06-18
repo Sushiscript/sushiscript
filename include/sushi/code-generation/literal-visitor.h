@@ -4,6 +4,7 @@
 #include "sushi/ast.h"
 
 namespace sushi {
+namespace code_generation {
 
 struct CodeGenLiteralVisitor : public ast::LiteralVisitor::Const {
     std::string val;
@@ -25,6 +26,7 @@ struct ConditionLiteralVisitor : public CodeGenLiteralVisitor {
     SUSHI_VISITING(ast::BoolLit, bool_lit);
 };
 
+} // namespace code_generation
 } // namespace sushi
 
 #endif

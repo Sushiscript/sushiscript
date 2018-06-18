@@ -7,6 +7,7 @@
 #include "./scope-manager.h"
 
 namespace sushi {
+namespace code_generation {
 
 constexpr char kIndentString[] = "    ";
 
@@ -28,6 +29,7 @@ class CodeGenerator {
     }
 };
 
-}  // namespace sushi
+} // namespace code_generation
+} // namespace sushi
 
 #endif

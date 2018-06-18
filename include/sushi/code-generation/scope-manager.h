@@ -6,6 +6,7 @@
 #include "boost/format.hpp"
 
 namespace sushi {
+namespace code_generation {
 
 class ScopeManager {
     std::map<const std::string &, int> origin_name_to_int;
@@ -60,6 +61,7 @@ class ScopeManager {
     }
 };
 
-}
+} // namespace code_generation
+} // namespace sushi
 
 #endif
