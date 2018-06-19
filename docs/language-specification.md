@@ -556,7 +556,7 @@ A specific type `<E' : T'>` in the _body_, whenever it is instantiated, add `T'`
 
 When `<E'>` is deduced with actual type `TA`, it instantiates the `T'` to `TA` in `<E''>`, and add `TA1` to the required types of `<E''>`. Then when `<E''>` is deduced with `TA2`, `<E'' : TA2>` is checked against the _satisfaction_ condition of the requirement with required type `TA1`.
 
-### 4.5 Buit-in Types
+### 4.5 Built-in Types
 
 #### 4.5.1 Simple Types
 
@@ -572,8 +572,8 @@ When `<E'>` is deduced with actual type `TA`, it instantiates the `T'` to `TA` i
 
 #### 4.5.2 Parameterized Types
 
-- `Array [element]`: Linear sequence of values with type `[Element]`.
-- `Map [Key] [Value]`: Associative structure that map a values of type `[Key]` to values of type `[Value]`
+- `Array [element]`: Linear sequence of values with simple type `[Element]`.
+- `Map [Key] [Value]`: Associative structure that map a values of simple type `[Key]` to values of simple type `[Value]`.
 - `Function [Ret] [Param1] [Param2] ...`: Function with parameters of type `[Param1], [Param2]` and return type `[Ret]`.
 
 #### 4.5.3 Implicit Conversion
