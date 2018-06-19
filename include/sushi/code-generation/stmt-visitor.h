@@ -24,10 +24,13 @@ if [[ _sushi_func_ret_ -ne 0 ]]; then
 else
     return 1
 fi)";
-constexpr char kIfStmtPartTemplate[] = "if [[ %1% ]]; then\n%2%\nfi";
-constexpr char kIfStmtFullTemplate[] = "if [[ %1% ]]; then\n%2%\nelse\n%3%\nfi";
+constexpr char kIfStmtPartTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nfi";
+constexpr char kIfStmtFullTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nelse\n%3%\nfi";
+constexpr char kIfStmtExitCodePartTemplate[] = "if [[ %1% -eq 0 ]]; then\n%2%\nfi";
+constexpr char kIfStmtExitCodeFullTemplate[] = "if [[ %1% -eq 0 ]]; then\n%2%\nelse\n%3%\nfi";
 constexpr char kForStmtIterTemplate[] = "for %1% in %2%; do\n%3%\ndone";
-constexpr char kForStmtWhileTemplate[] = "while %1%; do\n%2%\ndone";
+constexpr char kForStmtWhileTemplate[] = "while [[ %1% -ne 0 ]]; do\n%2%\ndone";
+constexpr char kForStmtWhileExitCodeTemplate[] = "while [[ %1% -eq 0 ]]; do\n%2%\ndone";
 
 struct StmtVisitor : public ast::StatementVisitor::Const {
     std::string code;
@@ -37,6 +40,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
     const scope::Scope * scope;
 
     std::vector<std::string> identifiers_to_unset;
+
+    using ST = TypeVisitor::SimplifiedType;
 
     StmtVisitor(
         const scope::Environment & environment, const ast::Program & program, std::shared_ptr<ScopeManager> scope_manager)
@@ -55,7 +60,6 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         TypeVisitor type_visitor;
         type->AcceptVisitor(type_visitor);
 
-        using ST = TypeVisitor::SimplifiedType;
         code += lvalue_expr_visitor.code_before + '\n' + rvalue_expr_visitor.code_before + '\n';
         switch (type_visitor.type) {
         case ST::kInt:
@@ -155,17 +159,27 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         code += (boost::format(kReturnStmtBoolTemplate) % value_expr_visitor.val).str();
     }
     SUSHI_VISITING(ast::IfStmt, if_stmt) {
-        ConditionExprVisitor condition_visitor(scope_manager, environment, scope);
+        ExprVisitor condition_visitor(scope_manager, environment, scope);
         if_stmt.condition->AcceptVisitor(condition_visitor);
 
         CodeGenerator true_body_gen;
         std::string true_body = true_body_gen.GenCode(if_stmt.true_body, environment, scope_manager);
         true_body = CodeGenerator::AddIndentToEachLine(true_body);
 
+        auto type = environment.LookUp(if_stmt.condition.get());
+        TypeVisitor type_visitor;
+        type->AcceptVisitor(type_visitor);
+
         if (if_stmt.false_body.statements.empty()) {
             code += condition_visitor.code_before;
-            code += (boost::format(kIfStmtPartTemplate) % condition_visitor.val
-                                                        % true_body).str();
+            if (type_visitor.type == ST::kBool) {
+                code += (boost::format(kIfStmtPartTemplate) % condition_visitor.val
+                                                            % true_body).str();
+            } else if (type_visitor.type == ST::kExitCode) {
+                // Implicitly conversion
+                code += (boost::format(kIfStmtExitCodePartTemplate) % condition_visitor.val
+                                                                    % true_body).str();
+            }
         } else {
             code += condition_visitor.code_before;
             CodeGenerator false_body_gen;
@@ -173,9 +187,16 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
             false_body = CodeGenerator::AddIndentToEachLine(false_body);
 
             code += condition_visitor.code_before;
-            code += (boost::format(kIfStmtFullTemplate) % condition_visitor.val
-                                                        % true_body
-                                                        % false_body).str();
+            if (type_visitor.type == ST::kBool) {
+                code += (boost::format(kIfStmtFullTemplate) % condition_visitor.val
+                                                            % true_body
+                                                            % false_body).str();
+            } else if (type_visitor.type == ST::kExitCode) {
+                code += (boost::format(kIfStmtExitCodeFullTemplate) % condition_visitor.val
+                                                                    % true_body
+                                                                    % false_body).str();
+
+            }
         }
     }
 
@@ -194,36 +215,51 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         );
 
         std::string code_before;
+        std::string temp_code;
         // each case
         for (auto & case_ : switch_stmt.cases) {
             if (default_case == &case_) continue;
             SwitchCaseExprVisitor case_visitor(scope_manager, environment, scope, switched_visitor.val);
             case_.condition->AcceptVisitor(case_visitor);
             code_before += case_visitor.code_before + '\n';
+            constexpr char template_[][64] = {
+                "if [[ %1% -eq %2% ]]; then",
+                "elif [[ %1% -eq %2% ]]; then",
+                "if [[ `_sushi_comp_array %1% %2%` -ne 0 ]]; then",
+                "elif [[ `_sushi_comp_array %1% %2%` -ne 0 ]]; then"
+            };
+            int select_template = 0;
             if (is_first_case) {
                 is_first_case = false;
-                constexpr char template_[] = "if %1%; then";
-                code += (boost::format(template_) % case_visitor.val).str();
-                CodeGenerator body_gen;
-                auto body_code = body_gen.GenCode(case_.body, environment, scope_manager);
-                code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+                select_template = 0;
             } else {
-                constexpr char template_[] = "elif %1%";
-                code += (boost::format(template_) % case_visitor.val).str();
-                CodeGenerator body_gen;
-                auto body_code = body_gen.GenCode(case_.body, environment, scope_manager);
-                code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+                select_template = 1;
             }
+            auto type = environment.LookUp(case_.condition.get());
+            TypeVisitor type_visitor;
+            type->AcceptVisitor(type_visitor);
+
+            if (type_visitor.type == ST::kArray) {
+                select_template += 2;
+            }
+
+            temp_code += (boost::format(template_[select_template]) % case_visitor.val
+                                                                    % switched_visitor.val).str();
+            CodeGenerator body_gen;
+            auto body_code = body_gen.GenCode(case_.body, environment, scope_manager);
+            temp_code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
         }
         // default case
         {
-            code += "else";
+            temp_code += "else";
             CodeGenerator body_gen;
             auto body_code = body_gen.GenCode(default_case->body, environment, scope_manager);
-            code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+            temp_code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
         }
         // fi
-        code += "\nfi";
+        temp_code += "\nfi";
+
+        code = code_before + '\n' + temp_code;
     }
     SUSHI_VISITING(ast::ForStmt, for_stmt) {
         if (for_stmt.condition.IsRange()) {
@@ -242,15 +278,26 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
                                                                 % for_body).str();
         } else {
             // For as while
-            ConditionExprVisitor expr_visitor(scope_manager, environment, scope);
+            ExprVisitor expr_visitor(scope_manager, environment, scope);
             for_stmt.condition.condition->AcceptVisitor(expr_visitor);
+
+            auto type = environment.LookUp(for_stmt.condition.condition.get());
+            TypeVisitor type_visitor;
+            type->AcceptVisitor(type_visitor);
+
             CodeGenerator code_gen;
             auto for_body = code_gen.GenCode(for_stmt.body, environment, scope_manager);
             for_body = CodeGenerator::AddIndentToEachLine(for_body);
             auto code_before = expr_visitor.code_before;
             code += code_before;
-            code += '\n' + (boost::format(kForStmtWhileTemplate) % expr_visitor.val
-                                                                 % for_body).str();
+            if (type_visitor.type == ST::kBool) {
+                code += '\n' + (boost::format(kForStmtWhileTemplate) % expr_visitor.val
+                                                                     % for_body).str();
+            } else if (type_visitor.type == ST::kExitCode) {
+                // Implicitly conversion
+                code += '\n' + (boost::format(kForStmtWhileExitCodeTemplate) % expr_visitor.val
+                                                                             % for_body).str();
+            }
         }
     }
     SUSHI_VISITING(ast::LoopControlStmt, loop_control_stmt) {

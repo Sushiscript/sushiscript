@@ -58,6 +58,27 @@ R"foo(_sushi_file_eq_() {
     fi
 })foo";
 
+// _sushi_comp_array
+constexpr char kSushiCompArrayFuncDef[] =
+R"foo(_sushi_compare_array_() {
+    local -n arr0=$1
+    local -n arr1=$2
+    if [[ ${#arr0[@]} -ne ${#arr1[@]} ]]; then
+        echo -n 0
+        return 1
+    fi
+    local n=${#arr0[@]}
+    for ((i=0; i < n; i++)); do
+        if [[ ${arr0[i]} -ne ${arr1[i]} ]]; then
+        echo -n 0
+        return 1
+        fi
+    done
+    echo -n 1
+    return 0
+}
+)foo";
+
 } // namespace code_generation
 } // namespace sushi
 
