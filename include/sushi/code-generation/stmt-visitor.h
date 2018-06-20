@@ -17,8 +17,17 @@ constexpr char kVarDefArrayTemplate[] = "local -a %1%=%2%";
 constexpr char kVarDefMapTemplate[] = "local -A %1%=%2%";
 constexpr char kVarDefExpoTemplate[] = "declare -x%1% %2%=%3%";
 
-constexpr char kFuncDefTemplate[] = "%1% () {\n%2%\n}";
-constexpr char kFuncDefExpoTemplate[] = "%1% () {\n%2%\n}\nexport %1%";
+constexpr char kFuncDefTemplate[] =
+R"(%1% () {
+%2%
+}
+local %1%=%1%)";
+constexpr char kFuncDefExpoTemplate[] =
+R"(%1% () {
+%2%
+}
+export -f %1%
+local %1%=%1%)";
 
 constexpr char kReturnStmtNotBoolTemplate[] = "_sushi_func_ret_=%1%; return 0";
 constexpr char kReturnStmtBoolTemplate[] =
@@ -169,9 +178,9 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         // Program
         CodeGenerator code_gen;
         std::string program_code = code_gen.GenCode(func_def.body, environment, scope_manager);
-        program_code = CodeGenerator::AddIndentToEachLine(program_code);
 
         auto all_code = param_assign_part + "\n\n" + program_code;
+        all_code = CodeGenerator::AddIndentToEachLine(all_code);
         if (func_def.is_export) {
             code += (boost::format(kFuncDefExpoTemplate) % new_name % all_code).str();
         } else {
