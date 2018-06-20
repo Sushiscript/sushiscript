@@ -8,9 +8,11 @@ namespace sushi {
 namespace scope {
 
 struct StatementVisitor : public ast::StatementVisitor::Const {
-    public: 
-    StatementVisitor(Environment & environment) {};
+    Environment & environment;
 
+    StatementVisitor(Environment & environment) : environment(environment) {
+        
+    };
     SUSHI_VISITING(ast::Assignment, assignment) {
     }
     SUSHI_VISITING(ast::Expression, expression) {

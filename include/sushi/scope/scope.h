@@ -12,7 +12,6 @@
 namespace sushi {
 namespace scope {
 
-
 /// ownership: (=> means `own`)
 ///
 /// Environment => Scope

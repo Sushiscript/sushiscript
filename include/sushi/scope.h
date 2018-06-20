@@ -3,6 +3,9 @@
 
 #include "sushi/scope/scope.h"
 #include "sushi/scope/environment.h"
+#include "sushi/scope/statement-visitor.h"
+#include "sushi/scope/type-check.h"
+#include "sushi/scope/error.h"
 
 /// what scope do ? 
 /// scope part is between the lexer part and code-generation part, it will 
