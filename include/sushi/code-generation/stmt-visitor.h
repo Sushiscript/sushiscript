@@ -219,7 +219,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         // each case
         for (auto & case_ : switch_stmt.cases) {
             if (default_case == &case_) continue;
-            SwitchCaseExprVisitor case_visitor(scope_manager, environment, scope, switched_visitor.val);
+            ExprVisitor case_visitor(scope_manager, environment, scope);
             case_.condition->AcceptVisitor(case_visitor);
             code_before += case_visitor.code_before + '\n';
             constexpr char template_[][64] = {
