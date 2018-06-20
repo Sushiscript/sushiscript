@@ -9,6 +9,8 @@
 #include "./cmdlike-visitor.h"
 #include "./type-visitor.h"
 
+#include <set>
+
 namespace sushi {
 namespace code_generation {
 
@@ -34,6 +36,8 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
     std::string val;
     std::string code_before;
     std::string raw_id;
+
+    std::set<std::string> new_ids;
 
     ExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
@@ -74,6 +78,7 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
                 auto temp = scope_manager->GetNewTemp();
                 code_before = (boost::format(kMapVarCodeBeforeTemplate) % temp % new_name).str();
                 val = (boost::format(R"("$%1%")") % temp).str();
+                new_ids.insert(temp);
                 break;
             }
         }

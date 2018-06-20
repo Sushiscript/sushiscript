@@ -15,6 +15,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -44,6 +45,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Minus) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -62,6 +64,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mult) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -86,6 +89,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -110,6 +114,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mod) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -128,6 +133,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -152,6 +158,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -176,6 +183,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -200,6 +208,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
@@ -227,6 +236,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kUnit:
