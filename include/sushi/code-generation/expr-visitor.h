@@ -69,7 +69,7 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
             case ST::kString:
             case ST::kChar:
             case ST::kFunc:
-                val = '$' + new_name;
+                val = "${" + new_name + '}';
                 break;
             case ST::kArray:
                 val = (boost::format("\"${%1%[@]}\"") % new_name).str();
@@ -165,7 +165,7 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
 
         code_before += indexable_visitor.code_before + '\n' + index_visitor.code_before;
         raw_id = indexable_visitor.val + '[' + index_visitor.val + ']';
-        val = '$' + raw_id;
+        val = "${" + raw_id + '}';
     }
 
   protected:

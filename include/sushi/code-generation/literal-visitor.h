@@ -82,7 +82,7 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
 
         code_before += (boost::format(kArrayLitCodeBeforeTemplate) % temp_name % lit_inside).str();
 
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
     }
 
     SUSHI_VISITING(ast::MapLit, map_lit) {
@@ -114,7 +114,7 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
 
         code_before += (boost::format(kMapLitCodeBeforeTemplate) % temp_name % lit_inside).str();
 
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
     }
 
     std::shared_ptr<ScopeManager> scope_manager;

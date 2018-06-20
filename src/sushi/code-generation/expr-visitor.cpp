@@ -22,13 +22,13 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
         code_before += (boost::format(kIntAddTemplate) % temp_name
                                                        % lhs_visitor.val
                                                        % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kString:
         code_before += (boost::format(kStringConcatTemplate) % temp_name
                                                              % lhs_visitor.val
                                                              % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kArray:
         code_before += (boost::format(kArrayConcatTempplate) % temp_name
@@ -52,7 +52,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Minus) {
         code_before += (boost::format(kIntMinusTemplate) % temp_name
                                                          % lhs_visitor.val
                                                          % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
@@ -71,13 +71,13 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mult) {
         code_before += (boost::format(kIntMultTemplate) % temp_name
                                                         % lhs_visitor.val
                                                         % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kString:
         code_before += (boost::format(kIntMultTemplate) % temp_name
                                                         % lhs_visitor.val
                                                         % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
@@ -96,14 +96,14 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
         code_before += (boost::format(kIntDivTemplate) % temp_name
                                                        % lhs_visitor.val
                                                        % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kPath:
     case ST::kRelPath:
         code_before += (boost::format(kPathConcatTemplate) % temp_name
                                                            % lhs_visitor.val
                                                            % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
@@ -121,7 +121,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mod) {
         code_before += (boost::format(kIntModTemplate) % temp_name
                                                        % lhs_visitor.val
                                                        % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
@@ -141,7 +141,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
                                                         % lhs_visitor.val
                                                         % "<"
                                                         % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
@@ -149,7 +149,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
                                                            % lhs_visitor.val
                                                            % "<"
                                                            % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
@@ -166,7 +166,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
                                                         % lhs_visitor.val
                                                         % ">"
                                                         % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
@@ -174,7 +174,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
                                                            % lhs_visitor.val
                                                            % ">"
                                                            % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
@@ -191,7 +191,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
                                                         % lhs_visitor.val
                                                         % "<="
                                                         % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
@@ -199,7 +199,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
                                                            % lhs_visitor.val
                                                            % "<="
                                                            % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
@@ -216,7 +216,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
                                                         % lhs_visitor.val
                                                         % ">="
                                                         % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
@@ -224,7 +224,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
                                                            % lhs_visitor.val
                                                            % ">="
                                                            % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
@@ -248,7 +248,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
                                                            % lhs_visitor.val
                                                            % "=="
                                                            % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kBool:
     case ST::kInt:
@@ -258,20 +258,20 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
                                                         % lhs_visitor.val
                                                         % "=="
                                                         % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kPath:
     case ST::kRelPath:
         code_before += (boost::format(kPathEqTemplate) % temp_name
                                                        % lhs_visitor.val
                                                        % rhs_visitor.val).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     case ST::kArray:
         code_before += (boost::format(kArrayEqTemplate) % temp_name
                                                         % lhs_visitor.raw_id
                                                         % rhs_visitor.raw_id).str();
-        val = '$' + temp_name;
+        val = "${" + temp_name + '}';
         break;
     }
 }
