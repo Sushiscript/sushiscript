@@ -179,7 +179,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
 
         // Program
         CodeGenerator code_gen;
-        std::string program_code = code_gen.GenCode(func_def.body, environment, scope_manager);
+        // Use a new scope manager because variables are scoped by bash
+        std::string program_code = code_gen.GenCode(func_def.body, environment, std::make_shared<ScopeManager>());
 
         auto all_code = param_assign_part + "\n\n" + program_code;
         all_code = CodeGenerator::AddIndentToEachLine(all_code);
