@@ -16,7 +16,7 @@ class ScopeManager {
         origin_name_to_int["_sushi_t_"] = -1;
     }
 
-    std::string GetNewTemp(const scope::Scope * scope) {
+    std::string GetNewTemp() {
         std::string str = "_sushi_t_";
         int new_int = origin_name_to_int[str];
         ++origin_name_to_int[str];

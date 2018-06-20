@@ -7,6 +7,7 @@
 #include "./scope-manager.h"
 #include "./literal-visitor.h"
 #include "./cmdlike-visitor.h"
+#include "./type-visitor.h"
 
 namespace sushi {
 namespace code_generation {
@@ -15,6 +16,13 @@ namespace code_generation {
                         const T & lhs_visitor,                     \
                         const T & rhs_visitor,                     \
                         const ST & type)
+
+#define EXPR_VISITOR_TRANSLATE_IMPL(T, op)  \
+void ExprVisitor::Translate##op(            \
+    const T & lhs_visitor,                  \
+    const T & rhs_visitor,                  \
+    const ST & type                         \
+)
 
 constexpr char kMapVarCodeBeforeTemplate[] =
 R"(local %1%=`declare -p %2%`
@@ -62,9 +70,9 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
                 val = (boost::format("\"${%1%[@]}\"") % new_name).str();
                 break;
             case ST::kMap:
-                auto temp = scope_manager->GetNewTemp(scope);
+                auto temp = scope_manager->GetNewTemp();
                 code_before = (boost::format(kMapVarCodeBeforeTemplate) % temp % new_name).str();
-                val = (boost::format("\"$%1%\"") % temp).str();
+                val = (boost::format(R"("$%1%")") % temp).str();
                 break;
             }
         }
@@ -146,7 +154,7 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
         indexing.index->AcceptVisitor(index_visitor);
 
         code_before += indexable_visitor.code_before + '\n' + index_visitor.code_before;
-        val = indexable_visitor.val + '[' + index_visitor.val + ']';
+        val = '$' + indexable_visitor.val + '[' + index_visitor.val + ']';
     }
 
   protected:

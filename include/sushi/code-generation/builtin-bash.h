@@ -58,7 +58,7 @@ R"foo(_sushi_file_eq_() {
     fi
 })foo";
 
-// _sushi_comp_array
+// _sushi_comp_array_
 constexpr char kSushiCompArrayFuncDef[] =
 R"foo(_sushi_compare_array_() {
     local -n arr0=$1
