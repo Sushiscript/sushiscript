@@ -4,6 +4,7 @@
 #include "./expr-visitor.h"
 #include "./type-visitor.h"
 #include "./code-generation.h"
+#include <set>
 
 namespace sushi {
 namespace code_generation {
@@ -38,7 +39,7 @@ else
     return 1
 fi)";
 constexpr char kReturnStmtArrayTemplate[] = "_sushi_func_ret_=(%1%)";
-constexpr char kReturnStmtMapTemplate[] = R"foo(eval "_sushi_func_ret_=(%1%)")foo";
+constexpr char kReturnStmtMapTemplate[] = R"foo(eval "_sushi_func_map_ret_=(%1%)")foo";
 
 constexpr char kIfStmtPartTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nfi";
 constexpr char kIfStmtFullTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nelse\n%3%\nfi";
@@ -56,7 +57,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
     std::shared_ptr<ScopeManager> scope_manager;
     const scope::Scope * scope;
 
-    std::vector<std::string> identifiers_to_unset;
+    std::set<std::string> identifiers_to_unset;
 
     using ST = TypeVisitor::SimplifiedType;
 
@@ -112,7 +113,6 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
     SUSHI_VISITING(ast::VariableDef, var_def) {
         const scope::Scope * scope = environment.LookUp(&program);
         auto new_name = scope_manager->GetNewName(var_def.name, scope);
-        identifiers_to_unset.push_back(new_name);
         TypeExprVisitor type_expr_visitor;
         var_def.type->AcceptVisitor(type_expr_visitor);
         ExprVisitor expr_visitor(scope_manager, environment, scope);
@@ -132,30 +132,30 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         case ST::kFunc:
             if (var_def.is_export) {
                 code += (boost::format(kVarDefExpoTemplate) % ""
-                                                            % var_def.name
+                                                            % new_name
                                                             % expr_visitor.val).str();
             } else {
-                code += (boost::format(kVarDefTemplate) % var_def.name
+                code += (boost::format(kVarDefTemplate) % new_name
                                                         % expr_visitor.val).str();
             }
             break;
         case ST::kMap:
             if (var_def.is_export) {
                 code += (boost::format(kVarDefExpoTemplate) % "a"
-                                                            % var_def.name
+                                                            % new_name
                                                             % expr_visitor.val).str();
             } else {
-                code += (boost::format(kVarDefMapTemplate) % var_def.name
+                code += (boost::format(kVarDefMapTemplate) % new_name
                                                            % expr_visitor.val).str();
             }
             break;
         case ST::kArray:
             if (var_def.is_export) {
                 code += (boost::format(kVarDefExpoTemplate) % "A"
-                                                            % var_def.name
+                                                            % new_name
                                                             % expr_visitor.val).str();
             } else {
-                code += (boost::format(kVarDefArrayTemplate) % var_def.name
+                code += (boost::format(kVarDefArrayTemplate) % new_name
                                                              % expr_visitor.val).str();
             }
             break;

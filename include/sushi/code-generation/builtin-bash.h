@@ -10,7 +10,8 @@ namespace code_generation {
 constexpr char kSushiUnitDef[] = R"(declare -r _sushi_unit_=0)";
 // _sushi_func_ret_
 constexpr char kSushiFuncRetDef[] = R"(declare _sushi_func_ret_=0)";
-
+// _sushi_func_map_ret_
+constexpr char kSushiFuncMapRetDef[] = "declare -A _sushi_func_map_ret_=()";
 
 // Function Definitions
 
