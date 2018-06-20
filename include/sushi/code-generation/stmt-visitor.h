@@ -11,11 +11,15 @@ namespace code_generation {
 constexpr char kAssignTemplate[] = "%1%=%2%";
 constexpr char kAssignArrayTemplate[] = "%1%=(%2%)";
 constexpr char kAssignMapTemplate[] = "eval \"%1%=(%2%)\"";
-constexpr char kVarDefFullTemplate[] = "local -%1% %2%=%3%";
-constexpr char kVarDefPartTemplate[] = "local %1%=%2%";
+
+constexpr char kVarDefTemplate[] = "local %1%=%2%";
+constexpr char kVarDefArrayTemplate[] = "local -a %1%=%2%";
+constexpr char kVarDefMapTemplate[] = "local -A %1%=%2%";
 constexpr char kVarDefExpoTemplate[] = "declare -x%1% %2%=%3%";
+
 constexpr char kFuncDefTemplate[] = "%1% () {\n%2%\n}";
 constexpr char kFuncDefExpoTemplate[] = "%1% () {\n%2%\n}\nexport %1%";
+
 constexpr char kReturnStmtNotBoolTemplate[] = "_sushi_func_ret_=%1%; return 0";
 constexpr char kReturnStmtBoolTemplate[] =
 R"(_sushi_func_ret_=%1%
@@ -24,10 +28,12 @@ if [[ _sushi_func_ret_ -ne 0 ]]; then
 else
     return 1
 fi)";
+
 constexpr char kIfStmtPartTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nfi";
 constexpr char kIfStmtFullTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nelse\n%3%\nfi";
 constexpr char kIfStmtExitCodePartTemplate[] = "if [[ %1% -eq 0 ]]; then\n%2%\nfi";
 constexpr char kIfStmtExitCodeFullTemplate[] = "if [[ %1% -eq 0 ]]; then\n%2%\nelse\n%3%\nfi";
+
 constexpr char kForStmtIterTemplate[] = "for %1% in %2%; do\n%3%\ndone";
 constexpr char kForStmtWhileTemplate[] = "while [[ %1% -ne 0 ]]; do\n%2%\ndone";
 constexpr char kForStmtWhileExitCodeTemplate[] = "while [[ %1% -eq 0 ]]; do\n%2%\ndone";
@@ -96,30 +102,52 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         const scope::Scope * scope = environment.LookUp(&program);
         auto new_name = scope_manager->GetNewName(var_def.name, scope);
         identifiers_to_unset.push_back(new_name);
-        TypeExprVisitor type_visitor;
-        var_def.type->AcceptVisitor(type_visitor);
+        TypeExprVisitor type_expr_visitor;
+        var_def.type->AcceptVisitor(type_expr_visitor);
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         var_def.value->AcceptVisitor(expr_visitor);
-        code += expr_visitor.code_before;
-        if (type_visitor.type_expr_str != "") {
-            if (var_def.is_export) {
-                code += (boost::format(kVarDefExpoTemplate) % type_visitor.type_expr_str
-                                                            % new_name
-                                                            % expr_visitor.val).str();
-            } else {
-                code += (boost::format(kVarDefFullTemplate) % type_visitor.type_expr_str
-                                                            % new_name
-                                                            % expr_visitor.val).str();
-            }
-        } else {
+        code += expr_visitor.code_before + '\n';
+
+        switch (type_expr_visitor.type) {
+        case ST::kInt:
+        case ST::kBool:
+        case ST::kUnit:
+        case ST::kFd:
+        case ST::kExitCode:
+        case ST::kPath:
+        case ST::kRelPath:
+        case ST::kString:
+        case ST::kChar:
+        case ST::kFunc:
             if (var_def.is_export) {
                 code += (boost::format(kVarDefExpoTemplate) % ""
-                                                            % new_name
+                                                            % var_def.name
                                                             % expr_visitor.val).str();
             } else {
-                code += (boost::format(kVarDefPartTemplate) % new_name
-                                                            % expr_visitor.val).str();
+                code += (boost::format(kVarDefTemplate) % var_def.name
+                                                        % expr_visitor.val).str();
             }
+            break;
+        case ST::kMap:
+            if (var_def.is_export) {
+                code += (boost::format(kVarDefExpoTemplate) % "a"
+                                                            % var_def.name
+                                                            % expr_visitor.val).str();
+            } else {
+                code += (boost::format(kVarDefMapTemplate) % var_def.name
+                                                           % expr_visitor.val).str();
+            }
+            break;
+        case ST::kArray:
+            if (var_def.is_export) {
+                code += (boost::format(kVarDefExpoTemplate) % "A"
+                                                            % var_def.name
+                                                            % expr_visitor.val).str();
+            } else {
+                code += (boost::format(kVarDefArrayTemplate) % var_def.name
+                                                             % expr_visitor.val).str();
+            }
+            break;
         }
     }
     SUSHI_VISITING(ast::FunctionDef, func_def) {

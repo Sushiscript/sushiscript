@@ -6,21 +6,6 @@
 namespace sushi {
 namespace code_generation {
 
-struct TypeExprVisitor : public ast::TypeExprVisitor::Const {
-    std::string type_expr_str;
-
-    SUSHI_VISITING(ast::TypeLit, type_lit) {}
-    SUSHI_VISITING(ast::ArrayType, array_type) {
-        type_expr_str = "a";
-    }
-    SUSHI_VISITING(ast::MapType, map_type) {
-        type_expr_str = "A";
-    }
-    SUSHI_VISITING(ast::FunctionType, function_type) {}
-};
-
-
-
 struct TypeVisitor : public type::TypeVisitor::Const {
     enum class SimplifiedType {
         kInt,
@@ -67,6 +52,36 @@ struct TypeVisitor : public type::TypeVisitor::Const {
     }
     SUSHI_VISITING(type::Function, function) {
         type = SimplifiedType::kFunc;
+    }
+};
+
+struct TypeExprVisitor : public ast::TypeExprVisitor::Const {
+    using ST = TypeVisitor::SimplifiedType;
+    using BT = type::BuiltInAtom::Type;
+
+    ST type;
+
+    SUSHI_VISITING(ast::TypeLit, type_lit) {
+        switch (type_lit.type) {
+        case BT::kInt: type = ST::kInt; break;
+        case BT::kBool: type = ST::kBool; break;
+        case BT::kUnit: type = ST::kUnit; break;
+        case BT::kFd: type = ST::kFd; break;
+        case BT::kExitCode: type = ST::kExitCode; break;
+        case BT::kPath: type = ST::kPath; break;
+        case BT::kRelPath: type = ST::kRelPath; break;
+        case BT::kString: type = ST::kString; break;
+        case BT::kChar: type = ST::kChar; break;
+        }
+    }
+    SUSHI_VISITING(ast::ArrayType, array_type) {
+        type = ST::kArray;
+    }
+    SUSHI_VISITING(ast::MapType, map_type) {
+        type = ST::kMap;
+    }
+    SUSHI_VISITING(ast::FunctionType, function_type) {
+        type = ST::kFunc;
     }
 };
 
