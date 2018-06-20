@@ -3,30 +3,24 @@
 
 language: cpp
 
-# if you want test osx, uncomment that line
-os:
-  - linux
-  - osx
-
-# if you want test clang, uncomment that line
-compiler:
-  - g++
-  # - clang
-
-
-addons:
-  apt:
-    sources:
-      - kubuntu-backports           # for cmake
-      - ubuntu-toolchain-r-test     # for g++-7 (maybe)
-      - llvm-toolchain-trusty-5.0   # for clang-5.0 (maybe)
-    packages:
-      - cmake                       # for cmake
-      # (why this version? later we will talk about it)
-      - g++-7                       # for this version g++ 
-      - clang-5.0                   # for this version clang
-      - python3                     # for python3 (pip3 need)
-      - python3-pip                 # for pip (conan need)
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - kubuntu-backports           # for cmake
+            - ubuntu-toolchain-r-test     # for g++-7 (maybe)
+            - llvm-toolchain-trusty-5.0   # for clang-5.0 (maybe)
+          packages:
+            - cmake                       # for cmake
+            # (why this version? later we will talk about it)
+            - g++-7                       # for this version g++ 
+            - clang-5.0                   # for this version clang
+            - python3                     # for python3 (pip3 need)
+            - python3-pip                 # for pip (conan need)
+    # - os: osx
+    #   osx_image: xcode8.3
 
 
 # execute all of the commands which need to be executed 
@@ -35,7 +29,7 @@ before_install:
   # mac os install
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade python; fi
-  # set this will avoid memory not enough problem
+  # set this will avoid linux memory not enough problem
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX" == "g++" ]]; then export CXX="g++-7" CC="gcc-7"; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX" == "clang++" ]]; then export CXX="clang++-5.0" CC="clang-5.0"; fi
 
@@ -61,9 +55,8 @@ script:
   #     for gtest, without this you will face error in the final make
   # why --build=missing
   #     for conan can't download pre build libs, you need build it by yourself
-  - conan install .. -s compiler.libcxx=libstdc++11 --build=missing
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan install .. -s compiler.libcxx=libstdc++11 --build=missing; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then conan install .. -s compiler=clang -s compiler.libcxx=libstdc++11 --build=missing; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then conan install .. -s compiler=apple-clang -s compiler.version=8.1 --build=missing; fi
 
   - cmake ..
   - make -j4
