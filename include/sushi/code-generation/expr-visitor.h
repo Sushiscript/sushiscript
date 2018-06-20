@@ -85,11 +85,11 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
         raw_id = new_name;
     }
     SUSHI_VISITING(ast::Literal, literal) {
-        LiteralVisitor literal_visitor;
+        LiteralVisitor literal_visitor(scope_manager, environment, scope);
         literal.AcceptVisitor(literal_visitor);
         code_before = literal_visitor.code_before;
         val = literal_visitor.val;
-        // TODO: assign raw_id
+        raw_id = literal_visitor.raw_id;
     }
     SUSHI_VISITING(ast::UnaryExpr, unary_expr) {
         ExprVisitor expr_visitor(scope_manager, environment, scope);
