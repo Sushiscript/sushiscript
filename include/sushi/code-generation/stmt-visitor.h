@@ -29,7 +29,7 @@ R"(%1% () {
 export -f %1%
 local %1%=%1%)";
 
-constexpr char kReturnStmtNotBoolTemplate[] = "_sushi_func_ret_=%1%; return 0";
+constexpr char kReturnStmtNotBoolTemplate[] ="_sushi_func_ret_=%1%";
 constexpr char kReturnStmtBoolTemplate[] =
 R"(_sushi_func_ret_=%1%
 if [[ _sushi_func_ret_ -ne 0 ]]; then
@@ -37,6 +37,8 @@ if [[ _sushi_func_ret_ -ne 0 ]]; then
 else
     return 1
 fi)";
+constexpr char kReturnStmtArrayTemplate[] = "_sushi_func_ret_=(%1%)";
+constexpr char kReturnStmtMapTemplate[] = R"foo(eval "_sushi_func_ret_=(%1%)")foo";
 
 constexpr char kIfStmtPartTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nfi";
 constexpr char kIfStmtFullTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nelse\n%3%\nfi";
@@ -192,8 +194,33 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         ExprVisitor value_expr_visitor(scope_manager, environment, scope, false);
         return_stmt.value->AcceptVisitor(value_expr_visitor);
         code += value_expr_visitor.code_before;
-        // TODO: Judge whether return value is Bool type
-        code += (boost::format(kReturnStmtBoolTemplate) % value_expr_visitor.val).str();
+
+        auto type = environment.LookUp(return_stmt.value.get());
+        TypeVisitor type_visitor;
+        type->AcceptVisitor(type_visitor);
+
+        switch (type_visitor.type) {
+        case ST::kInt:
+        case ST::kUnit:
+        case ST::kFd:
+        case ST::kExitCode:
+        case ST::kPath:
+        case ST::kRelPath:
+        case ST::kString:
+        case ST::kChar:
+        case ST::kFunc:
+            code += (boost::format(kReturnStmtNotBoolTemplate) % value_expr_visitor.val).str();
+            break;
+        case ST::kBool:
+            code += (boost::format(kReturnStmtBoolTemplate) % value_expr_visitor.val).str();
+            break;
+        case ST::kArray:
+            code += (boost::format(kReturnStmtArrayTemplate) % value_expr_visitor.val).str();
+            break;
+        case ST::kMap:
+            code += (boost::format(kReturnStmtMapTemplate) % value_expr_visitor.val).str();
+            break;
+        }
     }
     SUSHI_VISITING(ast::IfStmt, if_stmt) {
         ExprVisitor condition_visitor(scope_manager, environment, scope);
