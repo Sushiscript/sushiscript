@@ -6,7 +6,7 @@ language: cpp
 # if you want test osx, uncomment that line
 os:
   - linux
-  # - osx
+  - osx
 
 # if you want test clang, uncomment that line
 compiler:
@@ -32,15 +32,20 @@ addons:
 # execute all of the commands which need to be executed 
 # before installing dependencies
 before_install:
+  # mac os install
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew upgrade python; fi
   # set this will avoid memory not enough problem
-  - if [[ "$CXX" == "g++" ]]; then export CXX="g++-7" CC="gcc-7"; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX" == "g++" ]]; then export CXX="g++-7" CC="gcc-7"; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" && "$CXX" == "clang++" ]]; then export CXX="clang++-5.0" CC="clang-5.0"; fi
 
 
 # install all of the dependencies you need here
 # Install conan
 install:
-  - pip3 install --user conan
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then pip3 install --user conan; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then pip3 install conan;        fi
+
 
 # execute all of the commands which need to be executed 
 # before running actual tests
@@ -57,10 +62,14 @@ script:
   # why --build=missing
   #     for conan can't download pre build libs, you need build it by yourself
   - conan install .. -s compiler.libcxx=libstdc++11 --build=missing
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan install .. -s compiler.libcxx=libstdc++11 --build=missing; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then conan install .. -s compiler=clang -s compiler.libcxx=libstdc++11 --build=missing; fi
+
   - cmake ..
   - make -j4
   # run test
-  - ./bin/lexer-test && ./bin/parser-test && ./bin/scope-test
+  - cd bin
+  - ./lexer-test && ./parser-test && ./scope-test
 
 after_success:
   # so, pass the test...
