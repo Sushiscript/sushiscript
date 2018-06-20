@@ -15,6 +15,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntAddTemplate) % temp_name
@@ -43,6 +44,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Minus) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntMinusTemplate) % temp_name
@@ -60,6 +62,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mult) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntMultTemplate) % temp_name
@@ -83,6 +86,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntDivTemplate) % temp_name
@@ -106,6 +110,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mod) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntModTemplate) % temp_name
@@ -123,6 +128,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntCompTemplate) % temp_name
@@ -146,6 +152,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntCompTemplate) % temp_name
@@ -169,6 +176,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntCompTemplate) % temp_name
@@ -192,6 +200,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kInt:
         code_before += (boost::format(kIntCompTemplate) % temp_name
@@ -218,6 +227,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
     code_before += lhs_visitor.code_before + '\n';
     code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
+    raw_id = temp_name;
     switch (type) {
     case ST::kUnit:
         val = "1";
@@ -249,8 +259,8 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
         break;
     case ST::kArray:
         code_before += (boost::format(kArrayEqTemplate) % temp_name
-                                                        % lhs_visitor.val
-                                                        % rhs_visitor.val).str();
+                                                        % lhs_visitor.raw_id
+                                                        % rhs_visitor.raw_id).str();
         val = '$' + temp_name;
         break;
     }
@@ -259,6 +269,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, NotEq) {
     TranslateEqual(lhs_visitor, rhs_visitor, type);
     val = "$((" + val + "))";
+    raw_id = val;
 }
 
 constexpr char kBoolAndOrTemplate[] = "$((%1% %2% %3%))";
@@ -267,12 +278,14 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, And) {
     val = (boost::format(kBoolAndOrTemplate) % lhs_visitor.val
                                              % "&&"
                                              % rhs_visitor.val).str();
+    raw_id = val;
 }
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Or) {
     val = (boost::format(kBoolAndOrTemplate) % lhs_visitor.val
                                              % "||"
                                              % rhs_visitor.val).str();
+    raw_id = val;
 }
 
 } // namespace sushi

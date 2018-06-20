@@ -33,6 +33,7 @@ R"(local %1%=`declare -p %2%`
 struct ExprVisitor : public ast::ExpressionVisitor::Const {
     std::string val;
     std::string code_before;
+    std::string raw_id;
 
     ExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
@@ -76,12 +77,14 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
                 break;
             }
         }
+        raw_id = new_name;
     }
     SUSHI_VISITING(ast::Literal, literal) {
         LiteralVisitor literal_visitor;
         literal.AcceptVisitor(literal_visitor);
         code_before = literal_visitor.code_before;
         val = literal_visitor.val;
+        // TODO: assign raw_id
     }
     SUSHI_VISITING(ast::UnaryExpr, unary_expr) {
         ExprVisitor expr_visitor(scope_manager, environment, scope);
@@ -99,6 +102,7 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
             val = (boost::format("`_sushi_abs_ %1%`") % expr_visitor.val).str();
             break;
         }
+        raw_id = val;
     }
     SUSHI_VISITING(ast::BinaryExpr, binary_expr) {
         ExprVisitor lhs_visitor(scope_manager, environment, scope);
@@ -138,6 +142,7 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
         cmd_like.AcceptVisitor(cmdlike_visitor);
         code_before = cmdlike_visitor.code_before;
         val = cmdlike_visitor.val;
+        // TODO: assign raw_id
     }
     SUSHI_VISITING(ast::Indexing, indexing) {
         ExprVisitor indexable_visitor(
@@ -154,7 +159,8 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
         indexing.index->AcceptVisitor(index_visitor);
 
         code_before += indexable_visitor.code_before + '\n' + index_visitor.code_before;
-        val = '$' + indexable_visitor.val + '[' + index_visitor.val + ']';
+        raw_id = indexable_visitor.val + '[' + index_visitor.val + ']';
+        val = '$' + raw_id;
     }
 
   protected:
