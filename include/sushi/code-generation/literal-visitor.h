@@ -47,9 +47,15 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
         }
     }
 
-    SUSHI_VISITING(ast::StringLit, string_lit);
-    SUSHI_VISITING(ast::PathLit, path_lit);
-    SUSHI_VISITING(ast::RelPathLit, relPath_lit);
+    SUSHI_VISITING(ast::StringLit, string_lit) {
+        TranslateInterpolation(string_lit.value);
+    }
+    SUSHI_VISITING(ast::PathLit, path_lit) {
+        TranslateInterpolation(path_lit.value);
+    }
+    SUSHI_VISITING(ast::RelPathLit, relPath_lit) {
+        TranslateInterpolation(relPath_lit.value);
+    }
 
     SUSHI_VISITING(ast::ArrayLit, array_lit) {
         auto temp_name = scope_manager->GetNewTemp();
@@ -111,10 +117,28 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
         val = '$' + temp_name;
     }
 
-  protected:
     std::shared_ptr<ScopeManager> scope_manager;
     const scope::Environment & environment;
     const scope::Scope * scope;
+
+    void TranslateInterpolation(const ast::InterpolatedString &inter_str) {
+        std::string lit_str;
+        inter_str.Traverse([this, &lit_str](const std::string &str) {
+            lit_str += str;
+        }, [this, &lit_str](const ast::Expression & expr) {
+            auto temp_name = scope_manager->GetNewTemp();
+            new_ids.insert(temp_name);
+            ExprVisitor expr_visitor(scope_manager, environment, scope);
+            expr.AcceptVisitor(expr_visitor);
+            new_ids.merge(expr_visitor.new_ids);
+
+            code_before += expr_visitor.code_before + '\n';
+            code_before += (boost::format("local %1%=%2%") % temp_name % expr_visitor.val).str();
+
+            lit_str += "${" + temp_name + '}';
+        });
+        val = (boost::format("\"%1%\"") % lit_str).str();
+    }
 };
 
 } // namespace code_generation
