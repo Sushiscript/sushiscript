@@ -14,8 +14,8 @@ constexpr char kAssignArrayTemplate[] = "%1%=(%2%)";
 constexpr char kAssignMapTemplate[] = "eval \"%1%=(%2%)\"";
 
 constexpr char kVarDefTemplate[] = "local %1%=%2%";
-constexpr char kVarDefArrayTemplate[] = "local -a %1%=%2%";
-constexpr char kVarDefMapTemplate[] = "local -A %1%=%2%";
+constexpr char kVarDefArrayTemplate[] = "local -a %1%=(%2%)";
+constexpr char kVarDefMapTemplate[] = "local -A %1%=(); eval \"%1%=(%2%)\"";
 constexpr char kVarDefExpoTemplate[] = "declare -x%1% %2%=%3%";
 
 constexpr char kFuncDefTemplate[] =
