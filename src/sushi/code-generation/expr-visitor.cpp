@@ -12,8 +12,6 @@ constexpr char kStringConcatTemplate[] = R"(local %1%="%2%%3%")";
 constexpr char kArrayConcatTempplate[] = "local %1%=(%2% %3%)";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -34,7 +32,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
         code_before += (boost::format(kArrayConcatTempplate) % temp_name
                                                              % lhs_visitor.val
                                                              % rhs_visitor.val).str();
-        val = (boost::format(kArrayValTemplate) % tempnam).str();
+        val = (boost::format(kArrayValTemplate) % temp_name).str();
         break;
     }
 }
@@ -42,8 +40,6 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
 constexpr char kIntMinusTemplate[] = "local %1%=$((%2% - %3%))";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Minus) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -61,8 +57,6 @@ constexpr char kIntMultTemplate[] = "local %1%=$((%2% * %3%))";
 constexpr char kStringDupTemplate[] = "local %1%=`_sushi_dup_str_ %2% %3%`";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mult) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -86,8 +80,6 @@ constexpr char kIntDivTemplate[] = "local %1%=$((%2% / %3%))";
 constexpr char kPathConcatTemplate[] = "local %1%=`_sushi_path_concat_ %2% %3%`";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -111,8 +103,6 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
 constexpr char kIntModTemplate[] = "local %1%=$((%2% %% %3%))";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mod) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -130,8 +120,6 @@ constexpr char kStringCompTemplate[] = "[[ %2% %3% %4% ]]; %1%=$((1 - $?))";
 constexpr char kIntCompTemplate[] = "%1%=$((%2% %3% %4%))";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -155,8 +143,6 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
 }
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -180,8 +166,6 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
 }
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -205,8 +189,6 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
 }
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
@@ -232,15 +214,16 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
 constexpr char kPathEqTemplate[] = "local %1%=`_sushi_file_eq_ %2% %3%`";
 constexpr char kArrayEqTemplate[] = "local %1%=`_sushi_compare_array_ %2% %3%`";
 
+constexpr char kAssignTemplate[] = "local %1%=%2%";
+
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
-    code_before += lhs_visitor.code_before + '\n';
-    code_before += rhs_visitor.code_before + '\n';
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
     switch (type) {
     case ST::kUnit:
-        val = "1";
+        code_before += (boost::format(kAssignTemplate) % temp_name % "1").str();
+        val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
@@ -278,24 +261,33 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, NotEq) {
     TranslateEqual(lhs_visitor, rhs_visitor, type);
-    val = "$((" + val + "))";
-    raw_id = val;
+    code_before += (boost::format("%1%=$((1 - %2%))") % raw_id % val).str();
 }
 
-constexpr char kBoolAndOrTemplate[] = "$((%1% %2% %3%))";
+constexpr char kBoolAndOrTemplate[] = "%1%=$((%2% %3% %4%))";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, And) {
-    val = (boost::format(kBoolAndOrTemplate) % lhs_visitor.val
-                                             % "&&"
-                                             % rhs_visitor.val).str();
-    raw_id = val;
+    auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
+    raw_id = temp_name;
+
+    code_before += (boost::format(kBoolAndOrTemplate) % temp_name
+                                                      % lhs_visitor.val
+                                                      % "&&"
+                                                      % rhs_visitor.val).str();
+    val = "${" + temp_name + '}';
 }
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Or) {
-    val = (boost::format(kBoolAndOrTemplate) % lhs_visitor.val
-                                             % "||"
-                                             % rhs_visitor.val).str();
-    raw_id = val;
+    auto temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(temp_name);
+    raw_id = temp_name;
+
+    code_before += (boost::format(kBoolAndOrTemplate) % temp_name
+                                                      % lhs_visitor.val
+                                                      % "||"
+                                                      % rhs_visitor.val).str();
+    val = "${" + temp_name + '}';
 }
 
 } // namespace sushi

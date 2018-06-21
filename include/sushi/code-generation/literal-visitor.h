@@ -23,28 +23,49 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
             scope(scope) {}
 
     SUSHI_VISITING(ast::IntLit, int_lit) {
-        val = "$((" + std::to_string(int_lit.value) + "))";
+        auto temp_name = GetTempName();
+        code_before = (boost::format("%1%=$((%2%))") % temp_name
+                                                     % std::to_string(int_lit.value)).str();
+        val = "${" + temp_name + '}';
     }
     SUSHI_VISITING(ast::CharLit, char_lit) {
-        val = '"' + char_lit.value + '"';
+        auto temp_name = GetTempName();
+        code_before = (boost::format("%1%=\"%2%\"") % temp_name
+                                                    % char_lit.value).str();
+        val = "${" + temp_name + '}';
     }
     SUSHI_VISITING(ast::BoolLit, bool_lit) {
+        auto temp_name = GetTempName();
+        constexpr char template_[] = "%1%=$((%2%))";
         if (bool_lit.value) {
-            val = '$((1))';
+            code_before = (boost::format(template_) % temp_name
+                                                    % "1").str();
         } else {
-            val = '$((0))';
+            code_before = (boost::format(template_) % temp_name
+                                                    % "0").str();
         }
+        val = "${" + temp_name + '}';
     }
     SUSHI_VISITING(ast::UnitLit, unit_lit) {
-        val = "0";
+        auto temp_name = GetTempName();
+        code_before = (boost::format("%1%=0") % temp_name).str();
+        val = "${" + temp_name + '}';
     }
     SUSHI_VISITING(ast::FdLit, fd_lit) {
+        auto temp_name = GetTempName();
+
+        std::string fd_str;
         using V = ast::FdLit::Value;
         switch (fd_lit.value) {
-        case V::kStdin: val = "0"; break;
-        case V::kStdout: val = "1"; break;
-        case V::kStderr: val = "2"; break;
+        case V::kStdin: fd_str = "0"; break;
+        case V::kStdout: fd_str = "1"; break;
+        case V::kStderr: fd_str = "2"; break;
         }
+
+        constexpr char template_[] = "%1%=%2%";
+        code_before = (boost::format(template_) % temp_name
+                                                % fd_str).str();
+        val = "${" + temp_name + '}';
     }
 
     SUSHI_VISITING(ast::StringLit, string_lit) {
@@ -58,9 +79,7 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
     }
 
     SUSHI_VISITING(ast::ArrayLit, array_lit) {
-        auto temp_name = scope_manager->GetNewTemp();
-        new_ids.insert(temp_name);
-        raw_id = temp_name;
+        auto temp_name = GetTempName();
 
         std::string lit_inside;
 
@@ -86,9 +105,7 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
     }
 
     SUSHI_VISITING(ast::MapLit, map_lit) {
-        auto temp_name = scope_manager->GetNewTemp();
-        new_ids.insert(temp_name);
-        raw_id = temp_name;
+        auto temp_name = GetTempName();
 
         std::string lit_inside;
 
@@ -122,6 +139,7 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
     const scope::Scope * scope;
 
     void TranslateInterpolation(const ast::InterpolatedString &inter_str) {
+        auto temp_name = GetTempName();
         std::string lit_str;
         inter_str.Traverse([this, &lit_str](const std::string &str) {
             lit_str += str;
@@ -137,7 +155,15 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
 
             lit_str += "${" + temp_name + '}';
         });
-        val = (boost::format("\"%1%\"") % lit_str).str();
+        code_before = (boost::format("%1%=\"%2%\"") % temp_name % lit_str).str();
+        val = "${" + temp_name + '}';
+    }
+
+    std::string GetTempName() {
+        auto temp_name = scope_manager->GetNewTemp();
+        new_ids.insert(temp_name);
+        raw_id = temp_name;
+        return temp_name;
     }
 };
 

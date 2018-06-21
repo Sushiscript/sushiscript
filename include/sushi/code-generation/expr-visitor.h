@@ -92,28 +92,44 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
         raw_id = literal_visitor.raw_id;
     }
     SUSHI_VISITING(ast::UnaryExpr, unary_expr) {
+        auto temp_name = scope_manager->GetNewTemp();
+        new_ids.insert(temp_name);
+        raw_id = temp_name;
+
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         unary_expr.expr->AcceptVisitor(expr_visitor);
-        code_before = expr_visitor.code_before;
+        new_ids.merge(expr_visitor.new_ids);
+
+        code_before = expr_visitor.code_before + '\n';
         using UOP = ast::UnaryExpr::Operator;
         switch (unary_expr.op) {
         case UOP::kNot:
-            val = (boost::format("$((! %1%))") % expr_visitor.val).str();
+            code_before += (boost::format("%1%=$((! %2%))") % temp_name
+                                                            % expr_visitor.val).str();
+            val = "${" + temp_name + '}';
             break;
         case UOP::kNeg:
-            val = (boost::format("$((- %1%))") % expr_visitor.val).str();
+            code_before += (boost::format("%1%=$((- %2%))") % temp_name
+                                                            % expr_visitor.val).str();
+            val = "${" + temp_name + '}';
             break;
         case UOP::kPos:
-            val = (boost::format("`_sushi_abs_ %1%`") % expr_visitor.val).str();
+            code_before += (boost::format("%1%=`_sushi_abs_ %2%`") % temp_name
+                                                                   % expr_visitor.val).str();
+            val = "${" + temp_name + '}';
             break;
         }
-        raw_id = val;
     }
     SUSHI_VISITING(ast::BinaryExpr, binary_expr) {
         ExprVisitor lhs_visitor(scope_manager, environment, scope);
         ExprVisitor rhs_visitor(scope_manager, environment, scope);
         binary_expr.lhs->AcceptVisitor(lhs_visitor);
         binary_expr.rhs->AcceptVisitor(rhs_visitor);
+
+        new_ids.merge(lhs_visitor.new_ids);
+        new_ids.merge(rhs_visitor.new_ids);
+
+        code_before += lhs_visitor.code_before + '\n' + rhs_visitor.code_before + '\n';
 
         // Get whole expression's type or (lhs or rhs)'s type?
         auto type = environment.LookUp(&binary_expr);
