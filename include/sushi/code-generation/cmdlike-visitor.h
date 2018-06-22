@@ -6,7 +6,7 @@
 #include "./scope-manager.h"
 #include "./type-visitor.h"
 
-#include <set>
+#include <unordered_set>
 
 namespace sushi {
 namespace code_generation {
@@ -17,7 +17,7 @@ struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
     std::string raw_id;
     bool redir_to_here = false;
 
-    std::set<std::string> new_ids;
+    std::unordered_set<std::string> new_ids;
 
     CmdLikeVisitor(
         std::shared_ptr<ScopeManager> scope_manager,

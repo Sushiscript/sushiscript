@@ -9,7 +9,7 @@
 #include "./cmdlike-visitor.h"
 #include "./type-visitor.h"
 
-#include <set>
+#include <unordered_set>
 
 namespace sushi {
 namespace code_generation {
@@ -37,7 +37,7 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
     std::string code_before;
     std::string raw_id;
 
-    std::set<std::string> new_ids;
+    std::unordered_set<std::string> new_ids;
 
     ExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,

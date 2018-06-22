@@ -3,7 +3,7 @@
 
 #include "sushi/ast.h"
 
-#include <set>
+#include <unordered_set>
 
 namespace sushi {
 namespace code_generation {
@@ -12,7 +12,7 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
     std::string val;
     std::string code_before;
     std::string raw_id;
-    std::set<std::string> new_ids;
+    std::unordered_set<std::string> new_ids;
 
     LiteralVisitor(
         std::shared_ptr<ScopeManager> scope_manager,

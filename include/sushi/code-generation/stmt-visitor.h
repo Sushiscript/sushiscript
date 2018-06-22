@@ -4,7 +4,7 @@
 #include "./expr-visitor.h"
 #include "./type-visitor.h"
 #include "./code-generation.h"
-#include <set>
+#include <unordered_set>
 
 namespace sushi {
 namespace code_generation {
@@ -57,7 +57,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
     std::shared_ptr<ScopeManager> scope_manager;
     const scope::Scope * scope;
 
-    std::set<std::string> new_ids;
+    std::unordered_set<std::string> new_ids;
 
     using ST = TypeVisitor::SimplifiedType;
 

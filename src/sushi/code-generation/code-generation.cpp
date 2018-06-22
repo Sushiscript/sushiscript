@@ -12,7 +12,7 @@ std::string CodeGenerator::GenCode(
         scope_manager = std::make_shared<ScopeManager>(new ScopeManager());
     }
 
-    std::set<std::string> new_ids;
+    std::unordered_set<std::string> new_ids;
 
     std::string ret;
     for (auto &statement : program.statements) {
