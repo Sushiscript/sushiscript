@@ -292,7 +292,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
 
         bool is_first_case = true;
 
-        auto default_case =  &*std::find(
+        auto default_case =  &*std::find_if(
             switch_stmt.cases.begin(),
             switch_stmt.cases.end(),
             [](const ast::SwitchStmt::Case & case_) -> bool {

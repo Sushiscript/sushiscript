@@ -9,7 +9,7 @@ std::string CodeGenerator::GenCode(
     const scope::Environment & environment,
     std::shared_ptr<ScopeManager> scope_manager) {
     if (!scope_manager) {
-        scope_manager = std::make_shared<ScopeManager>(new ScopeManager());
+        scope_manager = std::make_shared<ScopeManager>();
     }
 
     std::unordered_set<std::string> new_ids;
