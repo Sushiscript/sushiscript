@@ -11,12 +11,24 @@ std::string CodeGenerator::GenCode(
     if (!scope_manager) {
         scope_manager = std::make_shared<ScopeManager>(new ScopeManager());
     }
+
+    std::set<std::string> new_ids;
+
     std::string ret;
     for (auto &statement : program.statements) {
         StmtVisitor visitor(environment, program, scope_manager);
         statement->AcceptVisitor(visitor);
+        new_ids.merge(visitor.new_ids);
         ret += visitor.code + "\n";
     }
+
+    // unset new_ids
+    constexpr char unset_template[] = "unset %1%";
+    for (auto &id : new_ids) {
+        scope_manager->Unset(id);
+        ret += '\n' + (boost::format(unset_template) % id).str();
+    }
+
     return ret;
 }
 

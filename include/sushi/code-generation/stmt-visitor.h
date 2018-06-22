@@ -125,7 +125,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         var_def.value->AcceptVisitor(expr_visitor);
 
         new_ids.merge(expr_visitor.new_ids);
-        new_ids.insert(new_name);
+        if (!var_def.is_export)
+            new_ids.insert(new_name);
 
         code += expr_visitor.code_before + '\n';
 
@@ -176,6 +177,9 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         TypeExprVisitor ret_type_visitor;
         func_def.ret_type->AcceptVisitor(ret_type_visitor);
         auto new_name = scope_manager->GetNewName(func_def.name, scope);
+
+        if (!func_def.is_export)
+            new_ids.insert(new_name);
 
         // Params assignment
         std::string param_assign_part;

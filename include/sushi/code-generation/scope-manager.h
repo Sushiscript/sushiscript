@@ -29,7 +29,7 @@ class ScopeManager {
     }
 
     std::string GetNewName(const std::string & identifier, const scope::Scope * scope) {
-        if (origin_name_to_int.find(identifier) != origin_name_to_int.end()
+        if (origin_name_to_int.find(identifier) == origin_name_to_int.end()
         || origin_name_to_int[identifier] == -1) {
             new_names_map[std::make_pair(scope, identifier)] = identifier;
             return identifier;
@@ -42,13 +42,8 @@ class ScopeManager {
         }
     }
 
-    void UnsetTemp(const std::string & new_name) {
+    void Unset(const std::string & new_name) {
         --origin_name_to_int[new_name];
-    }
-
-    void UnsetName(const std::string & new_name) {
-        --origin_name_to_int[new_name];
-        origin_name_to_int.erase(new_name);
     }
 
     std::string FindNewName(const std::string & identifier, const scope::Scope * scope) {
