@@ -2,19 +2,15 @@
 #include "sushi/lexer.h"
 #include "sushi/scope.h"
 #include "sushi/parser/parser.h"
+#include "../parser/util.h"
 
 using namespace sushi::scope;
 
 TEST(SCOPE_TEST_1, ASSRET_TRUE) {
-    // std::string s("for i < 4: i = i + 1");
-    // std::istringstream iss(s);
-    // sushi::lexer::Lexer lexer(iss, {"", 1, 1});
-    // sushi::parser::Parser p(std::move(lexer));
-
-    // Environment environment(p.Parse().program);
-    Environment environment;
-    StatementVisitor visitor(environment);
-    EXPECT_FALSE(false);
+    auto program = Parse("for i < 4: i = i + 1").program;
+    auto environment = TypeCheck(program);
+    auto top_scope = environment.LookUp(&program);
+    EXPECT_TRUE(top_scope != nullptr);
 }
 
 int main(int argc, char **argv) {

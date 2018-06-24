@@ -2,11 +2,15 @@
 #define SUSHI_SCOPE_LITERAL_VISITOR_H_
 
 #include "sushi/ast.h"
+#include "sushi/scope/environment.h"
 
 namespace sushi {
 namespace scope{
 
 struct LiteralVisitor : public ast::LiteralVisitor::Const {
+    Environment & environment;
+
+    LiteralVisitor(Environment & environment) : environment(environment) {};
 
     SUSHI_VISITING(ast::IntLit, int_lit);
     SUSHI_VISITING(ast::CharLit, char_lit);

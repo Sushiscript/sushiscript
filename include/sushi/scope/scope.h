@@ -1,9 +1,8 @@
 #ifndef SUSHI_SCOPE_SCOPE_H_
 #define SUSHI_SCOPE_SCOPE_H_
 
-#include "sushi/ast/expression/identifier.h"
-#include "sushi/ast/statement.h"
-#include "sushi/lexer/token-location.h"
+#include "sushi/ast.h"
+#include "sushi/lexer.h"
 #include "sushi/type-system.h"
 #include "util.h"
 #include <memory>

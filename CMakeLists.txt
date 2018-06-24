@@ -33,7 +33,8 @@ file(GLOB SCOPE_TEST_SRC ${SUSHI_TEST_DIR}/scope/*.cpp)
 add_executable(lexer-test ${LEXER_TEST_SRC} ${SUSHI_LEXER_SRC})
 add_executable(parser-test
     ${PARSER_TEST_SRC} ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC})
-add_executable(scope-test ${SCOPE_TEST_SRC} ${SUSHI_SCOPE_SRC})
+add_executable(scope-test ${SCOPE_TEST_SRC} ${SUSHI_SCOPE_SRC}
+    ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC})
 
 target_link_libraries(lexer-test ${CONAN_LIBS_GTEST})
 target_link_libraries(parser-test ${CONAN_LIBS_GTEST})

@@ -3,13 +3,14 @@
 
 #include "sushi/ast.h"
 #include "sushi/scope.h"
+#include <iostream>
 
 namespace sushi {
 namespace scope {
 
-Environment TypeChck(ast::Program & program) {
+Environment TypeCheck(ast::Program & program) {
     Environment environment;
-    std::shared_ptr<Scope> head_scope (nullptr);
+    std::shared_ptr<Scope> head_scope (new Scope (nullptr));
     environment.Insert(&program, head_scope);
 
     for (auto &statement : program.statements) {

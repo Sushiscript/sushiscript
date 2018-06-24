@@ -2,11 +2,15 @@
 #define SUSHI_SCOPE_EXPRESSION_VISITOR_H_
 
 #include "sushi/ast.h"
+#include "sushi/scope/environment.h"
 
 namespace sushi {
 namespace scope {
 
 struct ExpressionVisitor : public ast::ExpressionVisitor::Const {
+    Environment & environment;
+
+    ExpressionVisitor(Environment & environment) : environment(environment) {};
 
     SUSHI_VISITING(ast::Variable, variable) {
     }

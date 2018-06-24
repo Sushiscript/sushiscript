@@ -1,7 +1,7 @@
 #ifndef SUSHI_SCOPE_STATEMENT_VISITOR_H_
 #define SUSHI_SCOPE_STATEMENT_VISITOR_H_
 
-#include "sushi/ast/statement.h"
+#include "sushi/ast.h"
 #include "sushi/scope/environment.h"
 
 namespace sushi {
