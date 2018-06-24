@@ -9,6 +9,9 @@ namespace scope {
 
 Environment TypeChck(ast::Program & program) {
     Environment environment;
+    std::shared_ptr<Scope> head_scope (nullptr);
+    environment.Insert(&program, head_scope);
+
     for (auto &statement : program.statements) {
         StatementVisitor visitor(environment);
         statement->AcceptVisitor(visitor);

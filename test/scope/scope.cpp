@@ -1,7 +1,6 @@
 #include "gtest/gtest.h"
 #include "sushi/lexer.h"
-#include "sushi/scope/environment.h"
-#include "sushi/scope/statement-visitor.h"
+#include "sushi/scope.h"
 #include "sushi/parser/parser.h"
 
 using namespace sushi::scope;

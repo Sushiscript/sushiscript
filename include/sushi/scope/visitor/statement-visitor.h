@@ -2,7 +2,7 @@
 #define SUSHI_SCOPE_STATEMENT_VISITOR_H_
 
 #include "sushi/ast/statement.h"
-#include "environment.h"
+#include "sushi/scope/environment.h"
 
 namespace sushi {
 namespace scope {
@@ -10,9 +10,8 @@ namespace scope {
 struct StatementVisitor : public ast::StatementVisitor::Const {
     Environment & environment;
 
-    StatementVisitor(Environment & environment) : environment(environment) {
-        
-    };
+    StatementVisitor(Environment & environment) : environment(environment) {};
+
     SUSHI_VISITING(ast::Assignment, assignment) {
     }
     SUSHI_VISITING(ast::Expression, expression) {
