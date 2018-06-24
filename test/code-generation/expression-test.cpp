@@ -1,16 +1,13 @@
-#include "gtest/gtest.h"
-#include "util.h"
 #include "../parser/util.h"
 #include "sushi/code-generation/code-generation.h"
+#include "util.h"
+#include "gtest/gtest.h"
 
 namespace sushi {
 namespace code_generation {
-namespace test {
-
-
-} // namespace sushi
+namespace test {} // namespace test
 } // namespace code_generation
-} // namespace test
+} // namespace sushi
 
 using namespace sushi;
 using namespace sushi::code_generation;
@@ -26,7 +23,7 @@ TEST(ExpressionTest, TestLiteral) {
     // type::BuiltInAtom type(type::BuiltInAtom::Type::kInt);
 
     env.Insert(
-        dynamic_cast<ast::VariableDef*>(stmt)->value.get(),
+        dynamic_cast<ast::VariableDef *>(stmt)->value.get(),
         std::make_unique<type::BuiltInAtom>(type::BuiltInAtom::Type::kInt));
 
     CodeGenerator generator;

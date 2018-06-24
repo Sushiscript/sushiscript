@@ -1,16 +1,18 @@
 #ifndef SUSHI_SCOPE_MANAGER_H_
 #define SUSHI_SCOPE_MANAGER_H_
-#include <string>
-#include <map>
-#include "sushi/scope.h"
 #include "boost/format.hpp"
+#include "sushi/scope.h"
+#include <map>
+#include <string>
 
 namespace sushi {
 namespace code_generation {
 
 class ScopeManager {
     std::map<std::string, int> origin_name_to_int;
-    std::map<std::pair<const scope::Scope *, const std::string &>, std::string> new_names_map;
+    std::map<std::pair<const scope::Scope *, const std::string &>, std::string>
+        new_names_map;
+
   public:
     ScopeManager() {
         origin_name_to_int["_sushi_t_"] = -1;
@@ -28,9 +30,10 @@ class ScopeManager {
         }
     }
 
-    std::string GetNewName(const std::string & identifier, const scope::Scope * scope) {
-        if (origin_name_to_int.find(identifier) == origin_name_to_int.end()
-        || origin_name_to_int[identifier] == -1) {
+    std::string
+    GetNewName(const std::string &identifier, const scope::Scope *scope) {
+        if (origin_name_to_int.find(identifier) == origin_name_to_int.end() ||
+            origin_name_to_int[identifier] == -1) {
             new_names_map[std::make_pair(scope, identifier)] = identifier;
             return identifier;
         } else {
@@ -42,11 +45,12 @@ class ScopeManager {
         }
     }
 
-    void Unset(const std::string & new_name) {
+    void Unset(const std::string &new_name) {
         --origin_name_to_int[new_name];
     }
 
-    std::string FindNewName(const std::string & identifier, const scope::Scope * scope) {
+    std::string
+    FindNewName(const std::string &identifier, const scope::Scope *scope) {
         auto find_res = new_names_map.find(std::make_pair(scope, identifier));
         if (find_res != new_names_map.end()) {
             return find_res->second;

@@ -6,8 +6,7 @@ namespace sushi {
 namespace code_generation {
 
 std::string CodeGenerator::GenCode(
-    const ast::Program & program,
-    const scope::Environment & environment,
+    const ast::Program &program, const scope::Environment &environment,
     std::shared_ptr<ScopeManager> scope_manager) {
     if (!scope_manager) {
         scope_manager = std::make_shared<ScopeManager>();
@@ -34,5 +33,5 @@ std::string CodeGenerator::GenCode(
     return ret;
 }
 
-}
-}
+} // namespace code_generation
+} // namespace sushi

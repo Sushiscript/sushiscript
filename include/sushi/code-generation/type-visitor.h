@@ -22,20 +22,20 @@ struct TypeVisitor : public type::TypeVisitor::Const {
         kFunc
     };
 
-    inline static SimplifiedType BuiltInAtomTypeToSimplifiedType(
-        type::BuiltInAtom::Type built_in_type) {
+    inline static SimplifiedType
+    BuiltInAtomTypeToSimplifiedType(type::BuiltInAtom::Type built_in_type) {
         using T = type::BuiltInAtom::Type;
         using ST = SimplifiedType;
         switch (built_in_type) {
-            case T::kInt: return ST::kInt;
-            case T::kBool: return ST::kBool;
-            case T::kUnit: return ST::kUnit;
-            case T::kFd: return ST::kFd;
-            case T::kExitCode: return ST::kExitCode;
-            case T::kPath: return ST::kPath;
-            case T::kRelPath: return ST::kRelPath;
-            case T::kString: return ST::kString;
-            case T::kChar: return ST::kChar;
+        case T::kInt: return ST::kInt;
+        case T::kBool: return ST::kBool;
+        case T::kUnit: return ST::kUnit;
+        case T::kFd: return ST::kFd;
+        case T::kExitCode: return ST::kExitCode;
+        case T::kPath: return ST::kPath;
+        case T::kRelPath: return ST::kRelPath;
+        case T::kString: return ST::kString;
+        case T::kChar: return ST::kChar;
         }
     }
 

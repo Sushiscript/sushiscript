@@ -1,33 +1,29 @@
 #ifndef SUSHI_CODE_GEN_EXPR_VISITOR_H_
 #define SUSHI_CODE_GEN_EXPR_VISITOR_H_
 
+#include "./cmdlike-visitor.h"
+#include "./literal-visitor.h"
+#include "./scope-manager.h"
+#include "./type-visitor.h"
+#include "boost/format.hpp"
 #include "sushi/ast.h"
 #include "sushi/scope.h"
-#include "boost/format.hpp"
-#include "./scope-manager.h"
-#include "./literal-visitor.h"
-#include "./cmdlike-visitor.h"
-#include "./type-visitor.h"
 
 #include <unordered_set>
 
 namespace sushi {
 namespace code_generation {
 
-#define EXPR_VISITOR_TRANSLATE_DEF(T, op) void Translate##op(      \
-                        const T & lhs_visitor,                     \
-                        const T & rhs_visitor,                     \
-                        const ST & type)
+#define EXPR_VISITOR_TRANSLATE_DEF(T, op)                                      \
+    void Translate##op(                                                        \
+        const T &lhs_visitor, const T &rhs_visitor, const ST &type)
 
-#define EXPR_VISITOR_TRANSLATE_IMPL(T, op)  \
-void ExprVisitor::Translate##op(            \
-    const T & lhs_visitor,                  \
-    const T & rhs_visitor,                  \
-    const ST & type                         \
-)
+#define EXPR_VISITOR_TRANSLATE_IMPL(T, op)                                     \
+    void ExprVisitor::Translate##op(                                           \
+        const T &lhs_visitor, const T &rhs_visitor, const ST &type)
 
 constexpr char kMapVarCodeBeforeTemplate[] =
-R"(local %1%=`declare -p %2%`
+    R"(local %1%=`declare -p %2%`
 %1%=${%1%#*=}
 %1%=${%1%:1:-1}
 )";
@@ -41,13 +37,10 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
 
     ExprVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
-        const scope::Environment & environment,
-        const scope::Scope * scope,
-        bool is_left_value = false
-        ) : is_left_value(is_left_value),
-            scope_manager(scope_manager),
-            environment(environment),
-            scope(scope) {}
+        const scope::Environment &environment, const scope::Scope *scope,
+        bool is_left_value = false)
+        : is_left_value(is_left_value), scope_manager(scope_manager),
+          environment(environment), scope(scope) {}
 
     using ST = TypeVisitor::SimplifiedType;
     SUSHI_VISITING(ast::Variable, variable);
@@ -60,8 +53,8 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
   protected:
     bool is_left_value;
     std::shared_ptr<ScopeManager> scope_manager;
-    const scope::Environment & environment;
-    const scope::Scope * scope;
+    const scope::Environment &environment;
+    const scope::Scope *scope;
 
     EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Add);
     EXPR_VISITOR_TRANSLATE_DEF(ExprVisitor, Minus);
@@ -80,6 +73,5 @@ struct ExprVisitor : public ast::ExpressionVisitor::Const {
 
 } // namespace code_generation
 } // namespace sushi
-
 
 #endif

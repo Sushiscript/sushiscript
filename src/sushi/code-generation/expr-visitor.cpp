@@ -4,7 +4,7 @@
 namespace sushi {
 namespace code_generation {
 
-#define EXPR_VISITING_IMPL(T, t) void ExprVisitor::Visit(const T & t)
+#define EXPR_VISITING_IMPL(T, t) void ExprVisitor::Visit(const T &t)
 
 using ST = TypeVisitor::SimplifiedType;
 
@@ -26,15 +26,15 @@ EXPR_VISITING_IMPL(ast::Variable, variable) {
         case ST::kRelPath:
         case ST::kString:
         case ST::kChar:
-        case ST::kFunc:
-            val = "${" + new_name + '}';
-            break;
+        case ST::kFunc: val = "${" + new_name + '}'; break;
         case ST::kArray:
             val = (boost::format("\"${%1%[@]}\"") % new_name).str();
             break;
         case ST::kMap:
             auto temp = scope_manager->GetNewTemp();
-            code_before = (boost::format(kMapVarCodeBeforeTemplate) % temp % new_name).str();
+            code_before =
+                (boost::format(kMapVarCodeBeforeTemplate) % temp % new_name)
+                    .str();
             val = (boost::format(R"("$%1%")") % temp).str();
             new_ids.insert(temp);
             break;
@@ -63,18 +63,21 @@ EXPR_VISITING_IMPL(ast::UnaryExpr, unary_expr) {
     using UOP = ast::UnaryExpr::Operator;
     switch (unary_expr.op) {
     case UOP::kNot:
-        code_before += (boost::format("%1%=$((! %2%))") % temp_name
-                                                        % expr_visitor.val).str();
+        code_before +=
+            (boost::format("%1%=$((! %2%))") % temp_name % expr_visitor.val)
+                .str();
         val = "${" + temp_name + '}';
         break;
     case UOP::kNeg:
-        code_before += (boost::format("%1%=$((- %2%))") % temp_name
-                                                        % expr_visitor.val).str();
+        code_before +=
+            (boost::format("%1%=$((- %2%))") % temp_name % expr_visitor.val)
+                .str();
         val = "${" + temp_name + '}';
         break;
     case UOP::kPos:
-        code_before += (boost::format("%1%=`_sushi_abs_ %2%`") % temp_name
-                                                                % expr_visitor.val).str();
+        code_before += (boost::format("%1%=`_sushi_abs_ %2%`") % temp_name %
+                        expr_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -90,7 +93,8 @@ EXPR_VISITING_IMPL(ast::BinaryExpr, binary_expr) {
     // new_ids.merge(rhs_visitor.new_ids);
     MergeSets(new_ids, rhs_visitor.new_ids);
 
-    code_before += lhs_visitor.code_before + '\n' + rhs_visitor.code_before + '\n';
+    code_before +=
+        lhs_visitor.code_before + '\n' + rhs_visitor.code_before + '\n';
 
     // Get whole expression's type or (lhs or rhs)'s type?
     auto type = environment.LookUp(&binary_expr);
@@ -98,26 +102,27 @@ EXPR_VISITING_IMPL(ast::BinaryExpr, binary_expr) {
     type->AcceptVisitor(type_visitor);
 
     using BOP = ast::BinaryExpr::Operator;
-    // Use macro to make code short...
-    #define TRANSLATE_OP(op) Translate##op(lhs_visitor, rhs_visitor, type_visitor.type)
+// Use macro to make code short...
+#define TRANSLATE_OP(op)                                                       \
+    Translate##op(lhs_visitor, rhs_visitor, type_visitor.type)
 
     switch (binary_expr.op) {
-    case BOP::kAdd:     TRANSLATE_OP(Add); break;
-    case BOP::kMinus:   TRANSLATE_OP(Minus); break;
-    case BOP::kMult:    TRANSLATE_OP(Mult); break;
-    case BOP::kDiv:     TRANSLATE_OP(Div); break;
-    case BOP::kMod:     TRANSLATE_OP(Mod); break;
-    case BOP::kLess:    TRANSLATE_OP(Less); break;
-    case BOP::kGreat:   TRANSLATE_OP(Great); break;
-    case BOP::kLessEq:  TRANSLATE_OP(LessEq); break;
+    case BOP::kAdd: TRANSLATE_OP(Add); break;
+    case BOP::kMinus: TRANSLATE_OP(Minus); break;
+    case BOP::kMult: TRANSLATE_OP(Mult); break;
+    case BOP::kDiv: TRANSLATE_OP(Div); break;
+    case BOP::kMod: TRANSLATE_OP(Mod); break;
+    case BOP::kLess: TRANSLATE_OP(Less); break;
+    case BOP::kGreat: TRANSLATE_OP(Great); break;
+    case BOP::kLessEq: TRANSLATE_OP(LessEq); break;
     case BOP::kGreatEq: TRANSLATE_OP(GreatEq); break;
-    case BOP::kEqual:   TRANSLATE_OP(Equal); break;
-    case BOP::kNotEq:   TRANSLATE_OP(NotEq); break;
-    case BOP::kAnd:     TRANSLATE_OP(And); break;
-    case BOP::kOr:      TRANSLATE_OP(Or); break;
+    case BOP::kEqual: TRANSLATE_OP(Equal); break;
+    case BOP::kNotEq: TRANSLATE_OP(NotEq); break;
+    case BOP::kAnd: TRANSLATE_OP(And); break;
+    case BOP::kOr: TRANSLATE_OP(Or); break;
     }
 
-    #undef TRANSLATE_OP
+#undef TRANSLATE_OP
 }
 EXPR_VISITING_IMPL(ast::CommandLike, cmd_like) {
     CmdLikeVisitor cmdlike_visitor(scope_manager, environment, scope);
@@ -127,20 +132,13 @@ EXPR_VISITING_IMPL(ast::CommandLike, cmd_like) {
     raw_id = cmdlike_visitor.raw_id;
 }
 EXPR_VISITING_IMPL(ast::Indexing, indexing) {
-    ExprVisitor indexable_visitor(
-        scope_manager,
-        environment,
-        scope,
-        true);
-    ExprVisitor index_visitor(
-        scope_manager,
-        environment,
-        scope,
-        false);
+    ExprVisitor indexable_visitor(scope_manager, environment, scope, true);
+    ExprVisitor index_visitor(scope_manager, environment, scope, false);
     indexing.indexable->AcceptVisitor(indexable_visitor);
     indexing.index->AcceptVisitor(index_visitor);
 
-    code_before += indexable_visitor.code_before + '\n' + index_visitor.code_before;
+    code_before +=
+        indexable_visitor.code_before + '\n' + index_visitor.code_before;
     raw_id = indexable_visitor.val + '[' + index_visitor.val + ']';
     val = "${" + raw_id + '}';
 }
@@ -157,21 +155,21 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntAddTemplate) % temp_name
-                                                       % lhs_visitor.val
-                                                       % rhs_visitor.val).str();
+        code_before += (boost::format(kIntAddTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kString:
-        code_before += (boost::format(kStringConcatTemplate) % temp_name
-                                                             % lhs_visitor.val
-                                                             % rhs_visitor.val).str();
+        code_before += (boost::format(kStringConcatTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kArray:
-        code_before += (boost::format(kArrayConcatTempplate) % temp_name
-                                                             % lhs_visitor.val
-                                                             % rhs_visitor.val).str();
+        code_before += (boost::format(kArrayConcatTempplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = (boost::format(kArrayValTemplate) % temp_name).str();
         break;
     }
@@ -185,9 +183,9 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Minus) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntMinusTemplate) % temp_name
-                                                         % lhs_visitor.val
-                                                         % rhs_visitor.val).str();
+        code_before += (boost::format(kIntMinusTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -202,22 +200,23 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mult) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntMultTemplate) % temp_name
-                                                        % lhs_visitor.val
-                                                        % rhs_visitor.val).str();
+        code_before += (boost::format(kIntMultTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kString:
-        code_before += (boost::format(kIntMultTemplate) % temp_name
-                                                        % lhs_visitor.val
-                                                        % rhs_visitor.val).str();
+        code_before += (boost::format(kIntMultTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
 }
 
 constexpr char kIntDivTemplate[] = "local %1%=$((%2% / %3%))";
-constexpr char kPathConcatTemplate[] = "local %1%=`_sushi_path_concat_ %2% %3%`";
+constexpr char kPathConcatTemplate[] =
+    "local %1%=`_sushi_path_concat_ %2% %3%`";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
     auto temp_name = scope_manager->GetNewTemp();
@@ -225,16 +224,16 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntDivTemplate) % temp_name
-                                                       % lhs_visitor.val
-                                                       % rhs_visitor.val).str();
+        code_before += (boost::format(kIntDivTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kPath:
     case ST::kRelPath:
-        code_before += (boost::format(kPathConcatTemplate) % temp_name
-                                                           % lhs_visitor.val
-                                                           % rhs_visitor.val).str();
+        code_before += (boost::format(kPathConcatTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -248,9 +247,9 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mod) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntModTemplate) % temp_name
-                                                       % lhs_visitor.val
-                                                       % rhs_visitor.val).str();
+        code_before += (boost::format(kIntModTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -265,18 +264,16 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntCompTemplate) % temp_name
-                                                        % lhs_visitor.val
-                                                        % "<"
-                                                        % rhs_visitor.val).str();
+        code_before += (boost::format(kIntCompTemplate) % temp_name %
+                        lhs_visitor.val % "<" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
-        code_before += (boost::format(kStringCompTemplate) % temp_name
-                                                           % lhs_visitor.val
-                                                           % "<"
-                                                           % rhs_visitor.val).str();
+        code_before += (boost::format(kStringCompTemplate) % temp_name %
+                        lhs_visitor.val % "<" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -288,18 +285,16 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntCompTemplate) % temp_name
-                                                        % lhs_visitor.val
-                                                        % ">"
-                                                        % rhs_visitor.val).str();
+        code_before += (boost::format(kIntCompTemplate) % temp_name %
+                        lhs_visitor.val % ">" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
-        code_before += (boost::format(kStringCompTemplate) % temp_name
-                                                           % lhs_visitor.val
-                                                           % ">"
-                                                           % rhs_visitor.val).str();
+        code_before += (boost::format(kStringCompTemplate) % temp_name %
+                        lhs_visitor.val % ">" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -311,18 +306,16 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntCompTemplate) % temp_name
-                                                        % lhs_visitor.val
-                                                        % "<="
-                                                        % rhs_visitor.val).str();
+        code_before += (boost::format(kIntCompTemplate) % temp_name %
+                        lhs_visitor.val % "<=" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
-        code_before += (boost::format(kStringCompTemplate) % temp_name
-                                                           % lhs_visitor.val
-                                                           % "<="
-                                                           % rhs_visitor.val).str();
+        code_before += (boost::format(kStringCompTemplate) % temp_name %
+                        lhs_visitor.val % "<=" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -334,18 +327,16 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
     raw_id = temp_name;
     switch (type) {
     case ST::kInt:
-        code_before += (boost::format(kIntCompTemplate) % temp_name
-                                                        % lhs_visitor.val
-                                                        % ">="
-                                                        % rhs_visitor.val).str();
+        code_before += (boost::format(kIntCompTemplate) % temp_name %
+                        lhs_visitor.val % ">=" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
-        code_before += (boost::format(kStringCompTemplate) % temp_name
-                                                           % lhs_visitor.val
-                                                           % ">="
-                                                           % rhs_visitor.val).str();
+        code_before += (boost::format(kStringCompTemplate) % temp_name %
+                        lhs_visitor.val % ">=" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -367,33 +358,31 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
         break;
     case ST::kChar:
     case ST::kString:
-        code_before += (boost::format(kStringCompTemplate) % temp_name
-                                                           % lhs_visitor.val
-                                                           % "=="
-                                                           % rhs_visitor.val).str();
+        code_before += (boost::format(kStringCompTemplate) % temp_name %
+                        lhs_visitor.val % "==" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kBool:
     case ST::kInt:
     case ST::kExitCode:
     case ST::kFd:
-        code_before += (boost::format(kIntCompTemplate) % temp_name
-                                                        % lhs_visitor.val
-                                                        % "=="
-                                                        % rhs_visitor.val).str();
+        code_before += (boost::format(kIntCompTemplate) % temp_name %
+                        lhs_visitor.val % "==" % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kPath:
     case ST::kRelPath:
-        code_before += (boost::format(kPathEqTemplate) % temp_name
-                                                       % lhs_visitor.val
-                                                       % rhs_visitor.val).str();
+        code_before += (boost::format(kPathEqTemplate) % temp_name %
+                        lhs_visitor.val % rhs_visitor.val)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kArray:
-        code_before += (boost::format(kArrayEqTemplate) % temp_name
-                                                        % lhs_visitor.raw_id
-                                                        % rhs_visitor.raw_id).str();
+        code_before += (boost::format(kArrayEqTemplate) % temp_name %
+                        lhs_visitor.raw_id % rhs_visitor.raw_id)
+                           .str();
         val = "${" + temp_name + '}';
         break;
     }
@@ -411,10 +400,9 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, And) {
     new_ids.insert(temp_name);
     raw_id = temp_name;
 
-    code_before += (boost::format(kBoolAndOrTemplate) % temp_name
-                                                      % lhs_visitor.val
-                                                      % "&&"
-                                                      % rhs_visitor.val).str();
+    code_before += (boost::format(kBoolAndOrTemplate) % temp_name %
+                    lhs_visitor.val % "&&" % rhs_visitor.val)
+                       .str();
     val = "${" + temp_name + '}';
 }
 
@@ -423,12 +411,11 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Or) {
     new_ids.insert(temp_name);
     raw_id = temp_name;
 
-    code_before += (boost::format(kBoolAndOrTemplate) % temp_name
-                                                      % lhs_visitor.val
-                                                      % "||"
-                                                      % rhs_visitor.val).str();
+    code_before += (boost::format(kBoolAndOrTemplate) % temp_name %
+                    lhs_visitor.val % "||" % rhs_visitor.val)
+                       .str();
     val = "${" + temp_name + '}';
 }
 
-} // namespace sushi
 } // namespace code_generation
+} // namespace sushi

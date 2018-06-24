@@ -47,14 +47,14 @@ struct Error {
     std::string ToString() const {
         return '[' + Error::ToString(type) + ',' + position.ToString() + ']';
     }
-    bool operator==(const Error& rhs) const {
+    bool operator==(const Error &rhs) const {
         return type == rhs.type and position == rhs.position;
     }
     Type type;
     lexer::Token position;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Error& err) {
+inline std::ostream &operator<<(std::ostream &os, const Error &err) {
     os << err.ToString();
     return os;
 }

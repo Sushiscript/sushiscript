@@ -17,11 +17,9 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
 
     LiteralVisitor(
         std::shared_ptr<ScopeManager> scope_manager,
-        const scope::Environment & environment,
-        const scope::Scope * scope
-        ) : scope_manager(scope_manager),
-            environment(environment),
-            scope(scope) {}
+        const scope::Environment &environment, const scope::Scope *scope)
+        : scope_manager(scope_manager), environment(environment), scope(scope) {
+    }
 
     SUSHI_VISITING(ast::IntLit, int_lit);
     SUSHI_VISITING(ast::CharLit, char_lit);
@@ -38,8 +36,8 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
     SUSHI_VISITING(ast::MapLit, map_lit);
 
     std::shared_ptr<ScopeManager> scope_manager;
-    const scope::Environment & environment;
-    const scope::Scope * scope;
+    const scope::Environment &environment;
+    const scope::Scope *scope;
 
     void TranslateInterpolation(const ast::InterpolatedString &inter_str);
 

@@ -4,7 +4,8 @@
 #include <unordered_set>
 
 template <typename T>
-inline void MergeSets(std::unordered_set<T> & lhs, const std::unordered_set<T> & rhs) {
+inline void
+MergeSets(std::unordered_set<T> &lhs, const std::unordered_set<T> &rhs) {
     lhs.insert(rhs.begin(), rhs.end());
 }
 

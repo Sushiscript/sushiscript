@@ -97,8 +97,7 @@ TEST(ExpressionTest, TestIndexing) {
     ParseSuccess("123[1]", "123[1]");
     ParseSuccess(R"("hello"[1])", R"("hello"[1])");
     ParseSuccess(R"("hello"[1][1][1])", R"("hello"[1][1][1])");
-    ParseSuccess(
-        R"("hello"["hello"[1]][()])", R"("hello"["hello"[1]][()])");
+    ParseSuccess(R"("hello"["hello"[1]][()])", R"("hello"["hello"[1]][()])");
     ParseSuccess("{1,2,3}[expr]", "{1, 2, 3}[expr]");
     ParseSuccess("{1,2,3}[func call]", "{1, 2, 3}[(func call)]");
     ParseSuccess("array[func call]", "array[(func call)]");
@@ -128,11 +127,9 @@ TEST(ExpressionTest, TestPipe) {
         "(func call | another call | third call)");
     ParseSuccess("! ls -1 | ! sort -n", "(! ls -1 | ! sort -n)");
     ParseSuccess(
-        "! ls -1 | ! sort -n | ! pbcopy",
-        "(! ls -1 | ! sort -n | ! pbcopy)");
+        "! ls -1 | ! sort -n | ! pbcopy", "(! ls -1 | ! sort -n | ! pbcopy)");
     ParseSuccess(
-        "! ls -1 | ! sort -n | ! pbcopy",
-        "(! ls -1 | ! sort -n | ! pbcopy)");
+        "! ls -1 | ! sort -n | ! pbcopy", "(! ls -1 | ! sort -n | ! pbcopy)");
     ParseSuccess("func call | ! a command", "(func call | ! a command)");
     ParseSuccess("! a command | func call", "(! a command | func call)");
     ParseSuccess(

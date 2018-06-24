@@ -4,9 +4,9 @@
 #include "./error.h"
 #include "./token-location.h"
 #include "boost/variant.hpp"
+#include <sstream>
 #include <string>
 #include <unordered_map>
-#include <sstream>
 
 namespace sushi {
 namespace lexer {

@@ -4,7 +4,7 @@
 namespace sushi {
 namespace code_generation {
 
-#define CMDLIKE_VISITING_IMPL(T, t) void CmdLikeVisitor::Visit(const T & t)
+#define CMDLIKE_VISITING_IMPL(T, t) void CmdLikeVisitor::Visit(const T &t)
 
 CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
     auto new_name = scope_manager->FindNewName(func_call.func.name, scope);
@@ -48,9 +48,11 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
         case DIR::kIn: dir_str = "<"; break;
         case DIR::kOut:
             if (redir.append) {
-                dir_str = ">>"; break;
+                dir_str = ">>";
+                break;
             } else {
-                dir_str = ">"; break;
+                dir_str = ">";
+                break;
             }
         }
 
@@ -70,14 +72,14 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
         switch (type_visitor.type) {
         case ST::kPath:
         case ST::kRelPath:
-            redir_item = (boost::format(redir_template) % me_str
-                                                        % dir_str
-                                                        % expr_visitor.val).str();
+            redir_item = (boost::format(redir_template) % me_str % dir_str %
+                          expr_visitor.val)
+                             .str();
             break;
         case ST::kFd:
-            redir_item = (boost::format(redir_template) % me_str
-                                                        % dir_str
-                                                        % ('&' + expr_visitor.val)).str();
+            redir_item = (boost::format(redir_template) % me_str % dir_str %
+                          ('&' + expr_visitor.val))
+                             .str();
         }
         redir_str += ' ' + redir_item;
     }
@@ -94,7 +96,8 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
     auto final_ptr = next_ptr;
     bool final_to_here = false;
     while (next_ptr) {
-        CmdLikeVisitor cmd_like_visitor(scope_manager, environment, scope, false);
+        CmdLikeVisitor cmd_like_visitor(
+            scope_manager, environment, scope, false);
         next_ptr->AcceptVisitor(cmd_like_visitor);
         code_before += cmd_like_visitor.code_before + '\n';
         // new_ids.merge(cmd_like_visitor.new_ids);
@@ -107,8 +110,10 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
         }
 
         next_ptr = next_ptr->pipe_next.get();
-        if (next_ptr) final_ptr = next_ptr;
-        else if (cmd_like_visitor.redir_to_here) final_to_here = true;
+        if (next_ptr)
+            final_ptr = next_ptr;
+        else if (cmd_like_visitor.redir_to_here)
+            final_to_here = true;
     }
 
     auto temp_name = scope_manager->GetNewTemp();
@@ -118,7 +123,8 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
     // call
     if (final_to_here) {
         // if has redir to here, use a temp var to store stdout
-        code_before += (boost::format("local %1%=%2%") % temp_name % cmd_like_str).str();
+        code_before +=
+            (boost::format("local %1%=%2%") % temp_name % cmd_like_str).str();
         val = "${" + temp_name + '}';
     } else {
         // if no redir to here, use a temp var to copy function return value
@@ -172,9 +178,11 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
         case DIR::kIn: dir_str = "<"; break;
         case DIR::kOut:
             if (redir.append) {
-                dir_str = ">>"; break;
+                dir_str = ">>";
+                break;
             } else {
-                dir_str = ">"; break;
+                dir_str = ">";
+                break;
             }
         }
 
@@ -194,14 +202,14 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
         switch (type_visitor.type) {
         case ST::kPath:
         case ST::kRelPath:
-            redir_item = (boost::format(redir_template) % me_str
-                                                        % dir_str
-                                                        % expr_visitor.val).str();
+            redir_item = (boost::format(redir_template) % me_str % dir_str %
+                          expr_visitor.val)
+                             .str();
             break;
         case ST::kFd:
-            redir_item = (boost::format(redir_template) % me_str
-                                                        % dir_str
-                                                        % ('&' + expr_visitor.val)).str();
+            redir_item = (boost::format(redir_template) % me_str % dir_str %
+                          ('&' + expr_visitor.val))
+                             .str();
         }
         redir_str += ' ' + redir_item;
     }
@@ -217,7 +225,8 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
     auto final_ptr = next_ptr;
     bool final_to_here = false;
     while (next_ptr) {
-        CmdLikeVisitor cmd_like_visitor(scope_manager, environment, scope, false);
+        CmdLikeVisitor cmd_like_visitor(
+            scope_manager, environment, scope, false);
         next_ptr->AcceptVisitor(cmd_like_visitor);
         code_before += cmd_like_visitor.code_before + '\n';
         // new_ids.merge(cmd_like_visitor.new_ids);
@@ -230,8 +239,10 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
         }
 
         next_ptr = next_ptr->pipe_next.get();
-        if (next_ptr) final_ptr = next_ptr;
-        else if (cmd_like_visitor.redir_to_here) final_to_here = true;
+        if (next_ptr)
+            final_ptr = next_ptr;
+        else if (cmd_like_visitor.redir_to_here)
+            final_to_here = true;
     }
 
     auto temp_name = scope_manager->GetNewTemp();
@@ -241,7 +252,8 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
     // call
     if (final_ptr) {
         // if has redir to here, use a temp var to store stdout
-        code_before += (boost::format("%1%=%2%") % temp_name % cmd_like_str).str();
+        code_before +=
+            (boost::format("%1%=%2%") % temp_name % cmd_like_str).str();
         val = "${" + temp_name + '}';
     } else {
         // if no redir to here, use a temp var to store $?

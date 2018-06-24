@@ -40,8 +40,7 @@ TEST_F(LexerUtilTest, TestSkipSpaceLookahead) {
 TEST_F(LexerUtilTest, TestSkipSpaceNext) {
     EXPECT_PRED2(
         Token::WeakEqual, *SkipSpaceNext(*lexer), (TD(kIdent, "this")));
-    EXPECT_PRED2(
-        Token::WeakEqual, *SkipSpaceNext(*lexer), (TD(kIdent, "is")));
+    EXPECT_PRED2(Token::WeakEqual, *SkipSpaceNext(*lexer), (TD(kIdent, "is")));
     EXPECT_PRED2(
         Token::WeakEqual, *SkipSpaceNext(*lexer), (TD(kIdent, "some")));
     EXPECT_PRED2(
@@ -51,10 +50,10 @@ TEST_F(LexerUtilTest, TestSkipSpaceNext) {
 }
 
 TEST_F(LexerUtilTest, TestOptional) {
-    auto a = Optional(*lexer, Token::Type::kIdent, false); // none
+    auto a = Optional(*lexer, Token::Type::kIdent, false);  // none
     auto b = Optional(*lexer, Token::Type::kIndent, false); // indent
     auto c = Optional(*lexer, Token::Type::kIndent, false); // none
-    auto d = Optional(*lexer, Token::Type::kIdent, false); // ident
+    auto d = Optional(*lexer, Token::Type::kIdent, false);  // ident
     EXPECT_EQ(a, boost::none);
     EXPECT_EQ(b->IntData(), 2);
     EXPECT_EQ(c, boost::none);

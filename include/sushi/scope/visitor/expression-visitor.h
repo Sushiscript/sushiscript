@@ -8,28 +8,21 @@ namespace sushi {
 namespace scope {
 
 struct ExpressionVisitor : public ast::ExpressionVisitor::Const {
-    Environment & environment;
-    std::shared_ptr<Scope> & scope;
+    Environment &environment;
+    std::shared_ptr<Scope> &scope;
 
-    ExpressionVisitor(Environment & environment, std::shared_ptr<Scope> & scope) : 
-    environment(environment), scope(scope) {};
+    ExpressionVisitor(Environment &environment, std::shared_ptr<Scope> &scope)
+        : environment(environment), scope(scope){};
 
-    SUSHI_VISITING(ast::Variable, variable) {
-    }
-    SUSHI_VISITING(ast::Literal, literal) {
-    }
-    SUSHI_VISITING(ast::UnaryExpr, unary_expr) {
-    }
-    SUSHI_VISITING(ast::BinaryExpr, binary_expr) {
-    }
-    SUSHI_VISITING(ast::CommandLike, cmd_like) {
-    }
-    SUSHI_VISITING(ast::Indexing, indexing) {
-    }
+    SUSHI_VISITING(ast::Variable, variable) {}
+    SUSHI_VISITING(ast::Literal, literal) {}
+    SUSHI_VISITING(ast::UnaryExpr, unary_expr) {}
+    SUSHI_VISITING(ast::BinaryExpr, binary_expr) {}
+    SUSHI_VISITING(ast::CommandLike, cmd_like) {}
+    SUSHI_VISITING(ast::Indexing, indexing) {}
 };
 
 } // namespace scope
 } // namespace sushi
-
 
 #endif
