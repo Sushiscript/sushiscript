@@ -1,8 +1,8 @@
-#include "gtest/gtest.h"
-#include "sushi/lexer.h"
 #include "sushi/scope.h"
-#include "sushi/parser/parser.h"
 #include "../parser/util.h"
+#include "sushi/lexer.h"
+#include "sushi/parser/parser.h"
+#include "gtest/gtest.h"
 
 using namespace sushi::scope;
 
@@ -14,6 +14,6 @@ TEST(SCOPE_TEST_1, ASSRET_TRUE) {
 }
 
 int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+    testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

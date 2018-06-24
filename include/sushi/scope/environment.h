@@ -1,11 +1,11 @@
 #ifndef SUSHI_SCOPE_ENVIRONMENT_H_
 #define SUSHI_SCOPE_ENVIRONMENT_H_
 
+#include "scope.h"
 #include "sushi/ast/expression/identifier.h"
 #include "sushi/ast/statement.h"
 #include "sushi/lexer/token-location.h"
 #include "sushi/type-system.h"
-#include "scope.h"
 #include "util.h"
 #include <memory>
 #include <unordered_map>
@@ -13,13 +13,14 @@
 namespace sushi {
 namespace scope {
 
-
 class Environment {
   public:
     Environment() {
+        // initial the table
         idents_ = Table<const ast::Identifier *, std::shared_ptr<Scope>>();
         blocks_ = Table<const ast::Program *, std::shared_ptr<Scope>>();
-        typings_ = Table<const ast::Expression *, std::unique_ptr<type::Type>>();
+        typings_ =
+            Table<const ast::Expression *, std::unique_ptr<type::Type>>();
     }
     bool
     Insert(const ast::Identifier *ident, std::shared_ptr<Scope> def_scope) {
@@ -60,8 +61,7 @@ class Environment {
   private:
     Table<const ast::Identifier *, std::shared_ptr<Scope>> idents_;
     Table<const ast::Program *, std::shared_ptr<Scope>> blocks_;
-    Table<const ast::Expression *, std::unique_ptr<type::Type>>
-        typings_;
+    Table<const ast::Expression *, std::unique_ptr<type::Type>> typings_;
 };
 
 } // namespace scope

@@ -9,8 +9,11 @@ namespace scope {
 
 struct TypeExprVisitor : public ast::TypeExprVisitor::Const {
     Environment & environment;
+    std::shared_ptr<Scope> & scope;
 
-    TypeExprVisitor(Environment & environment) : environment(environment) {};
+
+    TypeExprVisitor(Environment & environment, std::shared_ptr<Scope> & scope) : 
+    environment(environment), scope(scope) {};
 
     SUSHI_VISITING(ast::TypeLit, type_lit) {
     }
@@ -24,8 +27,11 @@ struct TypeExprVisitor : public ast::TypeExprVisitor::Const {
 
 struct TypeVisitor : public type::TypeVisitor::Const {
     Environment & environment;
+    std::shared_ptr<Scope> & scope;
 
-    TypeVisitor(Environment & environment) : environment(environment) {};
+
+    TypeVisitor(Environment & environment, std::shared_ptr<Scope> & scope) : 
+    environment(environment), scope(scope) {};
 
     SUSHI_VISITING(type::BuiltInAtom, built_in_atom) {
     }

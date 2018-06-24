@@ -9,8 +9,10 @@ namespace scope {
 
 struct ExpressionVisitor : public ast::ExpressionVisitor::Const {
     Environment & environment;
+    std::shared_ptr<Scope> & scope;
 
-    ExpressionVisitor(Environment & environment) : environment(environment) {};
+    ExpressionVisitor(Environment & environment, std::shared_ptr<Scope> & scope) : 
+    environment(environment), scope(scope) {};
 
     SUSHI_VISITING(ast::Variable, variable) {
     }

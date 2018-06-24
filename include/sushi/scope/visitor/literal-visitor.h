@@ -9,8 +9,10 @@ namespace scope{
 
 struct LiteralVisitor : public ast::LiteralVisitor::Const {
     Environment & environment;
+    std::shared_ptr<Scope> & scope;
 
-    LiteralVisitor(Environment & environment) : environment(environment) {};
+    LiteralVisitor(Environment & environment, std::shared_ptr<Scope> & scope) : 
+    environment(environment), scope(scope) {};
 
     SUSHI_VISITING(ast::IntLit, int_lit);
     SUSHI_VISITING(ast::CharLit, char_lit);

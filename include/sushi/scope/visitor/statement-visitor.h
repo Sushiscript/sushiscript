@@ -3,20 +3,30 @@
 
 #include "sushi/ast.h"
 #include "sushi/scope/environment.h"
+#include "expression-visitor.h"
 
 namespace sushi {
 namespace scope {
 
 struct StatementVisitor : public ast::StatementVisitor::Const {
     Environment & environment;
+    std::shared_ptr<Scope> & scope;
 
-    StatementVisitor(Environment & environment) : environment(environment) {};
+    StatementVisitor(Environment & environment, std::shared_ptr<Scope> & scope) : 
+    environment(environment), scope(scope) {};
 
     SUSHI_VISITING(ast::Assignment, assignment) {
+        ExpressionVisitor expression_visitor (environment, scope);
+        assignment.lvalue->AcceptVisitor(expression_visitor);
+        assignment.value->AcceptVisitor(expression_visitor);
     }
-    SUSHI_VISITING(ast::Expression, expression) {
-    }
+
     SUSHI_VISITING(ast::VariableDef, var_def) {
+        ExpressionVisitor expression_visitor (environment, scope);
+        var_def.value->AcceptVisitor(expression_visitor);
+    }
+
+    SUSHI_VISITING(ast::Expression, expression) {
     }
     SUSHI_VISITING(ast::FunctionDef, func_def) {
     }

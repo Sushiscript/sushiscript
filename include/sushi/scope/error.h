@@ -8,9 +8,7 @@ namespace sushi {
 namespace scope {
 
 struct Error {
-    enum class Type {
-        kNoIdentyInfoError
-    };
+    enum class Type { kNoIdentyInfoError };
     static std::string ToString(Type t) {
         switch (t) {
         case Type::kNoIdentyInfoError: return "NoIdentyInfoError";
@@ -27,7 +25,7 @@ struct Error {
     // lexer::Token position;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Error& err) {
+inline std::ostream &operator<<(std::ostream &os, const Error &err) {
     os << err.ToString();
     return os;
 }
