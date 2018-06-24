@@ -1,4 +1,5 @@
 #include "sushi/code-generation/cmdlike-visitor.h"
+#include "sushi/code-generation/util.h"
 
 namespace sushi {
 namespace code_generation {
@@ -14,7 +15,8 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
     for (auto &expr : func_call.parameters) {
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         expr->AcceptVisitor(expr_visitor);
-        new_ids.merge(expr_visitor.new_ids);
+        // new_ids.merge(expr_visitor.new_ids);
+        MergeSets(new_ids, expr_visitor.new_ids);
 
         code_before += expr_visitor.code_before + '\n';
         // use raw_id("variable name") to pass parameter
@@ -54,7 +56,8 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
 
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         redir.external->AcceptVisitor(expr_visitor);
-        new_ids.merge(expr_visitor.new_ids);
+        // new_ids.merge(expr_visitor.new_ids);
+        MergeSets(new_ids, expr_visitor.new_ids);
         code_before += expr_visitor.code_before + '\n';
 
         auto type = environment.LookUp(redir.external.get());
@@ -94,7 +97,8 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
         CmdLikeVisitor cmd_like_visitor(scope_manager, environment, scope, false);
         next_ptr->AcceptVisitor(cmd_like_visitor);
         code_before += cmd_like_visitor.code_before + '\n';
-        new_ids.merge(cmd_like_visitor.new_ids);
+        // new_ids.merge(cmd_like_visitor.new_ids);
+        MergeSets(new_ids, cmd_like_visitor.new_ids);
 
         cmd_like_str += " | " + cmd_like_visitor.cmd_like_str;
 
@@ -125,7 +129,8 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
 CMDLIKE_VISITING_IMPL(ast::Command, command) {
     LiteralVisitor cmd_visitor(scope_manager, environment, scope);
     cmd_visitor.TranslateInterpolation(command.cmd);
-    new_ids.merge(cmd_visitor.new_ids);
+    // new_ids.merge(cmd_visitor.new_ids);
+    MergeSets(new_ids, cmd_visitor.new_ids);
     code_before += cmd_visitor.code_before + '\n';
 
     cmd_like_str = cmd_visitor.val;
@@ -134,7 +139,8 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
     for (auto &inter : command.parameters) {
         LiteralVisitor inter_visitor(scope_manager, environment, scope);
         inter_visitor.TranslateInterpolation(inter);
-        new_ids.merge(inter_visitor.new_ids);
+        // new_ids.merge(inter_visitor.new_ids);
+        MergeSets(new_ids, inter_visitor.new_ids);
         code_before += inter_visitor.code_before + '\n';
 
         // cmd doesn't use raw_id
@@ -174,7 +180,8 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
 
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         redir.external->AcceptVisitor(expr_visitor);
-        new_ids.merge(expr_visitor.new_ids);
+        // new_ids.merge(expr_visitor.new_ids);
+        MergeSets(new_ids, expr_visitor.new_ids);
         code_before += expr_visitor.code_before + '\n';
 
         auto type = environment.LookUp(redir.external.get());
@@ -213,7 +220,8 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
         CmdLikeVisitor cmd_like_visitor(scope_manager, environment, scope, false);
         next_ptr->AcceptVisitor(cmd_like_visitor);
         code_before += cmd_like_visitor.code_before + '\n';
-        new_ids.merge(cmd_like_visitor.new_ids);
+        // new_ids.merge(cmd_like_visitor.new_ids);
+        MergeSets(new_ids, cmd_like_visitor.new_ids);
 
         cmd_like_str += " | " + cmd_like_visitor.cmd_like_str;
 

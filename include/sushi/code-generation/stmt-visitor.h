@@ -5,6 +5,7 @@
 #include "./type-visitor.h"
 #include "./code-generation.h"
 #include <unordered_set>
+#include "./util.h"
 
 namespace sushi {
 namespace code_generation {
@@ -73,8 +74,10 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         ExprVisitor rvalue_expr_visitor(scope_manager, environment, scope, false);
         assignment.value->AcceptVisitor(rvalue_expr_visitor);
 
-        new_ids.merge(lvalue_expr_visitor.new_ids);
-        new_ids.merge(rvalue_expr_visitor.new_ids);
+        // new_ids.merge(lvalue_expr_visitor.new_ids);
+        MergeSets(new_ids, lvalue_expr_visitor.new_ids);
+        // new_ids.merge(rvalue_expr_visitor.new_ids);
+        MergeSets(new_ids, rvalue_expr_visitor.new_ids);
 
         auto type = environment.LookUp(assignment.value.get());
 
@@ -111,7 +114,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         expression.AcceptVisitor(expr_visitor);
 
-        new_ids.merge(expr_visitor.new_ids);
+        // new_ids.merge(expr_visitor.new_ids);
+        MergeSets(new_ids, expr_visitor.new_ids);
 
         code += expr_visitor.code_before;
         code += '\n' + expr_visitor.val;
@@ -124,7 +128,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         var_def.value->AcceptVisitor(expr_visitor);
 
-        new_ids.merge(expr_visitor.new_ids);
+        // new_ids.merge(expr_visitor.new_ids);
+        MergeSets(new_ids, expr_visitor.new_ids);
         if (!var_def.is_export)
             new_ids.insert(new_name);
 
@@ -209,7 +214,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         ExprVisitor value_expr_visitor(scope_manager, environment, scope, false);
         return_stmt.value->AcceptVisitor(value_expr_visitor);
 
-        new_ids.merge(value_expr_visitor.new_ids);
+        // new_ids.merge(value_expr_visitor.new_ids);
+        MergeSets(new_ids, value_expr_visitor.new_ids);
 
         code += value_expr_visitor.code_before;
 
@@ -244,7 +250,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         ExprVisitor condition_visitor(scope_manager, environment, scope);
         if_stmt.condition->AcceptVisitor(condition_visitor);
 
-        new_ids.merge(condition_visitor.new_ids);
+        // new_ids.merge(condition_visitor.new_ids);
+        MergeSets(new_ids, condition_visitor.new_ids);
 
         CodeGenerator true_body_gen;
         std::string true_body = true_body_gen.GenCode(if_stmt.true_body, environment, scope_manager);
@@ -288,7 +295,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         ExprVisitor switched_visitor(scope_manager, environment, scope, false);
         switch_stmt.switched->AcceptVisitor(switched_visitor);
 
-        new_ids.merge(switched_visitor.new_ids);
+        // new_ids.merge(switched_visitor.new_ids);
+        MergeSets(new_ids, switched_visitor.new_ids);
 
         bool is_first_case = true;
 
@@ -308,7 +316,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
             ExprVisitor case_visitor(scope_manager, environment, scope);
             case_.condition->AcceptVisitor(case_visitor);
 
-            new_ids.merge(case_visitor.new_ids);
+            // new_ids.merge(case_visitor.new_ids);
+            MergeSets(new_ids, case_visitor.new_ids);
 
             code_before += case_visitor.code_before + '\n';
             constexpr char template_[][64] = {
@@ -358,7 +367,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
             ExprVisitor expr_visitor(scope_manager, environment, scope, false);
             for_stmt.condition.condition->AcceptVisitor(expr_visitor);
 
-            new_ids.merge(expr_visitor.new_ids);
+            // new_ids.merge(expr_visitor.new_ids);
+            MergeSets(new_ids, expr_visitor.new_ids);
             new_ids.insert(new_name);
 
             CodeGenerator code_gen;
@@ -374,7 +384,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
             ExprVisitor expr_visitor(scope_manager, environment, scope);
             for_stmt.condition.condition->AcceptVisitor(expr_visitor);
 
-            new_ids.merge(expr_visitor.new_ids);
+            // new_ids.merge(expr_visitor.new_ids);
+            MergeSets(new_ids, expr_visitor.new_ids);
 
             auto type = environment.LookUp(for_stmt.condition.condition.get());
             TypeVisitor type_visitor;

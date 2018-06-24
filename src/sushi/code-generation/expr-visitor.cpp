@@ -1,4 +1,5 @@
 #include "sushi/code-generation/expr-visitor.h"
+#include "sushi/code-generation/util.h"
 
 namespace sushi {
 namespace code_generation {
@@ -55,7 +56,8 @@ EXPR_VISITING_IMPL(ast::UnaryExpr, unary_expr) {
 
     ExprVisitor expr_visitor(scope_manager, environment, scope);
     unary_expr.expr->AcceptVisitor(expr_visitor);
-    new_ids.merge(expr_visitor.new_ids);
+    // new_ids.merge(expr_visitor.new_ids);
+    MergeSets(new_ids, expr_visitor.new_ids);
 
     code_before = expr_visitor.code_before + '\n';
     using UOP = ast::UnaryExpr::Operator;
@@ -83,8 +85,10 @@ EXPR_VISITING_IMPL(ast::BinaryExpr, binary_expr) {
     binary_expr.lhs->AcceptVisitor(lhs_visitor);
     binary_expr.rhs->AcceptVisitor(rhs_visitor);
 
-    new_ids.merge(lhs_visitor.new_ids);
-    new_ids.merge(rhs_visitor.new_ids);
+    // new_ids.merge(lhs_visitor.new_ids);
+    MergeSets(new_ids, lhs_visitor.new_ids);
+    // new_ids.merge(rhs_visitor.new_ids);
+    MergeSets(new_ids, rhs_visitor.new_ids);
 
     code_before += lhs_visitor.code_before + '\n' + rhs_visitor.code_before + '\n';
 

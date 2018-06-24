@@ -1,5 +1,6 @@
 #include "sushi/code-generation/code-generation.h"
 #include "sushi/code-generation/stmt-visitor.h"
+#include "sushi/code-generation/util.h"
 
 namespace sushi {
 namespace code_generation {
@@ -18,7 +19,8 @@ std::string CodeGenerator::GenCode(
     for (auto &statement : program.statements) {
         StmtVisitor visitor(environment, program, scope_manager);
         statement->AcceptVisitor(visitor);
-        new_ids.merge(visitor.new_ids);
+        // new_ids.merge(visitor.new_ids);
+        MergeSets(new_ids, visitor.new_ids);
         ret += visitor.code + "\n";
     }
 

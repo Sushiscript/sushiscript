@@ -1,6 +1,7 @@
 #include "sushi/code-generation/literal-visitor.h"
 #include "sushi/code-generation/expr-visitor.h"
 #include "boost/format.hpp"
+#include "sushi/code-generation/util.h"
 
 namespace sushi {
 namespace code_generation {
@@ -75,7 +76,8 @@ LITERAL_VISITING_IMPL(ast::ArrayLit, array_lit) {
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         i->AcceptVisitor(expr_visitor);
         code_before += expr_visitor.code_before + '\n';
-        new_ids.merge(expr_visitor.new_ids);
+        // new_ids.merge(expr_visitor.new_ids);
+        MergeSets(new_ids, expr_visitor.new_ids);
         if (is_first) {
             is_first = false;
             lit_inside += expr_visitor.val;
@@ -104,8 +106,10 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
         i.first->AcceptVisitor(key_visitor);
         i.first->AcceptVisitor(val_visitor);
         code_before += key_visitor.code_before + '\n' + val_visitor.code_before + '\n';
-        new_ids.merge(key_visitor.new_ids);
-        new_ids.merge(val_visitor.new_ids);
+        // new_ids.merge(key_visitor.new_ids);
+        MergeSets(new_ids, key_visitor.new_ids);
+        // new_ids.merge(val_visitor.new_ids);
+        MergeSets(new_ids, val_visitor.new_ids);
         if (is_first) {
             is_first = false;
             lit_inside += (boost::format(kMapItemTemplate) % key_visitor.val % val_visitor.val).str();
@@ -130,7 +134,8 @@ void LiteralVisitor::TranslateInterpolation(const ast::InterpolatedString &inter
         new_ids.insert(temp_name);
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         expr.AcceptVisitor(expr_visitor);
-        new_ids.merge(expr_visitor.new_ids);
+        // new_ids.merge(expr_visitor.new_ids);
+        MergeSets(new_ids, expr_visitor.new_ids);
 
         code_before += expr_visitor.code_before + '\n';
         code_before += (boost::format("local %1%=%2%") % temp_name % expr_visitor.val).str();
