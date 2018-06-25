@@ -14,16 +14,16 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
     LiteralVisitor(Environment &environment, std::shared_ptr<Scope> &scope)
         : environment(environment), scope(scope){};
 
-    SUSHI_VISITING(ast::IntLit, int_lit);
-    SUSHI_VISITING(ast::CharLit, char_lit);
-    SUSHI_VISITING(ast::BoolLit, bool_lit);
-    SUSHI_VISITING(ast::UnitLit, unit_lit);
-    SUSHI_VISITING(ast::FdLit, fd_lit);
-    SUSHI_VISITING(ast::StringLit, string_lit);
-    SUSHI_VISITING(ast::PathLit, path_lit);
-    SUSHI_VISITING(ast::RelPathLit, relPath_lit);
-    SUSHI_VISITING(ast::ArrayLit, array_lit);
-    SUSHI_VISITING(ast::MapLit, map_lit);
+    SUSHI_VISITING(ast::IntLit, int_lit) {}
+    SUSHI_VISITING(ast::CharLit, char_lit) {}
+    SUSHI_VISITING(ast::BoolLit, bool_lit) {}
+    SUSHI_VISITING(ast::UnitLit, unit_lit) {}
+    SUSHI_VISITING(ast::FdLit, fd_lit) {}
+    SUSHI_VISITING(ast::StringLit, string_lit) {}
+    SUSHI_VISITING(ast::PathLit, path_lit) {}
+    SUSHI_VISITING(ast::RelPathLit, relPath_lit) {}
+    SUSHI_VISITING(ast::ArrayLit, array_lit) {}
+    SUSHI_VISITING(ast::MapLit, map_lit) {}
 };
 
 } // namespace scope

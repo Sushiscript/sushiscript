@@ -81,8 +81,7 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
                           ('&' + expr_visitor.val))
                              .str();
             break;
-        default:
-            assert(false && "Type is not supposed to be here");
+        default: assert(false && "Type is not supposed to be here");
         }
         redir_str += ' ' + redir_item;
     }
@@ -214,8 +213,7 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
                           ('&' + expr_visitor.val))
                              .str();
             break;
-        default:
-            assert(false && "Type is not supposed to be here");
+        default: assert(false && "Type is not supposed to be here");
         }
         redir_str += ' ' + redir_item;
     }

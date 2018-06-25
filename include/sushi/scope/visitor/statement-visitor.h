@@ -27,7 +27,7 @@ struct StatementVisitor : public ast::StatementVisitor::Const {
         ExpressionVisitor expression_visitor(environment, scope);
         var_def.value->AcceptVisitor(expression_visitor);
         // insert info
-        Scope::IdentInfo info = { var_def.start_location.get() , scope.get() };
+        Scope::IdentInfo info = {var_def.start_location.get(), scope.get()};
         scope->Insert(var_def.name, info);
     }
 
@@ -41,7 +41,7 @@ struct StatementVisitor : public ast::StatementVisitor::Const {
             statement->AcceptVisitor(visitor);
         }
         // insert info
-        Scope::IdentInfo info = { func_def.start_location.get() , scope.get() };
+        Scope::IdentInfo info = {func_def.start_location.get(), scope.get()};
         scope->Insert(func_def.name, info);
     }
 
@@ -80,7 +80,7 @@ struct StatementVisitor : public ast::StatementVisitor::Const {
         ExpressionVisitor expression_visitor(environment, scope);
         switch_stmt.switched->AcceptVisitor(expression_visitor);
         // switch case
-        for (auto & each_case : switch_stmt.cases) {
+        for (auto &each_case : switch_stmt.cases) {
             // condition
             each_case.condition->AcceptVisitor(expression_visitor);
             // body
@@ -97,7 +97,7 @@ struct StatementVisitor : public ast::StatementVisitor::Const {
     SUSHI_VISITING(ast::ForStmt, for_stmt) {
         // visit sub
         // condition
-        auto & condition = for_stmt.condition;
+        auto &condition = for_stmt.condition;
         ExpressionVisitor expression_visitor(environment, scope);
         condition.condition->AcceptVisitor(expression_visitor);
         // body
@@ -108,7 +108,7 @@ struct StatementVisitor : public ast::StatementVisitor::Const {
             statement->AcceptVisitor(visitor);
         }
         // insert info
-        Scope::IdentInfo info = { for_stmt.start_location.get() , scope.get() };
+        Scope::IdentInfo info = {for_stmt.start_location.get(), scope.get()};
         scope->Insert(condition.ident_name, info);
     }
 
