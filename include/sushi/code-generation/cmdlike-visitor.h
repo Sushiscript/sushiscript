@@ -75,6 +75,8 @@ struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
             TypeVisitor type_visitor;
             type->AcceptVisitor(type_visitor);
             switch (type_visitor.type) {
+            default:
+                assert(false && "Type is not supposed to be here");
             case ST::kInt:
             case ST::kBool:
             case ST::kUnit:

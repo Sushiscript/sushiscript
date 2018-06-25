@@ -96,6 +96,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         code += lvalue_expr_visitor.code_before + '\n' +
                 rvalue_expr_visitor.code_before + '\n';
         switch (type_visitor.type) {
+        default:
+            assert(false && "Type is not supposed to be here");
         case ST::kInt:
         case ST::kBool:
         case ST::kUnit:
@@ -147,6 +149,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         code += expr_visitor.code_before + '\n';
 
         switch (type_expr_visitor.type) {
+        default:
+            assert(false && "Type is not supposed to be here");
         case ST::kInt:
         case ST::kBool:
         case ST::kUnit:
@@ -243,6 +247,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         type->AcceptVisitor(type_visitor);
 
         switch (type_visitor.type) {
+        default:
+            assert(false && "Type is not supposed to be here");
         case ST::kInt:
         case ST::kUnit:
         case ST::kFd:

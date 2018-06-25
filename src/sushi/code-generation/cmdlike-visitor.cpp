@@ -80,6 +80,9 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
             redir_item = (boost::format(redir_template) % me_str % dir_str %
                           ('&' + expr_visitor.val))
                              .str();
+            break;
+        default:
+            assert(false && "Type is not supposed to be here");
         }
         redir_str += ' ' + redir_item;
     }
@@ -210,6 +213,9 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
             redir_item = (boost::format(redir_template) % me_str % dir_str %
                           ('&' + expr_visitor.val))
                              .str();
+            break;
+        default:
+            assert(false && "Type is not supposed to be here");
         }
         redir_str += ' ' + redir_item;
     }
