@@ -35,10 +35,9 @@ class Scope {
     Scope(std::shared_ptr<Scope> outer);
     const Scope *Outer() const;
     const IdentInfo *LookUp(const std::string &identifier) const;
-    const IdentInfo *LookUp(const std::string &identifier, 
-        const TokenLocation &use_loc) const;
+    const IdentInfo *
+    LookUp(const std::string &identifier, const TokenLocation &use_loc) const;
     bool Insert(const std::string &identifier, IdentInfo t);
-
 
   private:
     // outer scope

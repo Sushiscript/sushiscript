@@ -10,7 +10,9 @@ Scope::IdentInfo Scope::CreateIdentInfo(
         // todo: add error process system
         // debug::log(start_location,
         //     Error::ToString(Error::Type::kNoDefineLocationError));
-        return Scope::IdentInfo{};
+        auto info = Scope::IdentInfo{};
+        info.defined_scope = defined_scope;
+        return info;
     } else {
         return Scope::IdentInfo{start_location.get(), defined_scope};
     }
@@ -68,7 +70,6 @@ bool Scope::Insert(const std::string &identifier, IdentInfo t) {
     bindings_.emplace(identifier, std::move(t));
     return true;
 }
-
 
 } // namespace scope
 } // namespace sushi
