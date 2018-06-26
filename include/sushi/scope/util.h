@@ -22,7 +22,6 @@ void log(T variable, std::string message) {
 template <typename KeyType, typename ValueType>
 using Table = std::unordered_map<KeyType, ValueType>;
 
-
 } // namespace scope
 } // namespace sushi
 

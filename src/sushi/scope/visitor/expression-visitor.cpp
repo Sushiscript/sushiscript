@@ -6,8 +6,7 @@ namespace scope {
 #define VISIT(T, t) void ExpressionVisitor::Visit(const T &t)
 
 VISIT(ast::Variable, variable) {
-    auto info = Scope::CreateIdentInfo(
-        variable.start_location, scope.get());
+    auto info = Scope::CreateIdentInfo(variable.start_location, scope.get());
     scope->Insert(variable.var.name, info);
 }
 
