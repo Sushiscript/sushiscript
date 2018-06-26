@@ -27,10 +27,10 @@ struct TypeVisitor : public type::TypeVisitor::Const {
     TypeVisitor(Environment &environment, std::shared_ptr<Scope> &scope)
         : environment(environment), scope(scope){};
 
-    SUSHI_VISITING(type::BuiltInAtom, built_in_atom) {}
-    SUSHI_VISITING(type::Array, array) {}
-    SUSHI_VISITING(type::Map, map) {}
-    SUSHI_VISITING(type::Function, function) {}
+    SUSHI_VISITING(type::BuiltInAtom, built_in_atom);
+    SUSHI_VISITING(type::Array, array);
+    SUSHI_VISITING(type::Map, map);
+    SUSHI_VISITING(type::Function, function);
 };
 
 } // namespace scope

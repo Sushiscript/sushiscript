@@ -26,7 +26,8 @@ file(GLOB_RECURSE SUSHI_PARSER_SRC ${SUSHI_SRC_DIR}/sushi/parser/*.cpp)
 file(GLOB PARSER_TEST_SRC ${SUSHI_TEST_DIR}/parser/*.cpp)
 
 file(GLOB_RECURSE SUSHI_SCOPE_SRC ${SUSHI_SRC_DIR}/sushi/scope/*.cpp)
-file(GLOB SCOPE_TEST_SRC ${SUSHI_TEST_DIR}/scope/*.cpp)
+file(GLOB SCOPE_TEST_SRC  ${SUSHI_TEST_DIR}/scope/*.cpp
+    ${SUSHI_TEST_DIR}/scope/visitor/*.cpp)
 
 file(GLOB_RECURSE SUSHI_CODE_GEN_SRC
     ${SUSHI_SRC_DIR}/sushi/code-generation/*.cpp)
