@@ -21,7 +21,8 @@ VISIT(ast::FunctionCall, func_call) {
         expr_ptr->AcceptVisitor(expression_visitor);
     }
     // insert info
-    Scope::IdentInfo info = {func_call.start_location.get(), scope.get()};
+    auto info = Scope::CreateIdentInfo(
+        func_call.start_location, scope.get());
     scope->Insert(func_call.func.name, info);
 }
 

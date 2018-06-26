@@ -17,7 +17,8 @@ VISIT(ast::VariableDef, var_def) {
     ExpressionVisitor expression_visitor(environment, scope);
     var_def.value->AcceptVisitor(expression_visitor);
     // insert info
-    Scope::IdentInfo info = {var_def.start_location.get(), scope.get()};
+    auto info = Scope::CreateIdentInfo(
+        var_def.start_location, scope.get());
     scope->Insert(var_def.name, info);
 }
 
@@ -31,7 +32,8 @@ VISIT(ast::FunctionDef, func_def) {
         statement->AcceptVisitor(visitor);
     }
     // insert info
-    Scope::IdentInfo info = {func_def.start_location.get(), scope.get()};
+    auto info = Scope::CreateIdentInfo(
+        func_def.start_location, scope.get());
     scope->Insert(func_def.name, info);
 }
 
@@ -98,7 +100,7 @@ VISIT(ast::ForStmt, for_stmt) {
         statement->AcceptVisitor(visitor);
     }
     // insert info
-    Scope::IdentInfo info = {for_stmt.start_location.get(), scope.get()};
+    auto info = Scope::CreateIdentInfo(for_stmt.start_location, scope.get());
     scope->Insert(condition.ident_name, info);
 }
 

@@ -28,6 +28,19 @@ class Scope {
         // bool is_const; // not useful currently
     };
 
+    // create new identinfo with boost::optional<TokenLocation> and Scope*
+    static IdentInfo CreateIdentInfo(
+        boost::optional<TokenLocation> start_location, Scope *defined_scope) {
+            if (!start_location.is_initialized()) {
+                // todo: add error process system
+                // debug::log(start_location, 
+                //     Error::ToString(Error::Type::kNoDefineLocationError));
+                return IdentInfo {};
+            } else {
+                return IdentInfo { start_location.get(), defined_scope };
+            }
+    }
+
     // save the outer scope
     Scope(std::shared_ptr<Scope> outer) : outer_(outer) {
         // initial bindings_
