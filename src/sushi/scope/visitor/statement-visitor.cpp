@@ -72,7 +72,8 @@ VISIT(ast::SwitchStmt, switch_stmt) {
     // switch case
     for (auto &each_case : switch_stmt.cases) {
         // condition
-        each_case.condition->AcceptVisitor(expression_visitor);
+        if (each_case.condition)
+            each_case.condition->AcceptVisitor(expression_visitor);
         // body
         std::shared_ptr<Scope> sub_scope(new Scope(scope));
         environment.Insert(&each_case.body, sub_scope);
