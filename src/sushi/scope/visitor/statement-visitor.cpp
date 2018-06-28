@@ -24,9 +24,14 @@ VISIT(ast::VariableDef, var_def) {
 }
 
 VISIT(ast::FunctionDef, func_def) {
-    // TODO: Add parameters into scope
     // visit sub
     std::shared_ptr<Scope> sub_scope(new Scope(scope));
+    // Add parameters into scope
+    for (auto & param : func_def.params) {
+        auto info = Scope::CreateIdentInfo(boost::none, sub_scope.get());
+        scope->Insert(param.name, info);
+    }
+    // body
     environment.Insert(&func_def.body, sub_scope);
     StatementVisitor visitor(environment, sub_scope);
     for (auto &statement : func_def.body.statements) {
