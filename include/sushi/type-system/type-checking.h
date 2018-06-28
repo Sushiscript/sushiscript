@@ -1,30 +1,28 @@
 #ifndef SUSHI_TYPE_SYSTEM_TYPE_CHECKING_H_
 #define SUSHI_TYPE_SYSTEM_TYPE_CHECKING_H_
 
-#include "./error.h"
-#include "sushi/ast.h"
-#include "sushi/scope.h"
-#include <memory>
-#include <unordered_map>
+#include "type-check/state.h"
+#include "type-check/statement.h"
 #include <vector>
 
 namespace sushi {
 
 namespace type {
 
-struct Checker {
-    std::vector<Error> Check(const Program &program, Environment &env);
+std::vector<Error> Check(const ast::Program &program, Environment &env) {
+    State::ScopeBindings bindings;
+    std::vector<Error> errors;
+    CheckProgram(State(
+        bindings, program, env, errors,
+        BuiltInAtom::Make(BuiltInAtom::Type::kExitCode)));
+    return errors;
+}
 
-    std::unique_ptr<Type> VariableType(const Identifier &ident) {
-        auto scope = env->LookUp(&ident);
-        return name_table[scope][ident.name];
-    }
+// struct Checker {
+//     std::vector<Error> Check(const ast::Program &program, Environment &env);
 
-    std::unordered_map<const Scope *, std::unordered_map<std::string, Type *>>
-        name_table;
-
-    Environment *env = nullptr;
-};
+//     State::ScopeBindings bindings;
+// };
 
 } // namespace type
 

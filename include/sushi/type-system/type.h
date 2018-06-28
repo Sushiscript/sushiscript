@@ -37,6 +37,8 @@ struct Type {
     }
     virtual bool Equals(const Type *) const = 0;
 
+    virtual Pointer Copy() const = 0;
+
     virtual std::string ToString() const = 0;
 
     std::string ToAtomString() const {
@@ -96,6 +98,10 @@ struct BuiltInAtom : Type {
         return type == b->type;
     }
 
+    Pointer Copy() const override {
+        return Make(type);
+    }
+
     std::string ToString() const override {
         return ToString(type);
     }
@@ -121,6 +127,9 @@ struct Array : Type {
         auto a = rhs->ToArray();
         if (not a) return false;
         return element == a->element;
+    }
+    Pointer Copy() const override {
+        return Make(element);
     }
 
     std::string ToString() const override {
@@ -153,6 +162,9 @@ struct Map : Type {
         if (not m) return false;
         return key == m->key and value == m->value;
     }
+    Pointer Copy() const override {
+        return Make(key, value);
+    }
 
     BuiltInAtom::Type key;
     // std::unique_ptr<Type> value;
@@ -173,7 +185,7 @@ struct Function : Type {
     }
     std::string ToString() const override {
         std::string res = "Function " + result->ToAtomString();
-        for (auto& p : params) {
+        for (auto &p : params) {
             res += " " + p->ToAtomString();
         }
         return res;
@@ -186,6 +198,14 @@ struct Function : Type {
             if (not params[i]->Equals(f->params[i].get())) return false;
         }
         return result->Equals(f->result.get());
+    }
+    Pointer Copy() const override {
+        std::vector<Pointer> param_copies(params.size());
+        Pointer ret_copy = result->Copy();
+        std::transform(
+            begin(params), end(params), begin(param_copies),
+            [](auto &p) { return p->Copy(); });
+        return Make(std::move(param_copies), std::move(ret_copy));
     }
 
     std::vector<Pointer> params;
