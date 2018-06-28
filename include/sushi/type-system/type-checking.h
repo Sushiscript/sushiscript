@@ -9,7 +9,7 @@ namespace sushi {
 
 namespace type {
 
-std::vector<Error> Check(const ast::Program &program, Environment &env) {
+inline std::vector<Error> Check(const ast::Program &program, Environment &env) {
     State::ScopeBindings bindings;
     std::vector<Error> errors;
     CheckProgram(State(
@@ -17,12 +17,6 @@ std::vector<Error> Check(const ast::Program &program, Environment &env) {
         BuiltInAtom::Make(BuiltInAtom::Type::kExitCode)));
     return errors;
 }
-
-// struct Checker {
-//     std::vector<Error> Check(const ast::Program &program, Environment &env);
-
-//     State::ScopeBindings bindings;
-// };
 
 } // namespace type
 
