@@ -10,9 +10,15 @@ VISIT(ast::CharLit, char_lit) {}
 VISIT(ast::BoolLit, bool_lit) {}
 VISIT(ast::UnitLit, unit_lit) {}
 VISIT(ast::FdLit, fd_lit) {}
-VISIT(ast::StringLit, string_lit) {}
-VISIT(ast::PathLit, path_lit) {}
-VISIT(ast::RelPathLit, relPath_lit) {}
+VISIT(ast::StringLit, string_lit) {
+    ScopeInterpolation(string_lit.value);
+}
+VISIT(ast::PathLit, path_lit) {
+    ScopeInterpolation(path_lit.value);
+}
+VISIT(ast::RelPathLit, relPath_lit) {
+    ScopeInterpolation(relPath_lit.value);
+}
 VISIT(ast::ArrayLit, array_lit) {
     ExpressionVisitor expression_visitor(environment, scope);
     for (auto &each_value : array_lit.value) {
