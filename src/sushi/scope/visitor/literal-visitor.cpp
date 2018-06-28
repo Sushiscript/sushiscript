@@ -24,6 +24,7 @@ VISIT(ast::ArrayLit, array_lit) {
     for (auto &each_value : array_lit.value) {
         each_value->AcceptVisitor(expression_visitor);
     }
+    MergeVector(errs, expression_visitor.errs);
 }
 
 VISIT(ast::MapLit, map_lit) {
@@ -32,16 +33,18 @@ VISIT(ast::MapLit, map_lit) {
         each_pair.first->AcceptVisitor(expression_visitor);
         each_pair.second->AcceptVisitor(expression_visitor);
     }
+    MergeVector(errs, expression_visitor.errs);
 }
 
 void LiteralVisitor::ScopeInterpolation(
     const ast::InterpolatedString &inter_str) {
+    ExpressionVisitor expr_visitor(environment, scope);
     inter_str.Traverse(
         [](const std::string &) {},
-        [this](const ast::Expression &expr) {
-            ExpressionVisitor expr_visitor(this->environment, this->scope);
+        [this, &expr_visitor](const ast::Expression &expr) {
             expr.AcceptVisitor(expr_visitor);
         });
+    MergeVector(errs, expr_visitor.errs);
 }
 
 } // namespace scope

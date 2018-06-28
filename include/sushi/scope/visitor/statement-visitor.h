@@ -24,6 +24,8 @@ struct StatementVisitor : public ast::StatementVisitor::Const {
     SUSHI_VISITING(ast::ForStmt, for_stmt);
     SUSHI_VISITING(ast::LoopControlStmt, loop_control_stmt);
     SUSHI_VISITING(ast::Expression, expression);
+
+    std::vector<Error> errs;
 };
 
 } // namespace scope

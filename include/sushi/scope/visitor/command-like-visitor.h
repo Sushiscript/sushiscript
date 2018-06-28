@@ -15,6 +15,8 @@ struct CommandLikeVisitor : public ast::CommandLikeVisitor::Const {
 
     SUSHI_VISITING(ast::FunctionCall, func_call);
     SUSHI_VISITING(ast::Command, command);
+
+    std::vector<Error> errs;
 };
 
 } // namespace scope

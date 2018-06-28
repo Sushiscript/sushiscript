@@ -2,6 +2,8 @@
 #define SUSHI_SCOPE_EXPRESSION_VISITOR_H_
 
 #include "sushi/ast.h"
+#include "sushi/scope/scope.h"
+#include "sushi/scope/environment.h"
 
 namespace sushi {
 namespace scope {
@@ -19,6 +21,8 @@ struct ExpressionVisitor : public ast::ExpressionVisitor::Const {
     SUSHI_VISITING(ast::BinaryExpr, binary_expr);
     SUSHI_VISITING(ast::CommandLike, cmd_like);
     SUSHI_VISITING(ast::Indexing, indexing);
+
+    std::vector<Error> errs;
 };
 
 } // namespace scope

@@ -24,6 +24,9 @@ Environment TypeCheck(ast::Program &program) {
     std::shared_ptr<Scope> head_scope(new Scope(nullptr));
     // add the <program, scope> to environment
     environment.Insert(&program, head_scope);
+
+    std::vector<Error> errs;
+
     // initial statement visitor
     StatementVisitor visitor(environment, head_scope);
 
@@ -31,6 +34,9 @@ Environment TypeCheck(ast::Program &program) {
         // visitor.visit(Type statement)
         statement->AcceptVisitor(visitor);
     }
+
+    MergeVector(errs, visitor.errs);
+    // TODO: errs where to go?
 
     return environment;
 };

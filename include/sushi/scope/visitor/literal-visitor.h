@@ -26,6 +26,8 @@ struct LiteralVisitor : public ast::LiteralVisitor::Const {
     SUSHI_VISITING(ast::MapLit, map_lit);
 
     void ScopeInterpolation(const ast ::InterpolatedString &inter_str);
+
+    std::vector<Error> errs;
 };
 
 } // namespace scope
