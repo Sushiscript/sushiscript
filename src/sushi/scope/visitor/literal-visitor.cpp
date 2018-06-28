@@ -28,5 +28,15 @@ VISIT(ast::MapLit, map_lit) {
     }
 }
 
+void LiteralVisitor::ScopeInterpolation(
+    const ast::InterpolatedString &inter_str) {
+    inter_str.Traverse(
+        [](const std::string &) {},
+        [this](const ast::Expression &expr) {
+            ExpressionVisitor expr_visitor(this->environment, this->scope);
+            expr.AcceptVisitor(expr_visitor);
+        });
+}
+
 } // namespace scope
 } // namespace sushi

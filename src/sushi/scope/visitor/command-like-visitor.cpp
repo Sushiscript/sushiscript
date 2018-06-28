@@ -11,7 +11,9 @@ VISIT(ast::FunctionCall, func_call) {
         redir.external->AcceptVisitor(expression_visitor);
     }
     auto func_call_ptr = func_call.pipe_next.get();
-    while (func_call_ptr != nullptr) {
+
+    // This will recursively visit all the command-like
+    if (func_call_ptr != nullptr) {
         CommandLikeVisitor command_like_visitor(environment, scope);
         func_call.pipe_next->AcceptVisitor(command_like_visitor);
         func_call_ptr = func_call_ptr->pipe_next.get();
@@ -21,8 +23,12 @@ VISIT(ast::FunctionCall, func_call) {
         expr_ptr->AcceptVisitor(expression_visitor);
     }
     // insert info
-    auto info = Scope::CreateIdentInfo(func_call.start_location, scope.get());
-    scope->Insert(func_call.func.name, info);
+    auto func_call_id = scope->LookUp(func_call.func.name);
+    if (func_call_id == nullptr) {
+        // TODO: Handle not defined error
+        return;
+    }
+    environment.Insert(&func_call.func, scope);
 }
 
 VISIT(ast::Command, command) {
@@ -31,11 +37,21 @@ VISIT(ast::Command, command) {
         redir.external->AcceptVisitor(expression_visitor);
     }
     auto command_ptr = command.pipe_next.get();
-    while (command_ptr != nullptr) {
+
+    // This will recursively visit all the command-like
+    if (command_ptr != nullptr) {
         CommandLikeVisitor command_like_visitor(environment, scope);
         command.pipe_next->AcceptVisitor(command_like_visitor);
         command_ptr = command_ptr->pipe_next.get();
     }
+
+    LiteralVisitor lit_visitor(environment, scope);
+    for (auto &param : command.parameters) {
+        lit_visitor.ScopeInterpolation(param);
+    }
+
+    // cmd
+    lit_visitor.ScopeInterpolation(command.cmd);
 }
 
 } // namespace scope

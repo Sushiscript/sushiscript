@@ -6,8 +6,12 @@ namespace scope {
 #define VISIT(T, t) void ExpressionVisitor::Visit(const T &t)
 
 VISIT(ast::Variable, variable) {
-    auto info = Scope::CreateIdentInfo(variable.start_location, scope.get());
-    scope->Insert(variable.var.name, info);
+    auto var_id = scope->LookUp(variable.var.name);
+    if (var_id == nullptr) {
+        // TODO: Handle not defined error
+        return;
+    }
+    environment.Insert(&variable.var, scope);
 }
 
 VISIT(ast::Literal, literal) {

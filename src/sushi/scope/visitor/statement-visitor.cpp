@@ -99,8 +99,10 @@ VISIT(ast::ForStmt, for_stmt) {
         statement->AcceptVisitor(visitor);
     }
     // insert info
-    auto info = Scope::CreateIdentInfo(for_stmt.start_location, scope.get());
-    scope->Insert(condition.ident_name, info);
+    if (condition.IsRange()) {
+        auto info = Scope::CreateIdentInfo(for_stmt.start_location, scope.get());
+        scope->Insert(condition.ident_name, info);
+    }
 }
 
 VISIT(ast::LoopControlStmt, loop_control_stmt) {
