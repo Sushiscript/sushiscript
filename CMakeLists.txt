@@ -17,7 +17,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-add_executable(sushiscript ${CMAKE_SOURCE_DIR}/src/main.cpp)
+add_executable(sushi ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
 file(GLOB_RECURSE SUSHI_LEXER_SRC ${SUSHI_SRC_DIR}/sushi/lexer/*.cpp)
 file(GLOB LEXER_TEST_SRC ${SUSHI_TEST_DIR}/lexer/*.cpp)
