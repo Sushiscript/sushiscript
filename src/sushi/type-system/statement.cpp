@@ -34,20 +34,6 @@ struct ToType : ast::TypeExprVisitor::Const {
     Type::Pointer res;
 };
 
-Type::Pointer
-UnambiguousDeduce(const ast::Expression &expr, State &s, bool insert = true) {
-    auto deduced = Deduce(expr, s);
-    if (deduced.fail) return nullptr;
-    if (not deduced.type) {
-        s.TypeError(&expr, Error::kAmbiguousType);
-        return nullptr;
-    }
-    if (insert) {
-        s.env.Insert(&expr, deduced.type->Copy());
-    }
-    return std::move(deduced.type);
-}
-
 Type::Pointer FromTypeExpr(const ast::TypeExpr *expr) {
     ToType to_type;
     expr->AcceptVisitor(to_type);

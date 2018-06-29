@@ -1,7 +1,16 @@
 #include "sushi/type-system/type-check/expression.h"
+#include "boost/optional.hpp"
 
 #define SIMPLE(t) BuiltInAtom::Type::t
 #define MAKE_SIMPLE(t) type::BuiltInAtom::Make(SIMPLE(t))
+#define V_RETURN(r)                                                            \
+    {                                                                          \
+        result = r;                                                            \
+        return;                                                                \
+    }
+
+using boost::none;
+using boost::optional;
 
 namespace sushi {
 
@@ -9,45 +18,97 @@ namespace type {
 
 namespace {
 
+bool ValidInterpolatedString(const ast::InterpolatedString &inter, State &s) {
+    return true;
+}
+
+optional<BuiltInAtom::Type>
+DeduceSimple(const ast::Expression &expr, State &s) {
+    auto t = UnambiguousDeduce(expr, s);
+    if (not t) return none;
+    auto st = t->ToSimple();
+    if (not st) {
+        s.TypeError(&expr, Error::kRequireSimpleType);
+        return none;
+    }
+    return st->type;
+}
+
 struct DeduceLiteralVisitor : ast::LiteralVisitor::Const {
-    DeduceLiteralVisitor(State& s): s(s) {}
+    DeduceLiteralVisitor(State &s) : s(s) {}
 
     SUSHI_VISITING(ast::IntLit, i) {
-        result = DeduceResult(MAKE_SIMPLE(kInt));
+        V_RETURN(DeduceResult(MAKE_SIMPLE(kInt)));
     }
+
     SUSHI_VISITING(ast::CharLit, c) {
-        result = DeduceResult(MAKE_SIMPLE(kChar));
+        V_RETURN(DeduceResult(MAKE_SIMPLE(kChar)));
     }
+
     SUSHI_VISITING(ast::BoolLit, b) {
-        result = DeduceResult(MAKE_SIMPLE(kBool));
+        V_RETURN(DeduceResult(MAKE_SIMPLE(kBool)));
     }
+
     SUSHI_VISITING(ast::UnitLit, u) {
-        result = DeduceResult(MAKE_SIMPLE(kUnit));
+        V_RETURN(DeduceResult(MAKE_SIMPLE(kUnit)));
     }
+
     SUSHI_VISITING(ast::FdLit, f) {
-        result = DeduceResult(MAKE_SIMPLE(kFd));
+        V_RETURN(DeduceResult(MAKE_SIMPLE(kFd)));
     }
+
     SUSHI_VISITING(ast::PathLit, p) {
-        result = DeduceResult(MAKE_SIMPLE(kPath));
+        if (ValidInterpolatedString(p.value, s))
+            V_RETURN(DeduceResult(MAKE_SIMPLE(kPath)));
+        V_RETURN(DeduceResult::Fail());
     }
+
     SUSHI_VISITING(ast::RelPathLit, r) {
-        result = DeduceResult(MAKE_SIMPLE(kRelPath));
+        if (ValidInterpolatedString(r.value, s))
+            V_RETURN(DeduceResult(MAKE_SIMPLE(kRelPath)));
+        V_RETURN(DeduceResult::Fail());
     }
-    SUSHI_VISITING(ast::StringLit, s) {
 
+    SUSHI_VISITING(ast::StringLit, str) {
+        if (ValidInterpolatedString(str.value, s))
+            V_RETURN(DeduceResult(MAKE_SIMPLE(kString)));
+        V_RETURN(DeduceResult::Fail());
     }
+
     SUSHI_VISITING(ast::ArrayLit, a) {
-
+        if (a.value.empty()) V_RETURN(DeduceResult::EmptyArray());
+        auto elem = DeduceSimple(*a.value.front(), s);
+        if (not elem) V_RETURN(DeduceResult::Fail());
+        bool success = true;
+        for (int i = 1; i < a.value.size(); ++i) {
+            success =
+                SatisfyRequirement(*a.value[i], BuiltInAtom::Make(*elem), s) and
+                success;
+        }
+        V_RETURN(success ? Array::Make(*elem) : DeduceResult::Fail());
     }
-    SUSHI_VISITING(ast::MapLit, m) {
 
+    SUSHI_VISITING(ast::MapLit, m) {
+        if (m.value.empty()) V_RETURN(DeduceResult::EmptyArray());
+        auto key = DeduceSimple(*m.value.front().first, s);
+        auto val = DeduceSimple(*m.value.front().second, s);
+        if (not key or not val) V_RETURN(DeduceResult::Fail());
+        bool success = true;
+        for (int i = 1; i < m.value.size(); ++i) {
+            auto &key_expr = *m.value[i].first;
+            auto &val_expr = *m.value[i].second;
+            auto ks = SatisfyRequirement(key_expr, BuiltInAtom::Make(*key), s),
+                 vs = SatisfyRequirement(val_expr, BuiltInAtom::Make(*val), s);
+            success = success and ks and vs;
+        }
+        V_RETURN(success ? Map::Make(*key, *val) : DeduceResult::Fail());
     }
 
     DeduceResult result;
-    State& s;
+    State &s;
 };
 
-DeduceResult DeduceLiteral(const ast::Literal& l, State& s) {
+DeduceResult DeduceLiteral(const ast::Literal &l, State &s) {
     DeduceLiteralVisitor v(s);
     l.AcceptVisitor(v);
     return std::move(v.result);
@@ -55,18 +116,32 @@ DeduceResult DeduceLiteral(const ast::Literal& l, State& s) {
 
 struct DeductionVisitor : ast::ExpressionVisitor::Const {
     DeductionVisitor(State &s) : s(s) {}
+
     SUSHI_VISITING(ast::Variable, var) {
         auto p = s.LookupName(var.var);
-        if (not p) result = DeduceResult::Fail();
-        result = DeduceResult(std::move(p));
+        if (not p) V_RETURN(DeduceResult::Fail());
+        V_RETURN(DeduceResult(std::move(p)));
     }
+
     SUSHI_VISITING(ast::Literal, lit) {
-        result = DeduceLiteral(lit, s);
+        V_RETURN(DeduceLiteral(lit, s));
     }
-    SUSHI_VISITING(ast::UnaryExpr, u) {}
-    SUSHI_VISITING(ast::BinaryExpr, bi) {}
-    SUSHI_VISITING(ast::CommandLike, cmd) {}
-    SUSHI_VISITING(ast::Indexing, idx) {}
+
+    SUSHI_VISITING(ast::UnaryExpr, u) {
+
+    }
+
+    SUSHI_VISITING(ast::BinaryExpr, bi) {
+
+    }
+
+    SUSHI_VISITING(ast::CommandLike, cmd) {
+
+    }
+
+    SUSHI_VISITING(ast::Indexing, idx) {
+
+    }
 
     State &s;
     DeduceResult result;
@@ -88,7 +163,9 @@ bool ImplicitConvertible(const Type *from, const Type *to) {
 } // namespace
 
 DeduceResult Deduce(const ast::Expression &expr, State &state) {
-
+    DeductionVisitor v(state);
+    expr.AcceptVisitor(v);
+    return std::move(v.result);
 }
 
 bool SatisfyRequirement(
@@ -105,6 +182,20 @@ bool SatisfyRequirement(
     }
     state.TypeError(expr, Error::kInvalidType);
     return false;
+}
+
+Type::Pointer
+UnambiguousDeduce(const ast::Expression &expr, State &s, bool insert) {
+    auto deduced = Deduce(expr, s);
+    if (deduced.fail) return nullptr;
+    if (not deduced.type) {
+        s.TypeError(&expr, Error::kAmbiguousType);
+        return nullptr;
+    }
+    if (insert) {
+        s.env.Insert(&expr, deduced.type->Copy());
+    }
+    return std::move(deduced.type);
 }
 
 } // namespace type

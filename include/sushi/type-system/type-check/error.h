@@ -13,7 +13,8 @@ struct Error {
         kInvalidRange,
         kInvalidType,
         kInvalidLvalue,
-        kMissingReturnValue
+        kMissingReturnValue,
+        kRequireSimpleType
     };
     const ast::Expression* expr;
     Tp type;

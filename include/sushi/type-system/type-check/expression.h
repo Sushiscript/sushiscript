@@ -31,6 +31,9 @@ DeduceResult Deduce(const ast::Expression &expr, State &state);
 bool SatisfyRequirement(
     const ast::Expression &expr, Type::Pointer should_be, State &state);
 
+Type::Pointer
+UnambiguousDeduce(const ast::Expression &expr, State &s, bool insert = true);
+
 } // namespace type
 
 } // namespace sushi
