@@ -4,6 +4,7 @@
 #include "sushi/ast.h"
 #include "sushi/type-system/type.h"
 #include "sushi/type-system/type-check/state.h"
+#include <functional>
 
 namespace sushi {
 
@@ -33,6 +34,10 @@ bool SatisfyRequirement(
 
 Type::Pointer RequireOneOf(
     const ast::Expression &expr, State &state, std::vector<Type::Pointer> ts);
+
+Type::Pointer RequireSatisfy(
+    const ast::Expression &expr, State &state,
+    std::function<Type::Pointer(const DeduceResult &)> pred);
 
 Type::Pointer
 UnambiguousDeduce(const ast::Expression &expr, State &s, bool insert = true);

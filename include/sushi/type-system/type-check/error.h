@@ -19,6 +19,7 @@ struct Error {
         kInvalidFunction,
         kWrongNumOfParams
     };
+    Error(const ast::Expression* expr, Tp type) :expr(expr), type(type) {}
     const ast::Expression* expr;
     Tp type;
 };

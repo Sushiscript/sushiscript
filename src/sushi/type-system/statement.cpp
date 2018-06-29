@@ -121,7 +121,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         if (not s.return_type) {
             s.return_type = MAKE_SIMPLE(kUnit);
         } else if (not s.return_type->Equals(MAKE_SIMPLE(kUnit))) {
-            s.TypeError(nullptr, Error::MissingReturnValue);
+            s.TypeError(nullptr, Error::kMissingReturnValue);
         }
     }
 

@@ -1,5 +1,7 @@
 #include "sushi/type-system/type-check/expression.h"
 #include "boost/optional.hpp"
+#include "sushi/util/container.h"
+#include <functional>
 
 #define SIMPLE(t) BuiltInAtom::Type::t
 #define MAKE_SIMPLE(t) type::BuiltInAtom::Make(SIMPLE(t))
@@ -198,6 +200,7 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
             return DeduceResult(MAKE_SIMPLE(kBool));
         return DeduceResult::Fail();
     }
+
     DeduceResult PosNeg(const ast::Expression &expr) {
         if (SatisfyRequirement(expr, MAKE_SIMPLE(kInt), s))
             return DeduceResult(MAKE_SIMPLE(kInt));
@@ -213,29 +216,114 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
         }
     }
 
+    static Type::Pointer Addable(const DeduceResult &d) {
+        if (d.type == nullptr) return nullptr;
+        if (d.type->ToMap() or d.type->ToArray()) return d.type->Copy();
+        if (auto simple = d.type->ToSimple()) {
+            if (simple->type == SIMPLE(kInt) or simple->type == SIMPLE(kString))
+                return d.type->Copy();
+        }
+        return nullptr;
+    }
+
     DeduceResult Add(const ast::Expression &lhs, const ast::Expression &rhs) {
-
+        auto tp = RequireSatisfy(lhs, s, &Addable);
+        if (tp != nullptr and SatisfyRequirement(rhs, tp->Copy(), s)) {
+            return DeduceResult(std::move(tp));
+        }
+        return DeduceResult::Fail();
     }
+
     DeduceResult Minus(const ast::Expression &lhs, const ast::Expression &rhs) {
-
+        auto int_ = MAKE_SIMPLE(kInt);
+        if (SatisfyRequirement(lhs, int_->Copy(), s) and
+            SatisfyRequirement(rhs, int_->Copy(), s))
+            return DeduceResult(std::move(int_));
+        return DeduceResult::Fail();
     }
+
+    static std::vector<Type::Pointer> Multipliable() {
+        return {MAKE_SIMPLE(kInt), MAKE_SIMPLE(kPath)};
+    }
+
     DeduceResult Mult(const ast::Expression &lhs, const ast::Expression &rhs) {
-
+        auto left_type = RequireOneOf(lhs, s, Multipliable());
+        if (left_type and SatisfyRequirement(rhs, MAKE_SIMPLE(kInt), s)) {
+            return DeduceResult(std::move(left_type));
+        }
+        return DeduceResult::Fail();
     }
+
+    static std::vector<Type::Pointer> Dividable() {
+        return {MAKE_SIMPLE(kInt), MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath)};
+    }
+
     DeduceResult Div(const ast::Expression &lhs, const ast::Expression &rhs) {
-
+        auto tp = RequireOneOf(lhs, s, Dividable());
+        if (not tp) return DeduceResult::Fail();
+        auto int_ = MAKE_SIMPLE(kInt);
+        if (tp->Equals(int_->Copy())) {
+            return RequireThen(rhs, int_->Copy(), s, int_->Copy());
+        } else {
+            return RequireThen(rhs, MAKE_SIMPLE(kRelPath), s, std::move(tp));
+        }
+        return DeduceResult::Fail();
     }
+
     DeduceResult Mod(const ast::Expression &lhs, const ast::Expression &rhs) {
-
+        auto int_ = MAKE_SIMPLE(kInt);
+        if (SatisfyRequirement(lhs, int_->Copy(), s) and
+            SatisfyRequirement(rhs, int_->Copy(), s))
+            return DeduceResult(std::move(int_));
+        return DeduceResult::Fail();
     }
+
+    static bool IsEqualComparable(BuiltInAtom::Type t) {
+        std::vector<BuiltInAtom::Type> v{
+            SIMPLE(kUnit),   SIMPLE(kBool), SIMPLE(kChar),     SIMPLE(kInt),
+            SIMPLE(kString), SIMPLE(kPath), SIMPLE(kExitCode), SIMPLE(kFd)};
+        return sushi::util::Has(v, t);
+    }
+
+    static bool IsEqualComparable(const Type *tp) {
+        if (auto arr = tp->ToArray()) {
+            return IsEqualComparable(arr->element);
+        }
+        if (auto s = tp->ToSimple()) {
+            return IsEqualComparable(s->type);
+        }
+
+        return false;
+    }
+
+    static Type::Pointer EqualComparable(const DeduceResult &d) {
+        if (d.type == nullptr) return nullptr;
+        if (IsEqualComparable(d.type.get())) return d.type->Copy();
+        return nullptr;
+    }
+
     DeduceResult Equal(const ast::Expression &lhs, const ast::Expression &rhs) {
-
+        auto tp = RequireSatisfy(lhs, s, &EqualComparable);
+        if (not tp) return DeduceResult::Fail();
+        return RequireThen(rhs, tp->Copy(), s, MAKE_SIMPLE(kBool));
     }
+
     DeduceResult Logic(const ast::Expression &lhs, const ast::Expression &rhs) {
-
+        auto boo = MAKE_SIMPLE(kBool);
+        if (SatisfyRequirement(lhs, boo->Copy(), s) and
+            SatisfyRequirement(rhs, boo->Copy(), s))
+            return DeduceResult(std::move(boo));
+        return DeduceResult::Fail();
     }
-    DeduceResult Order(const ast::Expression &lhs, const ast::Expression &rhs) {
 
+    static std::vector<Type::Pointer> OrderComparable() {
+        return {MAKE_SIMPLE(kChar), MAKE_SIMPLE(kInt), MAKE_SIMPLE(kString)};
+    }
+
+    DeduceResult Order(const ast::Expression &lhs, const ast::Expression &rhs) {
+        auto tp = RequireOneOf(lhs, s, OrderComparable());
+        if (not tp) return DeduceResult::Fail();
+        return RequireThen(rhs, std::move(tp), s, MAKE_SIMPLE(kBool));
     }
 
     SUSHI_VISITING(ast::BinaryExpr, bi) {
@@ -354,15 +442,10 @@ Type::Pointer SolveRequirement(const DeduceResult &d, Type::Pointer should_be) {
 
 bool SatisfyRequirement(
     const ast::Expression &expr, Type::Pointer should_be, State &state) {
-    auto result = Deduce(expr, state);
-    if (result.fail) return false;
-    auto t = SolveRequirement(result, std::move(should_be));
-    if (t) {
-        state.env.Insert(&expr, std::move(t));
-        return true;
-    }
-    state.TypeError(&expr, Error::kInvalidType);
-    return false;
+    auto tp = RequireSatisfy(expr, state, [&should_be](const DeduceResult &d) {
+        return SolveRequirement(d, std::move(should_be));
+    });
+    return tp != nullptr;
 }
 
 Type::Pointer RequireOneOf(
@@ -377,6 +460,19 @@ Type::Pointer RequireOneOf(
             return state.TypeError(&expr, Error::kAmbiguousType);
         result_type = std::move(t);
     }
+    if (result_type == nullptr) {
+        return state.TypeError(&expr, Error::kInvalidType);
+    }
+    state.env.Insert(&expr, result_type->Copy());
+    return result_type;
+}
+
+Type::Pointer RequireSatisfy(
+    const ast::Expression &expr, State &state,
+    std::function<Type::Pointer(const DeduceResult &)> pred) {
+    auto result = Deduce(expr, state);
+    if (result.fail) return nullptr;
+    Type::Pointer result_type = pred(result);
     if (result_type == nullptr) {
         return state.TypeError(&expr, Error::kInvalidType);
     }
