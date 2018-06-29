@@ -4,7 +4,7 @@
 #include "sushi/scope/environment.h"
 #include "sushi/scope/error.h"
 #include "sushi/scope/scope.h"
-#include "sushi/scope/type-check.h"
+#include "sushi/scope/scope-check.h"
 #include "sushi/scope/visitor/command-like-visitor.h"
 #include "sushi/scope/visitor/expression-visitor.h"
 #include "sushi/scope/visitor/literal-visitor.h"

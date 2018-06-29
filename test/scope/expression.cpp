@@ -3,7 +3,7 @@
 TEST(ExpressionTest, TestVariable) {
     std::string source_code = "x";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);
@@ -14,14 +14,14 @@ TEST(ExpressionTest, TestVariable) {
 TEST(ExpressionTest, TestLiteral) {
     std::string source_code = "123";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
 }
 
 TEST(ExpressionTest, TestUnaryExpr) {
     std::string source_code = "+ x";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);
@@ -32,7 +32,7 @@ TEST(ExpressionTest, TestUnaryExpr) {
 TEST(ExpressionTest, TestBinaryExpr) {
     std::string source_code = "x + y";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);
@@ -52,7 +52,7 @@ TEST(ExpressionTest, TestCommandLike) {
 TEST(ExpressionTest, Indexing) {
     std::string source_code = "{1,2,3}[x]";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);

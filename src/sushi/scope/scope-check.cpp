@@ -17,7 +17,7 @@ namespace scope {
  *
  */
 
-Environment TypeCheck(ast::Program &program) {
+Environment ScopeCheck(ast::Program &program) {
     // initial top environment
     Environment environment;
     // initial top scope, outer is nullptr

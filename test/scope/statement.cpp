@@ -3,7 +3,7 @@
 TEST(StatementTest, TestAssignment) {
     std::string source_code = "x = 1";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);
@@ -14,7 +14,7 @@ TEST(StatementTest, TestAssignment) {
 TEST(StatementTest, TestVariableDef) {
     std::string source_code = "define x = 1";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);
@@ -23,12 +23,12 @@ TEST(StatementTest, TestVariableDef) {
 }
 
 TEST(StatementTest, TestFunctionDef) {
-    std::string source_code = 
+    std::string source_code =
         "define f(x: Int, y: String, z: Array Int):Int = \n"
         "    define x1 = 1 \n"
         "    return z[x]";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("f");
     EXPECT_TRUE(ident_info != nullptr);
@@ -46,13 +46,13 @@ TEST(StatementTest, TestFunctionDef) {
 }
 
 TEST(StatementTest, TestIfStmt) {
-    std::string source_code = 
+    std::string source_code =
         "if x < 5:\n"
         "  print x1\n"
         "else:\n"
         "  print x2";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);
@@ -82,7 +82,7 @@ TEST(StatementTest, TestIfStmt) {
 TEST(StatementTest, TestReturnStmt) {
     std::string source_code = "return x";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);
@@ -91,7 +91,7 @@ TEST(StatementTest, TestReturnStmt) {
 }
 
 TEST(StatementTest, TestSwitchStmt) {
-    std::string source_code = 
+    std::string source_code =
         "switch x\n"
         "  case 0\n"
         "    print x\n"
@@ -100,7 +100,7 @@ TEST(StatementTest, TestSwitchStmt) {
         "  default\n"
         "    print y";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("x");
     EXPECT_TRUE(ident_info != nullptr);
@@ -111,7 +111,7 @@ TEST(StatementTest, TestSwitchStmt) {
 TEST(StatementTest, TestForStmt) {
     std::string source_code = "for i < 4: continue";
     auto program = Parse(source_code).program;
-    auto environment = TypeCheck(program);
+    auto environment = ScopeCheck(program);
     auto top_scope = environment.LookUp(&program);
     auto ident_info = top_scope->LookUp("i");
     EXPECT_TRUE(ident_info != nullptr);
