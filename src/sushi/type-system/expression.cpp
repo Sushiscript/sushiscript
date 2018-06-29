@@ -18,8 +18,28 @@ namespace type {
 
 namespace {
 
+std::vector<Type::Pointer> Interpolatable() {
+    return {MAKE_SIMPLE(kChar), MAKE_SIMPLE(kInt), MAKE_SIMPLE(kString),
+            MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath)};
+}
+
 bool ValidInterpolatedString(const ast::InterpolatedString &inter, State &s) {
-    return true;
+    bool success = true;
+    inter.Traverse(
+        [](auto &) {},
+        [&success, &s](auto &expr) {
+            auto t = RequireOneOf(expr, s, Interpolatable());
+            success = t != nullptr and success;
+        });
+    return success;
+}
+
+DeduceResult RequireThen(
+    const ast::Expression &expr, Type::Pointer should_be, State &state,
+    Type::Pointer result) {
+    if (SatisfyRequirement(expr, std::move(should_be), state))
+        return DeduceResult(std::move(result));
+    return DeduceResult::Fail();
 }
 
 optional<BuiltInAtom::Type>
@@ -32,6 +52,52 @@ DeduceSimple(const ast::Expression &expr, State &s) {
         return none;
     }
     return st->type;
+}
+
+struct DeduceCommandLikeVisitor : ast::CommandLikeVisitor::Const {
+    DeduceCommandLikeVisitor(State &s) : s(s) {}
+
+    bool CompatibleParams(const ast::FunctionCall &call, const Function *f) {
+        auto &exprs = call.parameters;
+        auto &types = f->params;
+        if (exprs.size() != types.size()) {
+            s.TypeError(&call, Error::kWrongNumOfParams);
+            return false;
+        }
+        bool success = true;
+        for (int i = 0; i < types.size(); ++i) {
+            auto b = SatisfyRequirement(*exprs[i], types[i]->Copy(), s);
+            success = success and b;
+        }
+        return success;
+    }
+
+    SUSHI_VISITING(ast::FunctionCall, fc) {
+        auto tp = s.LookupName(fc.func);
+        if (not tp) V_RETURN(nullptr);
+        auto func_type = tp->ToFunction();
+        if (not func_type) {
+            s.TypeError(nullptr, Error::kInvalidFunction);
+        } else if (CompatibleParams(fc, func_type)) {
+            V_RETURN(func_type->result->Copy());
+        }
+        V_RETURN(nullptr);
+    }
+
+    SUSHI_VISITING(ast::Command, cmd) {
+        bool success = ValidInterpolatedString(cmd.cmd, s);
+        for (auto &p : cmd.parameters)
+            success = ValidInterpolatedString(p, s) and success;
+        V_RETURN(success ? MAKE_SIMPLE(kExitCode) : Type::Pointer{});
+    }
+    State &s;
+    Type::Pointer result;
+};
+
+Type::Pointer DeduceCommandLike(const ast::CommandLike &cl, State &state) {
+    DeduceCommandLikeVisitor v(state);
+    cl.AcceptVisitor(v);
+    return std::move(v.result);
 }
 
 struct DeduceLiteralVisitor : ast::LiteralVisitor::Const {
@@ -127,20 +193,127 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
         V_RETURN(DeduceLiteral(lit, s));
     }
 
+    DeduceResult Negate(const ast::Expression &expr) {
+        if (SatisfyRequirement(expr, MAKE_SIMPLE(kBool), s))
+            return DeduceResult(MAKE_SIMPLE(kBool));
+        return DeduceResult::Fail();
+    }
+    DeduceResult PosNeg(const ast::Expression &expr) {
+        if (SatisfyRequirement(expr, MAKE_SIMPLE(kInt), s))
+            return DeduceResult(MAKE_SIMPLE(kInt));
+        return DeduceResult::Fail();
+    }
+
     SUSHI_VISITING(ast::UnaryExpr, u) {
+        using UO = ast::UnaryExpr::Operator;
+        switch (u.op) {
+        case UO::kNot: V_RETURN(Negate(*u.expr));
+        case UO::kNeg:
+        case UO::kPos: V_RETURN(PosNeg(*u.expr));
+        }
+    }
+
+    DeduceResult Add(const ast::Expression &lhs, const ast::Expression &rhs) {
+
+    }
+    DeduceResult Minus(const ast::Expression &lhs, const ast::Expression &rhs) {
+
+    }
+    DeduceResult Mult(const ast::Expression &lhs, const ast::Expression &rhs) {
+
+    }
+    DeduceResult Div(const ast::Expression &lhs, const ast::Expression &rhs) {
+
+    }
+    DeduceResult Mod(const ast::Expression &lhs, const ast::Expression &rhs) {
+
+    }
+    DeduceResult Equal(const ast::Expression &lhs, const ast::Expression &rhs) {
+
+    }
+    DeduceResult Logic(const ast::Expression &lhs, const ast::Expression &rhs) {
+
+    }
+    DeduceResult Order(const ast::Expression &lhs, const ast::Expression &rhs) {
 
     }
 
     SUSHI_VISITING(ast::BinaryExpr, bi) {
+        using BO = ast::BinaryExpr::Operator;
+        switch (bi.op) {
+        case BO::kAdd: V_RETURN(Add(*bi.lhs, *bi.rhs));
+        case BO::kMinus: V_RETURN(Minus(*bi.lhs, *bi.rhs));
+        case BO::kMult: V_RETURN(Mult(*bi.lhs, *bi.rhs));
+        case BO::kDiv: V_RETURN(Div(*bi.lhs, *bi.rhs));
+        case BO::kMod: V_RETURN(Mod(*bi.lhs, *bi.rhs));
+        case BO::kLess:
+        case BO::kGreat:
+        case BO::kLessEq:
+        case BO::kGreatEq: V_RETURN(Order(*bi.lhs, *bi.rhs));
+        case BO::kEqual:
+        case BO::kNotEq: V_RETURN(Equal(*bi.lhs, *bi.rhs));
+        case BO::kAnd:
+        case BO::kOr: V_RETURN(Logic(*bi.lhs, *bi.rhs));
+        }
+    }
 
+    static std::vector<Type::Pointer> FromRedirAccepts() {
+        return {MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath)};
+    }
+    static std::vector<Type::Pointer> ToRedirAccepts() {
+        return {MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath), MAKE_SIMPLE(kFd)};
+    }
+
+    bool
+    ValidRedirections(const std::vector<ast::Redirection> &redirs, bool &here) {
+        bool success = false;
+        for (auto &redir : redirs) {
+            if (not redir.external) {
+                here = true;
+                continue;
+            };
+            auto accepts = redir.direction == ast::Redirection::Direction::kIn
+                               ? FromRedirAccepts()
+                               : ToRedirAccepts();
+            auto b = bool(RequireOneOf(*redir.external, s, std::move(accepts)));
+            success = success and b;
+        }
+        return success;
+    }
+
+    DeduceResult CheckCommandLike(bool success, const ast::CommandLike &cmd) {
+        bool here = false;
+        auto valid_redirs = ValidRedirections(cmd.redirs, here);
+        auto type = DeduceCommandLike(cmd, s);
+        success = valid_redirs and type != nullptr and success;
+        if (cmd.pipe_next != nullptr)
+            return CheckCommandLike(success, *cmd.pipe_next);
+        return success ? (here ? DeduceResult(MAKE_SIMPLE(kString))
+                               : DeduceResult(std::move(type)))
+                       : DeduceResult::Fail();
     }
 
     SUSHI_VISITING(ast::CommandLike, cmd) {
-
+        V_RETURN(CheckCommandLike(true, cmd));
     }
 
     SUSHI_VISITING(ast::Indexing, idx) {
+        auto tp = UnambiguousDeduce(*idx.indexable, s);
+        if (not tp) V_RETURN(DeduceResult::Fail());
+        if (auto a = tp->ToArray())
+            V_RETURN(RequireThen(
+                *idx.index, MAKE_SIMPLE(kInt), s,
+                BuiltInAtom::Make(a->element)));
+        if (auto m = tp->ToMap())
+            V_RETURN(RequireThen(
+                *idx.index, BuiltInAtom::Make(m->key), s,
+                BuiltInAtom::Make(m->value)));
+        if (tp->Equals(MAKE_SIMPLE(kString)))
+            V_RETURN(RequireThen(
+                *idx.index, MAKE_SIMPLE(kInt), s, MAKE_SIMPLE(kChar)));
 
+        s.TypeError(idx.indexable.get(), Error::kInvalidIndexable);
+        V_RETURN(DeduceResult::Fail());
     }
 
     State &s;
@@ -168,20 +341,47 @@ DeduceResult Deduce(const ast::Expression &expr, State &state) {
     return std::move(v.result);
 }
 
+Type::Pointer SolveRequirement(const DeduceResult &d, Type::Pointer should_be) {
+    if (d.fail) return nullptr;
+    if (d.empty_array and (should_be->ToMap() or should_be->ToArray())) {
+        return should_be;
+    }
+    if (ImplicitConvertible(d.type.get(), should_be.get())) {
+        return d.type->Copy();
+    }
+    return nullptr;
+}
+
 bool SatisfyRequirement(
     const ast::Expression &expr, Type::Pointer should_be, State &state) {
     auto result = Deduce(expr, state);
     if (result.fail) return false;
-    if (result.empty_array and (should_be->ToMap() or should_be->ToArray())) {
-        state.env.Insert(&expr, std::move(should_be));
+    auto t = SolveRequirement(result, std::move(should_be));
+    if (t) {
+        state.env.Insert(&expr, std::move(t));
         return true;
     }
-    if (ImplicitConvertible(result.type.get(), should_be.get())) {
-        state.env.Insert(&expr, std::move(result.type));
-        return true;
-    }
-    state.TypeError(expr, Error::kInvalidType);
+    state.TypeError(&expr, Error::kInvalidType);
     return false;
+}
+
+Type::Pointer RequireOneOf(
+    const ast::Expression &expr, State &state, std::vector<Type::Pointer> ts) {
+    auto result = Deduce(expr, state);
+    if (result.fail) return nullptr;
+    Type::Pointer result_type;
+    for (auto &tp : ts) {
+        auto t = SolveRequirement(result, std::move(tp));
+        if (not t) continue;
+        if (result_type != nullptr)
+            return state.TypeError(&expr, Error::kAmbiguousType);
+        result_type = std::move(t);
+    }
+    if (result_type == nullptr) {
+        return state.TypeError(&expr, Error::kInvalidType);
+    }
+    state.env.Insert(&expr, result_type->Copy());
+    return result_type;
 }
 
 Type::Pointer

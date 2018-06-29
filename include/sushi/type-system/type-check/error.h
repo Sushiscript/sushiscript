@@ -14,7 +14,10 @@ struct Error {
         kInvalidType,
         kInvalidLvalue,
         kMissingReturnValue,
-        kRequireSimpleType
+        kRequireSimpleType,
+        kInvalidIndexable,
+        kInvalidFunction,
+        kWrongNumOfParams
     };
     const ast::Expression* expr;
     Tp type;

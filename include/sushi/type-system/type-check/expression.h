@@ -31,6 +31,9 @@ DeduceResult Deduce(const ast::Expression &expr, State &state);
 bool SatisfyRequirement(
     const ast::Expression &expr, Type::Pointer should_be, State &state);
 
+Type::Pointer RequireOneOf(
+    const ast::Expression &expr, State &state, std::vector<Type::Pointer> ts);
+
 Type::Pointer
 UnambiguousDeduce(const ast::Expression &expr, State &s, bool insert = true);
 
