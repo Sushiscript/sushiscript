@@ -22,6 +22,11 @@ void log(T variable, std::string message) {
 template <typename KeyType, typename ValueType>
 using Table = std::unordered_map<KeyType, ValueType>;
 
+template<typename T>
+void MergeVector(std::vector<T> & lhs, const std::vector<T> & rhs) {
+    lhs.insert(lhs.end(), rhs.begin(), rhs.end());
+}
+
 } // namespace scope
 } // namespace sushi
 

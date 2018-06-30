@@ -27,9 +27,7 @@ struct TypeVisitor : public type::TypeVisitor::Const {
         using T = type::BuiltInAtom::Type;
         using ST = SimplifiedType;
         switch (built_in_type) {
-        default:
-            assert(false && "Type is not supposed to be here");
-            break;
+        default: assert(false && "Type is not supposed to be here"); break;
         case T::kInt: return ST::kInt;
         case T::kBool: return ST::kBool;
         case T::kUnit: return ST::kUnit;

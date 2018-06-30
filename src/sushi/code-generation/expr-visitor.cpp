@@ -18,9 +18,7 @@ EXPR_VISITING_IMPL(ast::Variable, variable) {
         TypeVisitor type_visitor;
         type->AcceptVisitor(type_visitor);
         switch (type_visitor.type) {
-        default:
-            assert(false && "Type is not supposed to be here");
-            break;
+        default: assert(false && "Type is not supposed to be here"); break;
         case ST::kInt:
         case ST::kBool:
         case ST::kUnit:
@@ -176,8 +174,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
                            .str();
         val = (boost::format(kArrayValTemplate) % temp_name).str();
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -194,8 +191,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Minus) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -219,8 +215,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mult) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -246,8 +241,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -264,8 +258,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mod) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -290,8 +283,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -313,8 +305,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -336,8 +327,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -359,8 +349,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 
@@ -407,8 +396,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
                            .str();
         val = "${" + temp_name + '}';
         break;
-    default:
-        assert(false && "Type is not supposed to be here");
+    default: assert(false && "Type is not supposed to be here");
     }
 }
 

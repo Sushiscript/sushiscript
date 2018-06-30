@@ -8,7 +8,7 @@
 namespace sushi {
 namespace scope {
 
-Environment TypeCheck(ast::Program &program);
+Environment ScopeCheck(ast::Program &program);
 
 } // namespace scope
 } // namespace sushi
