@@ -359,7 +359,8 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
         return Pack(MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath));
     }
     static std::vector<Type::Pointer> ToRedirAccepts() {
-        return Pack(MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath), MAKE_SIMPLE(kFd));
+        return Pack(
+            MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath), MAKE_SIMPLE(kFd));
     }
 
     bool
