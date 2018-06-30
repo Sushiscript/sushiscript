@@ -48,8 +48,13 @@ add_executable(scope-test ${SCOPE_TEST_SRC} ${SUSHI_SCOPE_SRC}
 add_executable(code-gen-test
     ${CODE_GEN_TEST_SRC} ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC}
     ${SUSHI_CODE_GEN_SRC} ${SUSHI_SCOPE_SRC})
+add_executable(pipeline-test
+    ${CODE_GEN_TEST_SRC} ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC}
+    ${SUSHI_CODE_GEN_SRC} ${SUSHI_SCOPE_SRC} ${SUSHI_PIPELINE_SRC})
 
 target_link_libraries(lexer-test ${CONAN_LIBS_GTEST})
 target_link_libraries(parser-test ${CONAN_LIBS_GTEST})
 target_link_libraries(scope-test ${CONAN_LIBS_GTEST})
 target_link_libraries(code-gen-test ${CONAN_LIBS_GTEST})
+target_link_libraries(pipeline-test ${CONAN_LIBS_GTEST})
+
