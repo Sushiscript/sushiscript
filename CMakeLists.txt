@@ -25,6 +25,14 @@ file(GLOB LEXER_TEST_SRC ${SUSHI_TEST_DIR}/lexer/*.cpp)
 file(GLOB_RECURSE SUSHI_PARSER_SRC ${SUSHI_SRC_DIR}/sushi/parser/*.cpp)
 file(GLOB PARSER_TEST_SRC ${SUSHI_TEST_DIR}/parser/*.cpp)
 
+file(GLOB_RECURSE SUSHI_SOURCES ${SUSHI_SRC_DIR}/sushi/*.cpp)
+list(REMOVE_ITEM SUSHI_SOURCES
+    ${SUSHI_SRC_DIR}/sushi/main.cpp
+    ${SUSHI_SRC_DIR}/sushi/code-generation/code-generation.cpp)
+file(GLOB TYPE_CHECK_TEST_SRC ${SUSHI_TEST_DIR}/type-check/*.cpp)
+add_executable(type-check-test ${SUSHI_SOURCES} ${TYPE_CHECK_TEST_SRC})
+target_link_libraries(type-check-test ${CONAN_LIBS_GTEST})
+
 add_executable(lexer-test ${LEXER_TEST_SRC} ${SUSHI_LEXER_SRC})
 add_executable(parser-test
     ${PARSER_TEST_SRC} ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC})
