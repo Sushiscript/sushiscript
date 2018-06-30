@@ -591,7 +591,7 @@ _Not (planned to) implement yet_
 #### 4.7.1 Array Literal
 
 ```
-<array literal : Array T> = [<T>, <T>, ...] | []
+<array literal : Array T> = {<T>, <T>, ...} | {}
 ```
 
 Array Literal is of type `Array T` when all of it's element are well-typed and of same type `T`.
@@ -672,11 +672,12 @@ Empty array and map literals satisfy all requirement whose required types contai
 
 ```
 <int div : Int> = <Int> // <Int>
-<path join : Path> = <Path | RelPath> // <RelPath>
+<path join1 : Path> = <RelPath> // <RelPath>
+<path join2 : Path> = <Path> // <RelPath>
 ```
 
 - `<int div>` integer division.
-- `<path concat>` applying the right-hand relative path to the left-hand path.
+- `<path join>` applying the right-hand relative path to the left-hand path(absolute or relative).
 
 ##### `%`
 
@@ -763,8 +764,8 @@ _todo: what happens when out of range?_
 
 ```
 <redirect to here : String> = (<function call : Ret> | command) redirect to here
-<redirect output> = redirect to <Path | FD>
-<redirect input>  = redirect from <Path>
+<redirect output> = redirect to   <RelPath | Path | FD>
+<redirect input>  = redirect from <RelPath | Path>
 ```
 
 - `<redirect to here>` if the redirected command if a function call, the original return value of function is discarded(_todo: to be discussed_). The value of whole command expression is the output of the command as a string
@@ -818,7 +819,7 @@ The type of ondition expression of `if` statement is required to be `Bool`.
 
 ```
 <switch> = switch <T>
-		   case <T | Function Bool T>: ...
+		   case <T>: ...
 ```
 
 The required types of expression following `case` are:

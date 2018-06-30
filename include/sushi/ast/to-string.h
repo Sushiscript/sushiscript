@@ -48,18 +48,7 @@ inline std::string ToString(BinaryExpr::Operator op) {
 }
 
 inline std::string ToString(type::BuiltInAtom::Type t) {
-    using T = type::BuiltInAtom::Type;
-    switch (t) {
-    case T::kInt: return "Int";
-    case T::kBool: return "Bool";
-    case T::kUnit: return "()";
-    case T::kFd: return "FD";
-    case T::kExitCode: return "ExitCode";
-    case T::kPath: return "Path";
-    case T::kRelPath: return "RelPath";
-    case T::kString: return "String";
-    case T::kChar: return "Char";
-    }
+    return type::BuiltInAtom::ToString(t);
 }
 
 inline std::string ToString(Redirection::Direction dir) {
