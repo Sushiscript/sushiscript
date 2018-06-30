@@ -17,7 +17,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
-add_executable(sushi ${CMAKE_SOURCE_DIR}/src/main.cpp)
 
 file(GLOB_RECURSE SUSHI_LEXER_SRC ${SUSHI_SRC_DIR}/sushi/lexer/*.cpp)
 file(GLOB LEXER_TEST_SRC ${SUSHI_TEST_DIR}/lexer/*.cpp)
@@ -33,6 +32,13 @@ file(GLOB_RECURSE SUSHI_CODE_GEN_SRC
     ${SUSHI_SRC_DIR}/sushi/code-generation/*.cpp)
 file(GLOB CODE_GEN_TEST_SRC ${SUSHI_TEST_DIR}/code-generation/*.cpp)
 
+file(GLOB_RECURSE SUSHI_PIPELINE_SRC
+    ${SUSHI_SRC_DIR}/sushi/pipeline/*.cpp)
+file(GLOB PIPELINE_TEST_SRC ${SUSHI_TEST_DIR}/pipeline/*.cpp)
+
+add_executable(sushi ${CMAKE_SOURCE_DIR}/src/main.cpp
+    ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC} ${SUSHI_CODE_GEN_SRC} 
+    ${SUSHI_SCOPE_SRC} ${SUSHI_PIPELINE_SRC})
 
 add_executable(lexer-test ${LEXER_TEST_SRC} ${SUSHI_LEXER_SRC})
 add_executable(parser-test ${PARSER_TEST_SRC} ${SUSHI_PARSER_SRC} 

@@ -1,15 +1,12 @@
 //
 // Created by Alvin Xue on 2018/4/18.
 //
+
+#include "sushi/pipeline.h"
 #include <iostream>
-#include <cstdlib>
-#include <string>
+using namespace sushi::pipeline;
 
-const std::string bash_str = 
-    "#/bin/bash\n"
-    "echo \"helloworld\"";
-
-int main() {
-    int result = system(bash_str.c_str());
-    exit(result);
+int main(int argc, char* argv[]) {
+    Pipeline pipeline(argc, argv);
+    pipeline.Main();
 }
