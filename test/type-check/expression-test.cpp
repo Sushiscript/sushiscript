@@ -1,5 +1,7 @@
 #include "./util.h"
 
+using type::Error;
+
 TEST(TypeCheckTest, TestVariables) {
     TypingSuccess("define a: Int = 1; a", {{"a", "Int"}});
     TypingSuccess("define a = 1; a", {{"a", "Int"}});
@@ -14,6 +16,13 @@ TEST(TypeCheckTest, TestFunctions) {
     TypingSuccess(
         "define func() = return 1\nfunc\ndefine a = func(); a",
         {{"func", "Function Int Unit"}, {"(func ())", "Int"}, {"a", "Int"}});
+    TypingError("define x = 1; x ()", Error::kInvalidFunction, "x");
+    TypingError(
+        "define f() = return 1; f () ()", Error::kWrongNumOfParams,
+        "(f () ())");
+    TypingError(
+        "define f(x: Int, y: Int) = return 1; f 1", Error::kWrongNumOfParams,
+        "(f 1)");
 }
 
 TEST(TypeCheckTest, TestSimpleLiteral) {
@@ -79,11 +88,15 @@ TEST(TypeCheckTest, TestPipe) {
 
 TEST(TypeCheckTest, TestIndexing) {
     TypingSuccess("{true}[0]", {{"{1}", "Array Bool"}, {"{true}[0]", "Bool"}});
+    TypingError("{true}['a']", Error::kInvalidType, "'a'");
+    TypingError("{true}[{0}]", Error::kInvalidType, "{0}");
     TypingSuccess(
         R"("hello"[0])", {{R"("hello")", "String"}, {R"("hello"[0])", "Char"}});
     TypingSuccess(
         "{1: true}[1]",
         {{"{1: true}", "Map Int Bool"}, {"{1: true}[1]", "Bool"}});
+    TypingError("{1: true}[false]", Error::kInvalidType, "false");
+    TypingError("{1: true}[()]", Error::kInvalidType, "()");
     TypingSuccess(
         "{true: 1}[true]",
         {{"{true: 1}", "Map Bool Int"}, {"{true: 1}[true]", "Int"}});
@@ -96,6 +109,8 @@ TEST(TypeCheckTest, TestIndexing) {
         R"({"hello"}[0][0])", {{R"({"hello"})", "Array String"},
                                {R"({"hello"}[0])", "String"},
                                {R"({"hello"}[0][0])", "Char"}});
+    TypingError("1[0]", Error::kInvalidIndexable, "1");
+    TypingError("()[0]", Error::kInvalidIndexable, "()");
 }
 
 TEST(TypeCheckTest, TestUnaryOperator) {

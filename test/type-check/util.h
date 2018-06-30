@@ -16,8 +16,7 @@ using namespace sushi;
 
 template <typename K, typename V>
 using Table = std::unordered_map<K, V>;
-using TypingTable =
-    Table<const ast::Expression *, type::Type::Pointer>;
+using TypingTable = Table<const ast::Expression *, type::Type::Pointer>;
 using StringTable = Table<std::string, std::string>;
 
 namespace std {
@@ -60,8 +59,8 @@ inline StringTable InternalToString(const TypingTable &table) {
     return tb;
 }
 
-inline void ExpectContainTypings(
-    const TypingTable &typings, const StringTable &atleast) {
+inline void
+ExpectContainTypings(const TypingTable &typings, const StringTable &atleast) {
     auto actual = InternalToString(typings);
     bool success = true;
     for (auto &kv : atleast) {
@@ -97,14 +96,31 @@ inline void WithTypeCheckResult(
     f(env, errors);
 }
 
-inline void TypingSuccess(
-    const std::string &source, const StringTable &expect_typings) {
+inline void
+TypingSuccess(const std::string &source, const StringTable &expect_typings) {
     WithTypeCheckResult(
         source, [&expect_typings](const auto &env, const auto &tes) {
             EXPECT_TRUE(tes.empty()) << tes;
             // TODO
             ExpectContainTypings({}, expect_typings);
         });
+}
+
+inline void TypingError(
+    const std::string &source, type::Error::Tp t, const std::string &expr) {
+    WithTypeCheckResult(source, [t, &expr](const auto &env, const auto &tes) {
+        bool error_found = false;
+        for (auto &te : tes) {
+            if (te.type == t and ((te.expr == nullptr and expr.empty()) or
+                                  (ast::ToString(te.expr) == expr))) {
+                error_found = true;
+                break;
+            }
+        }
+        EXPECT_TRUE(error_found)
+            << "error " << type::Error::ToString(t) << " not found in\n"
+            << tes;
+    });
 }
 
 } // namespace sushi
