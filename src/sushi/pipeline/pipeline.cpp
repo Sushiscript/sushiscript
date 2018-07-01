@@ -17,6 +17,9 @@
 namespace sushi {
 namespace pipeline {
 
+#define PRINT_ERRPR(POSITION, ERROR_TYPE, OTHERS)                              \
+    std::cout << "error:" << (POSITION) << ":" << (ERROR_TYPE) << " " << OTHERS;
+
 Pipeline::Pipeline(int argc, const char *argv[]) {
     config = Parser(argc, argv);
 };
@@ -41,29 +44,51 @@ void Pipeline::ExecSigleFile(std::string file_path) {
     std::ifstream in(file_path);
     std::stringstream buffer;
     buffer << in.rdbuf();
+    in.close();
+
     auto bash_str = TransToSushi(buffer.str());
     int result = system(bash_str.c_str());
-    in.close();
 }
 
 void Pipeline::BuildSingleFile(std::string file_path, std::string output_path) {
     std::ifstream in(file_path);
-    std::ofstream out(output_path);
     std::stringstream buffer;
     buffer << in.rdbuf();
-    auto bash_str = TransToSushi(buffer.str());
-    out << bash_str;
     in.close();
+
+    auto bash_str = TransToSushi(buffer.str());
+
+    std::ofstream out(output_path);
+    out << bash_str;
     out.close();
 }
 
 std::string Pipeline::TransToSushi(std::string s) {
     std::istringstream iss(s);
+    // lexer
     lexer::Lexer lexer(iss, {"", 1, 1});
+    // parser
     parser::Parser p(std::move(lexer));
     auto result = p.Parse();
+    for (auto &error : result.errors) {
+        PRINT_ERRPR("parser", error.ToString(), error.position);
+    }
+    if (not result.errors.empty()) exit(-1);
+    // scope check
     auto enviroment = scope::ScopeCheck(result.program);
+    // for (auto &error : result.errors) {
+    //     PRINT_ERRPR("scope", error.ToString(), error.error_detail);
+    // }
+    // if (!result.errors.empty()) exit(-1);
+
+    // type check
     auto errors = type::Check(result.program, enviroment);
+    for (auto &error : errors) {
+        PRINT_ERRPR("type-check", error.ToString(), "type-check error");
+    }
+    if (not errors.empty()) exit(-1);
+
+    // code gen
     code_generation::CodeGenerator generator;
     return generator.GenCode(result.program, enviroment);
 }
