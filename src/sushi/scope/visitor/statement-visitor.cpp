@@ -30,6 +30,12 @@ VISIT(ast::VariableDef, var_def) {
 }
 
 VISIT(ast::FunctionDef, func_def) {
+    auto existed_info = scope->LookUp(func_def.name);
+    if (existed_info != nullptr && existed_info->defined_scope == scope.get()) {
+        errs.push_back(Error(Error::Type::kRedefinedError, func_def.name));
+        return;
+    }
+
     // visit sub
     std::shared_ptr<Scope> sub_scope(new Scope(scope));
     // Add parameters into scope
