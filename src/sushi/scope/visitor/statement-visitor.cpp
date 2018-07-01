@@ -41,7 +41,7 @@ VISIT(ast::FunctionDef, func_def) {
     // Add parameters into scope
     for (auto & param : func_def.params) {
         auto info = Scope::CreateIdentInfo(boost::none, sub_scope.get());
-        scope->Insert(param.name, info);
+        sub_scope->Insert(param.name, info);
     }
     // body
     environment.Insert(&func_def.body, sub_scope);

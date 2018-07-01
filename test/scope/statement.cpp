@@ -2,14 +2,31 @@
 
 using namespace sushi::scope::test;
 
+using ET = Error::Type;
+
 TEST(StatementTest, TestVariableDef) {
-    VariableDefSuccess("define x = 1", { "x" });
-    VariableDefSuccess("define x = 1; define y = 1;", { "x", "y" });
-    VariableDefError("define x = 1; define x = 0", Error::Type::kRedefinedError);
+    ScopeSuccess("define x = 0", {{"x"}}, {});
+    ScopeSuccess("define x = 1; define y = 2", {{"x", "y"}}, {});
+
+    ScopeError("define x = 0; define x = 1", ET::kRedefinedError);
 }
 
-TEST(StatementTest, TestVariableDef_New) {
-    ScopeSuccess("define x = 1; define y = 2", {{"x", "y"}}, {});
+TEST(StatementTest, TestFunctionDef) {
+    ScopeSuccess("define foo (a : Int, b : String) : Bool = return a == 1",
+        {{}, {"a", "b"}}, {1});
+
+    ScopeSuccess(
+R"(define a = 0
+define foo (a : Int, b : String) : Bool =
+    return a == 1)",
+    {{"a"}, {"a", "b"}}, {1});
+
+    ScopeError(
+R"(define foo (a : Int) : Int =
+    return 0
+define foo (a : Int) : Int =
+    return 1)",
+        ET::kRedefinedError);
 }
 
 // TEST(StatementTest, TestAssignment) {

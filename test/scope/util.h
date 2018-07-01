@@ -112,7 +112,8 @@ inline void ScopeTest(
         auto &scope = scopes[i];
         auto &def_ids = expect_scope_def_ids[i];
         for (auto &id : def_ids) {
-            EXPECT_TRUE(scope->LookUp(id)->defined_scope == scope);
+            EXPECT_TRUE(scope->LookUp(id)->defined_scope == scope) << "In scope " << i
+                << " Finding " << id;
         }
     }
 }
@@ -120,16 +121,16 @@ inline void ScopeTest(
 inline void EnvironTest(
     const Environment &env, const std::vector<const Scope *> &scopes,
     const std::vector<const ast::Identifier *> &ids,
-    const std::vector<int> &scope_index) {
+    const std::vector<int> &use_scope_index) {
     for (int i = 0; i < ids.size(); ++i) {
-        EXPECT_TRUE(env.LookUp(ids[i]) == scopes[scope_index[i]]);
+        EXPECT_TRUE(env.LookUp(ids[i]) == scopes[use_scope_index[i]]);
     }
 }
 
 inline void ScopeSuccess(
     const std::string &source,
     const std::vector<std::vector<std::string>> &expect_scope_def_ids,
-    const std::vector<int> &scope_index) {
+    const std::vector<int> &use_scope_index) {
     SCOPED_TRACE(source);
     auto pr = Parse(source);
     ASSERT_TRUE(pr.errors.empty()) << pr.errors;
@@ -146,7 +147,25 @@ inline void ScopeSuccess(
     }
 
     ScopeTest(scopes, expect_scope_def_ids);
-    EnvironTest(env, scopes, res.identifiers, scope_index);
+    EnvironTest(env, scopes, res.identifiers, use_scope_index);
+}
+
+inline void ScopeError(const std::string &source, const Error::Type &err_type) {
+    SCOPED_TRACE(source);
+    auto pr = Parse(source);
+    ASSERT_TRUE(pr.errors.empty()) << pr.errors;
+    Environment env;
+    auto errs = ScopeCheck(pr.program, env);
+
+    ASSERT_FALSE(errs.empty()) << "no error, it's weired";
+    bool found_err = false;
+    for (auto &err : errs) {
+        if (err.type == err_type) {
+            found_err = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found_err);
 }
 
 } // namespace test
