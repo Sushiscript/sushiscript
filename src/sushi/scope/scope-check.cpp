@@ -1,6 +1,3 @@
-#ifndef SUSHI_SCOPE_TYPE_CHECK_H
-#define SUSHI_SCOPE_TYPE_CHECK_H
-
 #include "sushi/ast.h"
 #include "sushi/scope.h"
 #include <iostream>
@@ -17,7 +14,7 @@ namespace scope {
  *
  */
 
-inline std::vector<Error> ScopeCheck(ast::Program &program, Environment &environment) {
+std::vector<Error> ScopeCheck(const ast::Program &program, Environment &environment) {
     // initial top environment
     // Environment environment;
     // initial top scope, outer is nullptr
@@ -42,5 +39,3 @@ inline std::vector<Error> ScopeCheck(ast::Program &program, Environment &environ
 
 } // namespace scope
 } // namespace sushi
-
-#endif // SUSHI_SCOPE_TYPE_CHECK_H
