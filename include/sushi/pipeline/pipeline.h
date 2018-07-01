@@ -1,7 +1,7 @@
 #ifndef SUSHI_PIPELINE_PIPELINE_H_
 #define SUSHI_PIPELINE_PIPELINE_H_
 
-namespace sushi{
+namespace sushi {
 namespace pipeline {
 
 class Pipeline {
@@ -9,12 +9,12 @@ class Pipeline {
     std::string bash_str = "echo \"helloworld\"";
 
   public:
-    Pipeline(int argc, char* argv[]) {};
+    Pipeline(int argc, char *argv[]){};
     void Main();
     void DisplayHelpMenu();
     void DesplayVertion();
     void ExecSigleFile(std::string file_path);
-    static Config Parser(int argc, char* argv[]);
+    static Config Parser(int argc, const char *argv[]);
 };
 
 } // namespace pipeline

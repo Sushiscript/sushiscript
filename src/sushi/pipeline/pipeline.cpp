@@ -1,9 +1,10 @@
 #include "sushi/pipeline.h"
+#include <cstring>
+#include <iostream>
 #include <string>
 #include <vector>
-#include <iostream>
 
-namespace sushi{
+namespace sushi {
 namespace pipeline {
 
 void Pipeline::Main() {
@@ -22,21 +23,19 @@ void Pipeline::ExecSigleFile(std::string file_path) {
     // pass
 }
 
-Config Pipeline::Parser(int argc, char* argv[]) {
+Config Pipeline::Parser(int argc, const char *argv[]) {
     Config config;
     if (argc < 2) {
         config.command_type = Config::Void;
         return config;
     } else {
         // version
-        if (strcmp(argv[1], "-v") or 
-            strcmp(argv[1], "--version")) {
+        if (!strcmp(argv[1], "-v") or !strcmp(argv[1], "--version")) {
             config.command_type = Config::Version;
             return config;
         }
         // help
-        if (strcmp(argv[1], "-h") or 
-            strcmp(argv[1], "--help")) {
+        if (!strcmp(argv[1], "-h") or !strcmp(argv[1], "--help")) {
             config.command_type = Config::Help;
             return config;
         }
@@ -48,8 +47,7 @@ Config Pipeline::Parser(int argc, char* argv[]) {
             return config;
         }
         // build
-        if (argc == 4 and
-            strcmp(argv[2], "-o")) {
+        if (argc == 4 and !strcmp(argv[2], "-o")) {
             config.output_path = argv[3];
             config.command_type = Config::Build;
             return config;
@@ -58,7 +56,6 @@ Config Pipeline::Parser(int argc, char* argv[]) {
         return config;
     }
 }
-
 
 } // namespace pipeline
 } // namespace sushi

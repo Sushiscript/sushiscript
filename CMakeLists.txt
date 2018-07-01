@@ -49,7 +49,7 @@ add_executable(code-gen-test
     ${CODE_GEN_TEST_SRC} ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC}
     ${SUSHI_CODE_GEN_SRC} ${SUSHI_SCOPE_SRC})
 add_executable(pipeline-test
-    ${CODE_GEN_TEST_SRC} ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC}
+    ${PIPELINE_TEST_SRC} ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC}
     ${SUSHI_CODE_GEN_SRC} ${SUSHI_SCOPE_SRC} ${SUSHI_PIPELINE_SRC})
 
 target_link_libraries(lexer-test ${CONAN_LIBS_GTEST})
