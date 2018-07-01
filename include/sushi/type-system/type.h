@@ -2,6 +2,7 @@
 #define SUSHI_TYPE_SYSTEM_TYPE_H_
 
 #include "sushi/util/visitor.h"
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>

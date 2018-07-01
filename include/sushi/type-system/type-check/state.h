@@ -11,10 +11,11 @@ namespace type {
 
 struct State {
     using ScopeBindings = std::unordered_map<
-        const Scope *, std::unordered_map<std::string, Type::Pointer>>;
+        const scope::Scope *, std::unordered_map<std::string, Type::Pointer>>;
     State(
-        ScopeBindings &bindings, const ast::Program &program, Environment &env,
-        std::vector<Error> &errors, Type::Pointer return_type)
+        ScopeBindings &bindings, const ast::Program &program,
+        scope::Environment &env, std::vector<Error> &errors,
+        Type::Pointer return_type)
         : bindings(bindings), program(program), env(env), errors(errors),
           return_type(std::move(return_type)) {}
 
@@ -45,7 +46,7 @@ struct State {
 
     ScopeBindings &bindings;
     const ast::Program &program;
-    Environment &env;
+    scope::Environment &env;
     std::vector<Error> &errors;
     Type::Pointer return_type;
 };

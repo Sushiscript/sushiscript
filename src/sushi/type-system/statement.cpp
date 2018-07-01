@@ -129,7 +129,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         if (ret.value == nullptr) {
             NoReturnValue();
         } else if (s.return_type == nullptr) {
-            s.return_value = UnambiguousDeduce(*ret.value, s);
+            s.return_type = UnambiguousDeduce(*ret.value, s);
         } else {
             SatisfyRequirement(*ret.value, s.return_type->Copy(), s);
         }
@@ -181,7 +181,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
 
 void CheckStatement(const ast::Statement &stmt, State &state) {
     CheckStatementVisitor v(state);
-    stmt.AcceptVisitor(stmt);
+    stmt.AcceptVisitor(v);
 }
 
 } // namespace

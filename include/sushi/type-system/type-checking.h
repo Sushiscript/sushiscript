@@ -9,7 +9,8 @@ namespace sushi {
 
 namespace type {
 
-inline std::vector<Error> Check(const ast::Program &program, Environment &env) {
+inline std::vector<Error>
+Check(const ast::Program &program, scope::Environment &env) {
     State::ScopeBindings bindings;
     std::vector<Error> errors;
     CheckProgram(State(

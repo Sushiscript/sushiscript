@@ -20,9 +20,17 @@ namespace type {
 
 namespace {
 
+template <typename... Args>
+std::vector<Type::Pointer> Pack(Args &&... ps) {
+    std::vector<Type::Pointer> result;
+    [[maybe_unused]] auto a = {(result.push_back(std::move(ps)), 0)...};
+    return result;
+}
+
 std::vector<Type::Pointer> Interpolatable() {
-    return {MAKE_SIMPLE(kChar), MAKE_SIMPLE(kInt), MAKE_SIMPLE(kString),
-            MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath)};
+    return Pack(
+        MAKE_SIMPLE(kChar), MAKE_SIMPLE(kInt), MAKE_SIMPLE(kString),
+        MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath));
 }
 
 bool ValidInterpolatedString(const ast::InterpolatedString &inter, State &s) {
@@ -243,7 +251,7 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     }
 
     static std::vector<Type::Pointer> Multipliable() {
-        return {MAKE_SIMPLE(kInt), MAKE_SIMPLE(kPath)};
+        return Pack(MAKE_SIMPLE(kInt), MAKE_SIMPLE(kPath));
     }
 
     DeduceResult Mult(const ast::Expression &lhs, const ast::Expression &rhs) {
@@ -255,7 +263,8 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     }
 
     static std::vector<Type::Pointer> Dividable() {
-        return {MAKE_SIMPLE(kInt), MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath)};
+        return Pack(
+            MAKE_SIMPLE(kInt), MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath));
     }
 
     DeduceResult Div(const ast::Expression &lhs, const ast::Expression &rhs) {
@@ -317,7 +326,8 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     }
 
     static std::vector<Type::Pointer> OrderComparable() {
-        return {MAKE_SIMPLE(kChar), MAKE_SIMPLE(kInt), MAKE_SIMPLE(kString)};
+        return Pack(
+            MAKE_SIMPLE(kChar), MAKE_SIMPLE(kInt), MAKE_SIMPLE(kString));
     }
 
     DeduceResult Order(const ast::Expression &lhs, const ast::Expression &rhs) {
@@ -346,10 +356,11 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     }
 
     static std::vector<Type::Pointer> FromRedirAccepts() {
-        return {MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath)};
+        return Pack(MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath));
     }
     static std::vector<Type::Pointer> ToRedirAccepts() {
-        return {MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath), MAKE_SIMPLE(kFd)};
+        return Pack(
+            MAKE_SIMPLE(kPath), MAKE_SIMPLE(kRelPath), MAKE_SIMPLE(kFd));
     }
 
     bool
