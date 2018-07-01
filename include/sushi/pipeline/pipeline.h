@@ -1,19 +1,24 @@
 #ifndef SUSHI_PIPELINE_PIPELINE_H_
 #define SUSHI_PIPELINE_PIPELINE_H_
 
+#include <string>
+
 namespace sushi {
 namespace pipeline {
 
 class Pipeline {
   private:
-    std::string bash_str = "echo \"helloworld\"";
+    // config
+    Config config;
+    // std::string bash_str = "echo \"helloworld\"";
 
   public:
-    Pipeline(int argc, char *argv[]){};
+    Pipeline(int argc, const char *argv[]);
     void Main();
-    void DisplayHelpMenu();
-    void DesplayVertion();
+    void DisplayMessage();
     void ExecSigleFile(std::string file_path);
+    void BuildSingleFile(std::string file_path, std::string output_path);
+    static std::string TransToSushi(std::string);
     static Config Parser(int argc, const char *argv[]);
 };
 
