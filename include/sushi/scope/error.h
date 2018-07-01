@@ -8,12 +8,13 @@ namespace sushi {
 namespace scope {
 
 struct Error {
-    enum class Type { kNoIdentyInfoError, kNoDefineLocationError, kUndefinedError };
+    enum class Type { kNoIdentyInfoError, kNoDefineLocationError, kUndefinedError, kRedefinedError };
     static std::string ToString(Type t) {
         switch (t) {
         case Type::kNoIdentyInfoError: return "NoIdentyInfoError";
         case Type::kNoDefineLocationError: return "kNoDefineLocationError";
         case Type::kUndefinedError: return "kUndefinedError";
+        case Type::kRedefinedError: return "kRedefinedError";
         }
     }
     std::string ToString() const {

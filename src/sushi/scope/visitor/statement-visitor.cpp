@@ -14,6 +14,12 @@ VISIT(ast::Assignment, assignment) {
 }
 
 VISIT(ast::VariableDef, var_def) {
+    auto existed_info = scope->LookUp(var_def.name);
+    if (existed_info != nullptr && existed_info->defined_scope == scope.get()) {
+        errs.push_back(Error(Error::Type::kRedefinedError, var_def.name));
+        return;
+    }
+
     // visit sub
     ExpressionVisitor expression_visitor(environment, scope);
     var_def.value->AcceptVisitor(expression_visitor);
