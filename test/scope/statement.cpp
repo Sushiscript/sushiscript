@@ -8,6 +8,10 @@ TEST(StatementTest, TestVariableDef) {
     VariableDefError("define x = 1; define x = 0", Error::Type::kRedefinedError);
 }
 
+TEST(StatementTest, TestVariableDef_New) {
+    ScopeSuccess("define x = 1; define y = 2", {{"x", "y"}}, {});
+}
+
 // TEST(StatementTest, TestAssignment) {
 //     std::string source_code = "x = 1";
 //     auto program = Parse(source_code).program;

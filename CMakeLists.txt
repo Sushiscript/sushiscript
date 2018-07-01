@@ -26,7 +26,7 @@ file(GLOB_RECURSE SUSHI_PARSER_SRC ${SUSHI_SRC_DIR}/sushi/parser/*.cpp)
 file(GLOB PARSER_TEST_SRC ${SUSHI_TEST_DIR}/parser/*.cpp)
 
 file(GLOB_RECURSE SUSHI_SCOPE_SRC ${SUSHI_SRC_DIR}/sushi/scope/*.cpp)
-file(GLOB SCOPE_TEST_SRC  ${SUSHI_TEST_DIR}/scope/*.cpp
+file(GLOB_RECURSE SCOPE_TEST_SRC  ${SUSHI_TEST_DIR}/scope/*.cpp
     ${SUSHI_TEST_DIR}/scope/visitor/*.cpp)
 
 file(GLOB_RECURSE SUSHI_CODE_GEN_SRC
@@ -35,7 +35,7 @@ file(GLOB CODE_GEN_TEST_SRC ${SUSHI_TEST_DIR}/code-generation/*.cpp)
 
 
 add_executable(lexer-test ${LEXER_TEST_SRC} ${SUSHI_LEXER_SRC})
-add_executable(parser-test ${PARSER_TEST_SRC} ${SUSHI_PARSER_SRC} 
+add_executable(parser-test ${PARSER_TEST_SRC} ${SUSHI_PARSER_SRC}
 ${SUSHI_LEXER_SRC} ${SUSHI_SCOPE_SRC})
 add_executable(scope-test ${SCOPE_TEST_SRC} ${SUSHI_SCOPE_SRC}
     ${SUSHI_PARSER_SRC} ${SUSHI_LEXER_SRC})
