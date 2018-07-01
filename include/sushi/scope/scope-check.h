@@ -8,7 +8,7 @@
 namespace sushi {
 namespace scope {
 
-Environment ScopeCheck(ast::Program &program);
+inline std::vector<Error> ScopeCheck(const ast::Program &program, Environment &environment);
 
 } // namespace scope
 } // namespace sushi

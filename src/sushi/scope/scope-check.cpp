@@ -17,9 +17,9 @@ namespace scope {
  *
  */
 
-Environment ScopeCheck(ast::Program &program) {
+inline std::vector<Error> ScopeCheck(ast::Program &program, Environment &environment) {
     // initial top environment
-    Environment environment;
+    // Environment environment;
     // initial top scope, outer is nullptr
     std::shared_ptr<Scope> head_scope(new Scope(nullptr));
     // add the <program, scope> to environment
@@ -36,9 +36,8 @@ Environment ScopeCheck(ast::Program &program) {
     }
 
     MergeVector(errs, visitor.errs);
-    // TODO: errs where to go?
 
-    return environment;
+    return errs;
 };
 
 } // namespace scope
