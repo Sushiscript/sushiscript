@@ -22,7 +22,10 @@ class CodeGenerator {
         boost::algorithm::split(res, str, boost::algorithm::is_any_of("\n"));
         std::string ret;
         for (auto &s : res) {
-            ret += kIndentString + s + '\n';
+            if (s.empty())
+                ret += '\n';
+            else
+                ret += kIndentString + s + '\n';
         }
         return ret;
     }
