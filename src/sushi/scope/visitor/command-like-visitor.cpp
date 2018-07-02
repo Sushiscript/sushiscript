@@ -8,7 +8,8 @@ namespace scope {
 VISIT(ast::FunctionCall, func_call) {
     ExpressionVisitor expression_visitor(environment, scope);
     for (auto &redir : func_call.redirs) {
-        redir.external->AcceptVisitor(expression_visitor);
+        if (redir.external != nullptr)
+            redir.external->AcceptVisitor(expression_visitor);
     }
     MergeVector(errs, expression_visitor.errs);
     auto func_call_ptr = func_call.pipe_next.get();
@@ -36,7 +37,8 @@ VISIT(ast::FunctionCall, func_call) {
 VISIT(ast::Command, command) {
     ExpressionVisitor expression_visitor(environment, scope);
     for (auto &redir : command.redirs) {
-        redir.external->AcceptVisitor(expression_visitor);
+        if (redir.external != nullptr)
+            redir.external->AcceptVisitor(expression_visitor);
     }
     MergeVector(errs, expression_visitor.errs);
     auto command_ptr = command.pipe_next.get();

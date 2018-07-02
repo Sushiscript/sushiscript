@@ -108,11 +108,13 @@ TEST(ExpressionTest, TestBinaryExpr) {
 
 TEST(ExpressionTest, TestFunctionCall) {
     ScopeSuccess("define func () : Int = return 1\nfunc", {{"func"}, {}}, {0});
+    ScopeSuccess("define func () : Int = return 1\nfunc () redirect to here", {{"func"}, {}}, {0});
     ScopeError("func", ET::kUndefinedError);
 }
 
 TEST(ExpressionTest, TestCommand) {
     ScopeSuccess("! echo \"hello\"", {{}}, {});
+    ScopeSuccess("! echo \"hello\" redirect to here", {{}}, {});
     ScopeSuccess("define ec = \"echo\"\n! ${ec} \"${ec}\"", {{"ec"}}, {0, 0});
     ScopeError("! echo \"${b}\"", ET::kUndefinedError);
 }

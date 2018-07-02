@@ -18,7 +18,8 @@ VISIT(ast::FunctionCall, func_call) {
 
     ExpressionVisitor expression_visitor;
     for (auto &redir : func_call.redirs) {
-        redir.external->AcceptVisitor(expression_visitor);
+        if (redir.external != nullptr)
+            redir.external->AcceptVisitor(expression_visitor);
     }
     MergeVector(identifiers, expression_visitor.identifiers);
 
@@ -46,7 +47,8 @@ VISIT(ast::Command, command) {
 
     ExpressionVisitor expression_visitor;
     for (auto &redir : command.redirs) {
-        redir.external->AcceptVisitor(expression_visitor);
+        if (redir.external != nullptr)
+            redir.external->AcceptVisitor(expression_visitor);
     }
     MergeVector(identifiers, expression_visitor.identifiers);
 
