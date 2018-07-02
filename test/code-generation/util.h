@@ -7,6 +7,7 @@
 #include "../parser/util.h"
 #include "sushi/code-generation/code-generation.h"
 #include "sushi/type-system/type-checking.h"
+#include "sushi/type-system/type.h"
 
 namespace sushi {
 namespace code_generation {
