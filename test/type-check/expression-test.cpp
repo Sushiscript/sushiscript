@@ -10,19 +10,19 @@ TEST(TypeCheckTest, TestVariables) {
 
 TEST(TypeCheckTest, TestFunctions) {
     TypingSuccess(
-        "define func(): Int = return 1\nfunc", {{"func", "Function Int Unit"}});
+        "define func(): Int = return 1\nfunc", {{"func", "Function Int ()"}});
     TypingSuccess(
-        "define func() = return 1\nfunc", {{"func", "Function Int Unit"}});
+        "define func() = return 1\nfunc", {{"func", "Function Int ()"}});
     TypingSuccess(
         "define func() = return 1\nfunc\ndefine a = func(); a",
-        {{"func", "Function Int Unit"}, {"(func ())", "Int"}, {"a", "Int"}});
-    TypingError("define x = 1; x ()", Error::kInvalidFunction, "x");
+        {{"func", "Function Int ()"}, {"(func ())", "Int"}, {"a", "Int"}});
+    TypingError("define x = 1; x ()", Error::kInvalidFunction, "(x ())");
     TypingError(
-        "define f() = return 1; f () ()", Error::kWrongNumOfParams,
+        "define f(): Int = return 1; f () ()", Error::kWrongNumOfParams,
         "(f () ())");
     TypingError(
-        "define f(x: Int, y: Int) = return 1; f 1", Error::kWrongNumOfParams,
-        "(f 1)");
+        "define f(x: Int, y: Int): Int = return 1; f 1",
+        Error::kWrongNumOfParams, "(f 1)");
 }
 
 TEST(TypeCheckTest, TestSimpleLiteral) {
@@ -34,9 +34,9 @@ TEST(TypeCheckTest, TestSimpleLiteral) {
     TypingSuccess("/hello", {{"/hello", "Path"}});
     TypingSuccess("true", {{"true", "Bool"}});
     TypingSuccess("false", {{"false", "Bool"}});
-    TypingSuccess("stdin", {{"stdin", "Fd"}});
-    TypingSuccess("stdout", {{"stdout", "Fd"}});
-    TypingSuccess("stderr", {{"stderr", "Fd"}});
+    TypingSuccess("stdin", {{"stdin", "FD"}});
+    TypingSuccess("stdout", {{"stdout", "FD"}});
+    TypingSuccess("stderr", {{"stderr", "FD"}});
 }
 
 TEST(TypeCheckTest, TestImplicitConversion) {
@@ -46,15 +46,15 @@ TEST(TypeCheckTest, TestImplicitConversion) {
 TEST(TypeCheckTest, TestArrayLiteral) {
     TypingSuccess("{1}", {{"{1}", "Array Int"}});
     TypingSuccess("{1, 2, 3}", {{"{1, 2, 3}", "Array Int"}});
-    TypingSuccess("{/hello, ./hi}", {{"{/hello, ./hi}", "Array Path"}});
+    TypingSuccess("{/hello, ./hi }", {{"{/hello, ./hi}", "Array Path"}});
     TypingSuccess("define a: Array Int = {}; a", {{"a", "Array Int"}});
 }
 
 TEST(TypeCheckTest, TestMapLiteral) {
     TypingSuccess("{1: 2}", {{"{1: 2}", "Map Int Int"}});
-    TypingSuccess("{1: 2, 3: 4}", {{"{1: 2}", "Map Int Int"}});
+    TypingSuccess("{1: 2, 3: 4}", {{"{1: 2, 3: 4}", "Map Int Int"}});
     TypingSuccess(
-        "{/hello : /hello, ./hi : ./hi}",
+        "{/hello : /hello, ./hi : ./hi }",
         {{"{/hello: /hello, ./hi: ./hi}", "Map Path Path"}});
 }
 
@@ -62,32 +62,31 @@ TEST(TypeCheckTest, TestCommand) {
     TypingSuccess("!hello world", {{"(! hello world)", "ExitCode"}});
     TypingSuccess(
         "!hello world, redirect to here",
-        {{"(! hello world redirect to here)", "String"}});
+        {{"(! hello world redirect stdout to here)", "String"}});
 }
 TEST(TypeCheckTest, TestRedirection) {
     TypingSuccess("! hello, redirect from ./hello", {{"./hello", "RelPath"}});
     TypingSuccess("! hello, redirect from /hello", {{"/hello", "Path"}});
     TypingSuccess("! hello, redirect to /hello", {{"/hello", "Path"}});
-    TypingSuccess("! hello, redirect to ./hello", {{"/hello", "RelPath"}});
-    TypingSuccess("! hello, redirect to stderr", {{"stderr", "Fd"}});
+    TypingSuccess("! hello, redirect to ./hello", {{"./hello", "RelPath"}});
+    TypingSuccess("! hello, redirect to stderr", {{"stderr", "FD"}});
 }
 TEST(TypeCheckTest, TestPipe) {
     TypingSuccess(
         "!hello world | !hello world",
         {{"(! hello world | ! hello world)", "ExitCode"}});
     TypingSuccess(
-        "define func(): Int = return 1\n!hello world | func ()",
-        {{"func", "Function Int Unit"},
-         {"(func ())", "Int"},
-         {"(! hello world | func ())", "Int"}});
+        "define func(): Int = return 1\nfunc; !hello world | func ()",
+        {{"func", "Function Int ()"}, {"(! hello world | func ())", "Int"}});
     TypingSuccess(
         "define func(): Int = return 1\n!hello world | func () redirect to "
         "here",
-        {{"(! hello world | func () redirect to here)", "String"}});
+        {{"(! hello world | func () redirect stdout to here)", "String"}});
 }
 
 TEST(TypeCheckTest, TestIndexing) {
-    TypingSuccess("{true}[0]", {{"{1}", "Array Bool"}, {"{true}[0]", "Bool"}});
+    TypingSuccess(
+        "{true}[0]", {{"{true}", "Array Bool"}, {"{true}[0]", "Bool"}});
     TypingError("{true}['a']", Error::kInvalidType, "'a'");
     TypingError("{true}[{0}]", Error::kInvalidType, "{0}");
     TypingSuccess(
@@ -134,7 +133,7 @@ TEST(TypeCheckTest, TestArithmetic) {
     TypingSuccess("define a = 1 + 1; a", {{"a", "Int"}});
     TypingSuccess("define a = 1 - 1; a", {{"a", "Int"}});
     TypingSuccess("define a = 1 * 1; a", {{"a", "Int"}});
-    TypingSuccess("define a = 1 / 1; a", {{"a", "Int"}});
+    TypingSuccess("define a = 1 // 1; a", {{"a", "Int"}});
     TypingSuccess("define a = 1 % 1; a", {{"a", "Int"}});
 }
 
@@ -184,4 +183,22 @@ TEST(TypeCheckTest, TestOrder) {
 TEST(TypeCheckTest, TestLogic) {
     TypingSuccess("define a = true and false; a", {{"a", "Bool"}});
     TypingSuccess("define a = true or false; a", {{"a", "Bool"}});
+}
+
+TEST(TypeCheckTest, TestInterpolation) {
+    TypingSuccess(
+        "./${1 + 2}", {{"1", "Int"},
+                       {"2", "Int"},
+                       {"(1 + 2)", "Int"},
+                       {"./${(1 + 2)}", "RelPath"}});
+    TypingSuccess("./${'a'}", {{"'a'", "Char"}, {"./${'a'}", "RelPath"}});
+    TypingSuccess(
+        "./${./hello }", {{"./hello", "RelPath"}, {"./${./hello}", "RelPath"}});
+    TypingSuccess(
+        "./${\"hello\"}",
+        {{"\"hello\"", "String"}, {"./${\"hello\"}", "RelPath"}});
+    TypingSuccess(
+        "./${/hello }", {{"/hello", "Path"}, {"./${/hello}", "RelPath"}});
+    TypingError("./${{1}}", Error::kInvalidType, "{1}");
+    TypingError("./${stdout}", Error::kInvalidType, "stdout");
 }

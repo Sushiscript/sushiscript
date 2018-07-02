@@ -1,6 +1,7 @@
 #include "sushi/type-system/type-check/statement.h"
 #include "sushi/type-system/type-check/expression.h"
 #include <algorithm>
+#include <iostream>
 
 #define SIMPLE(t) BuiltInAtom::Type::t
 #define MAKE_SIMPLE(t) type::BuiltInAtom::Make(SIMPLE(t))
@@ -97,8 +98,9 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         const ast::FunctionDef &fdef, std::vector<Type::Pointer> params) {
         State new_state = s.NewFunctionBody(fdef.body, nullptr);
         CheckProgram(new_state);
-        Type::Pointer ret = s.return_type == nullptr ? MAKE_SIMPLE(kUnit)
-                                                     : std::move(s.return_type);
+        Type::Pointer ret = new_state.return_type == nullptr
+                                ? MAKE_SIMPLE(kUnit)
+                                : std::move(new_state.return_type);
         s.InsertName(
             fdef.name, Function::Make(std::move(params), std::move(ret)));
     }
@@ -147,7 +149,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
     }
 
     Type::Pointer GetIdentType(const ast::ForStmt::Condition &cond) {
-        auto range_type = UnambiguousDeduce(*cond.condition, s, false);
+        auto range_type = UnambiguousDeduce(*cond.condition, s);
         if (not range_type) return nullptr;
         auto arr = range_type->ToArray();
         if (not arr)

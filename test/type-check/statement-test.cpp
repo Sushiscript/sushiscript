@@ -29,15 +29,15 @@ TEST(TypeCheckTest, TestSwitch) {
 TEST(TypeCheckTest, TestFunctionReturn) {
     TypingError("define f(): Int = return false", Error::kInvalidType, "false");
     TypingError("define f(): Int = return", Error::kMissingReturnValue, "");
-    TypingSuccess("define f() = return;\nf", {{"f", "Function Unit Unit"}});
-    TypingSuccess("define f() = return; return", {{"f", "Function Unit Unit"}});
+    TypingSuccess("define f() = return;\nf", {{"f", "Function () ()"}});
+    TypingSuccess("define f() = return; return\nf", {{"f", "Function () ()"}});
     TypingSuccess(
-        "define f() = return 0; return 1", {{"f", "Function Int Unit"}});
+        "define f() = return 0; return 1\nf", {{"f", "Function Int ()"}});
     TypingError(
         "define f() =\n  return;\n  return false", Error::kInvalidType,
         "false");
     TypingSuccess(
-        "define f(): Int = return f ()", {{"f", "Function Int Unit"}});
+        "define f(): Int = return f ()\nf", {{"f", "Function Int ()"}});
 }
 
 TEST(TypeCheckTest, TestAssignment) {
