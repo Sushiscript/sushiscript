@@ -107,10 +107,10 @@ for true:
     break)",{{}, {"a"}}, {1});
 
     ScopeSuccess(R"(
-for i in [1, 2, 3]:
-    define b = i)", {{}, {"i", "b"}}, {});
+for i in {1, 2, 3}:
+    define b = i)", {{}, {"i", "b"}}, {1});
 
     ScopeError(R"(
-for i in [1, 2, 3]:
+for i in {1, 2, 3}:
     define i = 1)", ET::kRedefinedError);
 }

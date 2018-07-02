@@ -121,17 +121,17 @@ VISIT(ast::ForStmt, for_stmt) {
     MergeVector(errs, expression_visitor.errs);
     // body
     std::shared_ptr<Scope> sub_scope(new Scope(scope));
+    // insert range identifier
+    if (condition.IsRange()) {
+        auto info = Scope::CreateIdentInfo(for_stmt.start_location, sub_scope.get());
+        sub_scope->Insert(condition.ident_name, info);
+    }
     environment.Insert(&for_stmt.body, sub_scope);
     StatementVisitor visitor(environment, sub_scope);
     for (auto &statement : for_stmt.body.statements) {
         statement->AcceptVisitor(visitor);
     }
     MergeVector(errs, visitor.errs);
-    // insert info
-    if (condition.IsRange()) {
-        auto info = Scope::CreateIdentInfo(for_stmt.start_location, sub_scope.get());
-        sub_scope->Insert(condition.ident_name, info);
-    }
 }
 
 VISIT(ast::LoopControlStmt, loop_control_stmt) {

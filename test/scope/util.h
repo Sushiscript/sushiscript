@@ -134,7 +134,11 @@ inline void EnvironTest(
     const std::vector<const ast::Identifier *> &ids,
     const std::vector<int> &use_scope_index) {
     for (int i = 0; i < ids.size(); ++i) {
-        EXPECT_TRUE(env.LookUp(ids[i]) == scopes[use_scope_index[i]])
+        auto scope = env.LookUp(ids[i]);
+        ASSERT_TRUE(scope != nullptr);
+        ASSERT_TRUE(i < use_scope_index.size());
+        ASSERT_TRUE(use_scope_index[i] < scopes.size());
+        EXPECT_TRUE(scope == scopes[use_scope_index[i]])
             << "Expect " << i << ": " << ids[i]->name << " in scope " << use_scope_index[i] << '\n'
             << "But in " << FindScope(env, scopes, ids[i]);
     }
