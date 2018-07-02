@@ -13,7 +13,7 @@ using namespace sushi::scope;
 namespace std {
 
 inline std::ostream &
-operator<<(std::ostream &os, const std::vector<Error> &es) {
+operator<<(std::ostream &os, const std::vector<scope::Error> &es) {
     for (auto &te : es) {
         os << te.ToString() << '\n';
     }
