@@ -70,6 +70,7 @@ VISIT(ast::SwitchStmt, switch_stmt) {
     // switched key
     ExpressionVisitor expression_visitor;
     switch_stmt.switched->AcceptVisitor(expression_visitor);
+    MergeVector(identifiers, expression_visitor.identifiers);
     // switch case
     for (auto &each_case : switch_stmt.cases) {
         // condition
@@ -85,7 +86,6 @@ VISIT(ast::SwitchStmt, switch_stmt) {
         programs.push_back(&each_case.body);
         MergeVector(programs, visitor.programs);
     }
-    MergeVector(identifiers, expression_visitor.identifiers);
 }
 
 VISIT(ast::ForStmt, for_stmt) {

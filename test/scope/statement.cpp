@@ -29,129 +29,88 @@ define foo (a : Int) : Int =
         ET::kRedefinedError);
 }
 
-// TEST(StatementTest, TestAssignment) {
-//     std::string source_code = "x = 1";
-//     auto program = Parse(source_code).program;
-//     auto environment = ScopeCheck(program);
-//     auto top_scope = environment.LookUp(&program);
-//     auto ident_info = top_scope->LookUp("x");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == top_scope);
-// }
+TEST(StatementTest, TestAssignment) {
+    ScopeSuccess("define a = 0; a = 1", {{"a"}}, {0});
+    ScopeError("a = 1", ET::kUndefinedError);
+}
 
-// TEST(StatementTest, TestVariableDef) {
-//     std::string source_code = "define x = 1";
-//     auto program = Parse(source_code).program;
-//     auto environment = ScopeCheck(program);
-//     auto top_scope = environment.LookUp(&program);
-//     auto ident_info = top_scope->LookUp("x");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == top_scope);
-// }
+TEST(StatementTest, TestIfStmt) {
+    ScopeSuccess("if true: define a = 0", {{}, {"a"}}, {});
+    ScopeSuccess(R"(
+if true:
+    define a = 0
+    a = 2
+else:
+    define a = 1
+    a = 3)",
+    {{}, {"a"}, {"a"}}, {1, 2});
+    ScopeSuccess(R"(
+define a = 0
+if true:
+    a = 1
+    define a = 2
+    a = 3
+else:
+    a = 4
+    define b = 3
+    b = 5)",
+    {{"a"}, {"a"}, {"b"}}, {1, 1, 2, 2});
 
-// TEST(StatementTest, TestFunctionDef) {
-//     std::string source_code =
-//         "define f(x: Int, y: String, z: Array Int):Int = \n"
-//         "    define x1 = 1 \n"
-//         "    return z[x]";
-//     auto program = Parse(source_code).program;
-//     auto environment = ScopeCheck(program);
-//     auto top_scope = environment.LookUp(&program);
-//     auto ident_info = top_scope->LookUp("f");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == top_scope);
-//     auto & func_stmt = program.statements[0];
-//     auto & func_body = ((ast::FunctionDef *)func_stmt.get())->body;
-//     auto func_scope = environment.LookUp(&func_body);
-//     EXPECT_TRUE(func_scope != nullptr);
-//     ident_info = func_scope->LookUp("x1");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == func_scope);
-//     EXPECT_TRUE(func_scope->Outer() == top_scope);
-// }
+    ScopeError(R"(
+if true:
+    define a = 0
+    define a = 1)",ET::kRedefinedError);
+    ScopeError(R"(
+if a:
+    define b = 0
+    )", ET::kUndefinedError);
+}
 
-// TEST(StatementTest, TestIfStmt) {
-//     std::string source_code =
-//         "if x < 5:\n"
-//         "  print x1\n"
-//         "else:\n"
-//         "  print x2";
-//     auto program = Parse(source_code).program;
-//     auto environment = ScopeCheck(program);
-//     auto top_scope = environment.LookUp(&program);
-//     auto ident_info = top_scope->LookUp("x");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == top_scope);
-//     auto & if_stmt = program.statements[0];
-//     auto & true_body = ((ast::IfStmt *)if_stmt.get())->true_body;
-//     auto & false_body = ((ast::IfStmt *)if_stmt.get())->false_body;
-//     auto true_scope = environment.LookUp(&true_body);
-//     auto false_scope = environment.LookUp(&false_body);
-//     EXPECT_TRUE(true_scope != nullptr);
-//     EXPECT_TRUE(false_scope != nullptr);
+TEST(StatementTest, TestReturnStmt) {
+    ScopeSuccess("return 1", {{}}, {});
+    ScopeSuccess("define a = 0; return a", {{"a"}}, {0});
+    ScopeSuccess(R"(
+define foo (a : Int) : Bool =
+    define b = true
+    return b)", {{}, {"a", "b"}}, {1});
 
-//     ident_info = true_scope->LookUp("x1");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == true_scope);
-//     EXPECT_TRUE(true_scope->Outer() == top_scope);
+    ScopeError("return a", ET::kUndefinedError);
+}
 
-//     ident_info = false_scope->LookUp("x2");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == false_scope);
-//     EXPECT_TRUE(false_scope->Outer() == top_scope);
-// }
+TEST(StatementTest, TestSwitchStmt) {
+    ScopeSuccess(R"(
+define foo (para : Int) : Bool =
+    return false
+define a = 2
+switch a
+case 1: a = 2
+case 2: ()
+case foo: ()
+default: ())", {{"a"}, {"para"}, {}, {}, {}, {}}, {0, 2, 0});
 
-// TEST(StatementTest, TestReturnStmt) {
-//     std::string source_code = "return x";
-//     auto program = Parse(source_code).program;
-//     auto environment = ScopeCheck(program);
-//     auto top_scope = environment.LookUp(&program);
-//     auto ident_info = top_scope->LookUp("x");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == top_scope);
-// }
+    ScopeError(R"(
+switch a
+case 1: a = 1)", ET::kUndefinedError);
 
-// TEST(StatementTest, TestSwitchStmt) {
-//     std::string source_code =
-//         "switch x\n"
-//         "  case 0\n"
-//         "    print x\n"
-//         "  case 1\n"
-//         "    print x\n"
-//         "  default\n"
-//         "    print y";
-//     auto program = Parse(source_code).program;
-//     auto environment = ScopeCheck(program);
-//     auto top_scope = environment.LookUp(&program);
-//     auto ident_info = top_scope->LookUp("x");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == top_scope);
-// }
+    ScopeError(R"(
+switch 1
+case 1
+    define a = 0
+    define a = 1)", ET::kRedefinedError);
+}
 
-// TEST(StatementTest, TestForStmt) {
-//     std::string source_code = "for i < 4: continue";
-//     auto program = Parse(source_code).program;
-//     auto environment = ScopeCheck(program);
-//     auto top_scope = environment.LookUp(&program);
-//     auto ident_info = top_scope->LookUp("i");
-//     EXPECT_TRUE(ident_info != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope != nullptr);
-//     EXPECT_TRUE(ident_info->defined_scope == top_scope);
-// }
+TEST(StatementTest, TestForStmt) {
+    ScopeSuccess(R"(
+for true:
+    define a = 0
+    a = 1
+    break)",{{}, {"a"}}, {1});
 
-// TEST(StatementTest, LoopControlStmt) {
-//     // pass
-// }
+    ScopeSuccess(R"(
+for i in [1, 2, 3]:
+    define b = i)", {{}, {"i", "b"}}, {});
 
-// TEST(StatementTest, TestExpression) {
-//     // pass
-// }
+    ScopeError(R"(
+for i in [1, 2, 3]:
+    define i = 1)", ET::kRedefinedError);
+}

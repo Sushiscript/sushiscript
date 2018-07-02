@@ -112,10 +112,21 @@ inline void ScopeTest(
         auto &scope = scopes[i];
         auto &def_ids = expect_scope_def_ids[i];
         for (auto &id : def_ids) {
-            EXPECT_TRUE(scope->LookUp(id)->defined_scope == scope) << "In scope " << i
+            auto ident_info = scope->LookUp(id);
+            ASSERT_TRUE(ident_info != nullptr) << "In scope " << i
+                << " Finding " << id;
+            EXPECT_TRUE(ident_info->defined_scope == scope) << "In scope " << i
                 << " Finding " << id;
         }
     }
+}
+
+inline int FindScope(const Environment &env, const std::vector<const Scope *> &scopes, const ast::Identifier *id) {
+    auto scope = env.LookUp(id);
+    for (int i = 0; i < scopes.size(); ++i) {
+        if (scope == scopes[i]) return i;
+    }
+    return -1;
 }
 
 inline void EnvironTest(
@@ -123,7 +134,9 @@ inline void EnvironTest(
     const std::vector<const ast::Identifier *> &ids,
     const std::vector<int> &use_scope_index) {
     for (int i = 0; i < ids.size(); ++i) {
-        EXPECT_TRUE(env.LookUp(ids[i]) == scopes[use_scope_index[i]]);
+        EXPECT_TRUE(env.LookUp(ids[i]) == scopes[use_scope_index[i]])
+            << "Expect " << i << ": " << ids[i]->name << " in scope " << use_scope_index[i] << '\n'
+            << "But in " << FindScope(env, scopes, ids[i]);
     }
 }
 
