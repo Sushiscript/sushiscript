@@ -42,6 +42,8 @@ struct Type {
 
     virtual std::string ToString() const = 0;
 
+    static bool ImplicitConvertible(const Type *from, const Type *to);
+
     std::string ToAtomString() const {
         std::string t = ToString();
         if (ToSimple()) return t;
@@ -212,6 +214,22 @@ struct Function : Type {
     std::vector<Pointer> params;
     Pointer result;
 };
+
+inline bool Type::ImplicitConvertible(const Type *from, const Type *to) {
+    if (from->Equals(to)) return true;
+
+    auto simple_from = from->ToSimple(), simple_to = to->ToSimple();
+    if (not(simple_from and simple_to)) return false;
+
+    using T = BuiltInAtom::Type;
+
+    auto from_type = simple_from->type, to_type = simple_to->type;
+    if (from_type == T::kExitCode and
+        (to_type == T::kBool or to_type == T::kInt))
+        return true;
+    if (from_type == T::kRelPath and to_type == T::kPath) return true;
+    return false;
+}
 
 } // namespace type
 } // namespace sushi

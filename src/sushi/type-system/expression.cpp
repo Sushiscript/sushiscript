@@ -425,19 +425,6 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     DeduceResult result;
 };
 
-bool ImplicitConvertible(const Type *from, const Type *to) {
-    if (from->Equals(to)) return true;
-    auto simple_from = from->ToSimple(), simple_to = to->ToSimple();
-    if (not(simple_from and simple_to)) return false;
-    auto from_type = simple_from->type, to_type = simple_to->type;
-    if (from_type == to_type) return true;
-    if (from_type == SIMPLE(kExitCode) and
-        (to_type == SIMPLE(kBool) or to_type == SIMPLE(kInt)))
-        return true;
-    if (from_type == SIMPLE(kRelPath) and to_type == SIMPLE(kPath)) return true;
-    return false;
-}
-
 } // namespace
 
 DeduceResult Deduce(const ast::Expression &expr, State &state) {
@@ -454,7 +441,7 @@ Type::Pointer SolveRequirement(
         return nullptr;
     }
     if (d.type->Equals(should_be)) return should_be;
-    if (ImplicitConvertible(d.type.get(), should_be.get())) {
+    if (Type::ImplicitConvertible(d.type.get(), should_be.get())) {
         if (casted) *casted = true;
         return d.type->Copy();
     }

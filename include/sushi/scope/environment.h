@@ -4,7 +4,7 @@
 #include "scope.h"
 #include "sushi/ast.h"
 #include "sushi/lexer.h"
-#include "sushi/type-system.h"
+#include "sushi/type-system/type.h"
 #include "util.h"
 #include <memory>
 #include <unordered_map>
