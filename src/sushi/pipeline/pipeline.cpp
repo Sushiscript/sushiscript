@@ -17,7 +17,7 @@
 namespace sushi {
 namespace pipeline {
 
-#define PRINT_ERRPR(POSITION, ERROR_TYPE, OTHERS)                              \
+#define PRINT_ERROR(POSITION, ERROR_TYPE, OTHERS)                              \
     std::cout << "error:" << (POSITION) << ":" << (ERROR_TYPE) << " " << OTHERS;
 
 Pipeline::Pipeline(int argc, const char *argv[]) {
@@ -71,20 +71,21 @@ std::string Pipeline::TransToSushi(std::string s) {
     parser::Parser p(std::move(lexer));
     auto result = p.Parse();
     for (auto &error : result.errors) {
-        PRINT_ERRPR("parser", error.ToString(), error.position);
+        PRINT_ERROR("parser", error.ToString(), error.position);
     }
     if (not result.errors.empty()) exit(-1);
     // scope check
-    auto enviroment = scope::ScopeCheck(result.program);
-    // for (auto &error : result.errors) {
-    //     PRINT_ERRPR("scope", error.ToString(), error.error_detail);
-    // }
-    // if (!result.errors.empty()) exit(-1);
+    scope::Environment enviroment;
+    auto scope_errors = scope::ScopeCheck(result.program, enviroment);
+    for (auto &error : scope_errors) {
+        PRINT_ERROR("scope", error.ToString(), error.error_detail);
+    }
+    if (!scope_errors.empty()) exit(-1);
 
     // type check
     auto errors = type::Check(result.program, enviroment);
     for (auto &error : errors) {
-        PRINT_ERRPR("type-check", error.ToString(), "type-check error");
+        PRINT_ERROR("type-check", error.ToString(), "type-check error");
     }
     if (not errors.empty()) exit(-1);
 
