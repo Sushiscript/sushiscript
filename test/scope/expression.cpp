@@ -109,6 +109,7 @@ TEST(ExpressionTest, TestBinaryExpr) {
 TEST(ExpressionTest, TestFunctionCall) {
     ScopeSuccess("define func () : Int = return 1\nfunc", {{"func"}, {}}, {0});
     ScopeSuccess("define func () : Int = return 1\nfunc () redirect to here", {{"func"}, {}}, {0});
+    ScopeSuccess("define func () = return 1; func ()", {{"func"}, {}}, {1});
     ScopeError("func", ET::kUndefinedError);
 }
 

@@ -35,6 +35,9 @@ VISIT(ast::FunctionDef, func_def) {
         errs.push_back(Error(Error::Type::kRedefinedError, func_def.name));
         return;
     }
+    // insert info
+    auto info = Scope::CreateIdentInfo(func_def.start_location, scope.get());
+    scope->Insert(func_def.name, info);
 
     // visit sub
     std::shared_ptr<Scope> sub_scope(new Scope(scope));
@@ -51,9 +54,6 @@ VISIT(ast::FunctionDef, func_def) {
         statement->AcceptVisitor(visitor);
     }
     MergeVector(errs, visitor.errs);
-    // insert info
-    auto info = Scope::CreateIdentInfo(func_def.start_location, scope.get());
-    scope->Insert(func_def.name, info);
 }
 
 VISIT(ast::IfStmt, if_stmt) {
@@ -85,7 +85,8 @@ VISIT(ast::IfStmt, if_stmt) {
 VISIT(ast::ReturnStmt, return_stmt) {
     // visit sub
     ExpressionVisitor expression_visitor(environment, scope);
-    return_stmt.value->AcceptVisitor(expression_visitor);
+    if (return_stmt.value)
+        return_stmt.value->AcceptVisitor(expression_visitor);
     MergeVector(errs, expression_visitor.errs);
 }
 
