@@ -9,6 +9,7 @@ namespace code_generation {
 using ST = TypeVisitor::SimplifiedType;
 
 EXPR_VISITING_IMPL(ast::Variable, variable) {
+    auto var_scope = scope->LookUp(variable.var.name)->defined_scope;
     auto new_name = scope_manager->FindNewName(variable.var.name, scope);
     if (is_left_value) {
         val = new_name;

@@ -7,7 +7,8 @@ namespace code_generation {
 #define CMDLIKE_VISITING_IMPL(T, t) void CmdLikeVisitor::Visit(const T &t)
 
 CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
-    auto new_name = scope_manager->FindNewName(func_call.func.name, scope);
+    auto func_scope = scope->LookUp(func_call.func.name)->defined_scope;
+    auto new_name = scope_manager->FindNewName(func_call.func.name, func_scope);
 
     cmd_like_str = "${" + new_name + '}';
 
