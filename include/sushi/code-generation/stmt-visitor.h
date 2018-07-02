@@ -56,6 +56,18 @@ constexpr char kForStmtWhileTemplate[] = "while [[ %1% -ne 0 ]]; do\n%2%\ndone";
 constexpr char kForStmtWhileExitCodeTemplate[] =
     "while [[ %1% -eq 0 ]]; do\n%2%\ndone";
 
+inline std::string ExitCodeExprToBool(const std::string &str) {
+    return "$((! " + str + "))";
+}
+
+inline std::string ExitCodeExprToInt(const std::string &str) {
+    return str;
+}
+
+inline std::string RelPathExprToPath(const std::string &str) {
+    return "\"$(pwd)/" + str + "\"";
+}
+
 struct StmtVisitor : public ast::StatementVisitor::Const {
     std::string code;
     const scope::Environment &environment;
@@ -88,14 +100,21 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         // new_ids.merge(rvalue_expr_visitor.new_ids);
         MergeSets(new_ids, rvalue_expr_visitor.new_ids);
 
-        auto type = environment.LookUp(assignment.value.get());
+
+        auto lvalue_type = environment.LookUp(assignment.lvalue.get());
+        auto rvalue_type = environment.LookUp(assignment.value.get());
 
         TypeVisitor type_visitor;
-        type->AcceptVisitor(type_visitor);
+        rvalue_type->AcceptVisitor(type_visitor);
+        auto rval_simplified_type = type_visitor.type;
+        lvalue_type->AcceptVisitor(type_visitor);
+        auto lval_simplified_type = type_visitor.type;
 
         code += lvalue_expr_visitor.code_before + '\n' +
                 rvalue_expr_visitor.code_before + '\n';
-        switch (type_visitor.type) {
+
+        std::string rval_str = rvalue_expr_visitor.val;
+        switch (rval_simplified_type) {
         default: assert(false && "Type is not supposed to be here");
         case ST::kInt:
         case ST::kBool:
@@ -107,18 +126,25 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         case ST::kString:
         case ST::kChar:
         case ST::kFunc:
+            if (lval_simplified_type == ST::kExitCode && rval_simplified_type == ST::kBool) {
+                rval_str = ExitCodeExprToBool(rval_str);
+            } else if (lval_simplified_type == ST::kExitCode && rval_simplified_type == ST::kInt) {
+                rval_str = ExitCodeExprToInt(rval_str);
+            } else if (lval_simplified_type == ST::kRelPath && rval_simplified_type == ST::kPath) {
+                rval_str = RelPathExprToPath(rval_str);
+            }
             code += (boost::format(kAssignTemplate) % lvalue_expr_visitor.val %
-                     rvalue_expr_visitor.val)
+                    rval_str)
                         .str();
             break;
         case ST::kMap:
             code += (boost::format(kAssignMapTemplate) %
-                     lvalue_expr_visitor.val % rvalue_expr_visitor.val)
+                     lvalue_expr_visitor.val % rval_str)
                         .str();
             break;
         case ST::kArray:
             code += (boost::format(kAssignArrayTemplate) %
-                     lvalue_expr_visitor.val % rvalue_expr_visitor.val)
+                     lvalue_expr_visitor.val % rval_str)
                         .str();
             break;
         }
@@ -140,9 +166,20 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         var_def.value->AcceptVisitor(expr_visitor);
 
+        std::unique_ptr<type::Type> var_type;
+        ST var_simplified_type;
+        if (var_def.type) {
+            var_type = var_def.type->ToType();
+            TypeVisitor visitor;
+            var_type->AcceptVisitor(visitor);
+            var_simplified_type = visitor.type;
+        }
+
         auto type = environment.LookUp(var_def.value.get());
         TypeVisitor type_visitor;
         type->AcceptVisitor(type_visitor);
+
+        auto rval_simplified_type = type_visitor.type;
 
         // new_ids.merge(expr_visitor.new_ids);
         MergeSets(new_ids, expr_visitor.new_ids);
@@ -150,7 +187,9 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
 
         code += expr_visitor.code_before + '\n';
 
-        switch (type_visitor.type) {
+        std::string rval_str;
+
+        switch (rval_simplified_type) {
         default: assert(false && "Type is not supposed to be here");
         case ST::kInt:
         case ST::kBool:
@@ -162,6 +201,13 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         case ST::kString:
         case ST::kChar:
         case ST::kFunc:
+            if (var_def.type && var_simplified_type == ST::kExitCode && rval_simplified_type == ST::kBool) {
+                rval_str = ExitCodeExprToBool(rval_str);
+            } else if (var_def.type && var_simplified_type == ST::kExitCode && rval_simplified_type == ST::kInt) {
+                rval_str = ExitCodeExprToInt(rval_str);
+            } else if (var_def.type && var_simplified_type == ST::kRelPath && rval_simplified_type == ST::kPath) {
+                rval_str = RelPathExprToPath(rval_str);
+            }
             if (var_def.is_export) {
                 code += (boost::format(kVarDefExpoTemplate) % "" % new_name %
                          expr_visitor.val)
@@ -231,6 +277,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         }
     }
     SUSHI_VISITING(ast::ReturnStmt, return_stmt) {
+        // TODO: Implicitly Conversion not finished
         // Like assignment
         ExprVisitor value_expr_visitor(
             scope_manager, environment, scope, false);
@@ -340,6 +387,11 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
                 return case_.condition == nullptr;
             });
 
+        auto switched_type = environment.LookUp(switch_stmt.switched.get());
+        TypeVisitor visitor;
+        switched_type->AcceptVisitor(visitor);
+        auto switched_simplified_type = visitor.type;
+
         std::string code_before;
         std::string temp_code;
         // each case
@@ -350,6 +402,11 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
 
             // new_ids.merge(case_visitor.new_ids);
             MergeSets(new_ids, case_visitor.new_ids);
+
+            auto case_type = environment.LookUp(case_.condition.get());
+            TypeVisitor visitor;
+            case_type->AcceptVisitor(visitor);
+            auto case_simplified_type = visitor.type;
 
             code_before += case_visitor.code_before + '\n';
             constexpr char template_[][64] = {
@@ -371,8 +428,18 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
                 select_template += 2;
             }
 
+            std::string case_str = case_visitor.val;
+
+            if (case_simplified_type == ST::kExitCode && switched_simplified_type == ST::kBool) {
+                case_str = ExitCodeExprToBool(case_str);
+            } else if (case_simplified_type == ST::kExitCode && switched_simplified_type == ST::kInt) {
+                case_str = ExitCodeExprToInt(case_str);
+            } else if (case_simplified_type == ST::kRelPath && switched_simplified_type == ST::kPath) {
+                case_str = RelPathExprToPath(case_str);
+            }
+
             temp_code += (boost::format(template_[select_template]) %
-                          case_visitor.val % switched_visitor.val)
+                          case_str % switched_visitor.val)
                              .str();
             CodeGenerator body_gen;
             auto body_code =

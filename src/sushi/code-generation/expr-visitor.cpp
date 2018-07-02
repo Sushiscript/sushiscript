@@ -1,5 +1,6 @@
 #include "sushi/code-generation/expr-visitor.h"
 #include "sushi/code-generation/util.h"
+#include "sushi/code-generation/stmt-visitor.h"
 
 namespace sushi {
 namespace code_generation {
@@ -61,24 +62,32 @@ EXPR_VISITING_IMPL(ast::UnaryExpr, unary_expr) {
     // new_ids.merge(expr_visitor.new_ids);
     MergeSets(new_ids, expr_visitor.new_ids);
 
+    auto unary_expr_simplified_type = GetType(environment, unary_expr.expr.get());
+
     code_before = expr_visitor.code_before + '\n';
     using UOP = ast::UnaryExpr::Operator;
+
+    std::string expr_str = expr_visitor.val;
+
     switch (unary_expr.op) {
     case UOP::kNot:
+        if (unary_expr_simplified_type == ST::kExitCode) {
+            expr_str = ExitCodeExprToBool(expr_str);
+        }
         code_before +=
-            (boost::format("%1%=$((! %2%))") % temp_name % expr_visitor.val)
+            (boost::format("%1%=$((! %2%))") % temp_name % expr_str)
                 .str();
         val = "${" + temp_name + '}';
         break;
     case UOP::kNeg:
         code_before +=
-            (boost::format("%1%=$((- %2%))") % temp_name % expr_visitor.val)
+            (boost::format("%1%=$((- %2%))") % temp_name % expr_str)
                 .str();
         val = "${" + temp_name + '}';
         break;
     case UOP::kPos:
         code_before += (boost::format("%1%=`_sushi_abs_ %2%`") % temp_name %
-                        expr_visitor.val)
+                        expr_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -99,14 +108,14 @@ EXPR_VISITING_IMPL(ast::BinaryExpr, binary_expr) {
         lhs_visitor.code_before + '\n' + rhs_visitor.code_before + '\n';
 
     // Get whole expression's type or (lhs or rhs)'s type?
-    auto type = environment.LookUp(&binary_expr);
-    TypeVisitor type_visitor;
-    type->AcceptVisitor(type_visitor);
+    // auto type = environment.LookUp(&binary_expr);
+    // TypeVisitor type_visitor;
+    // type->AcceptVisitor(type_visitor);
 
     using BOP = ast::BinaryExpr::Operator;
 // Use macro to make code short...
 #define TRANSLATE_OP(op)                                                       \
-    Translate##op(lhs_visitor, rhs_visitor, type_visitor.type)
+    Translate##op(lhs_visitor, rhs_visitor, GetType(environment, binary_expr.lhs.get()), GetType(environment, binary_expr.rhs.get()))
 
     switch (binary_expr.op) {
     case BOP::kAdd: TRANSLATE_OP(Add); break;
@@ -139,9 +148,18 @@ EXPR_VISITING_IMPL(ast::Indexing, indexing) {
     indexing.indexable->AcceptVisitor(indexable_visitor);
     indexing.index->AcceptVisitor(index_visitor);
 
+    auto indexable_simplified_type = GetType(environment, indexing.indexable.get());
+    auto index_simplified_type = GetType(environment, indexing.index.get());
+
+    auto index_str = index_visitor.val;
+
+    if (indexable_simplified_type == ST::kArray && index_simplified_type == ST::kExitCode) {
+        index_str = ExitCodeExprToInt(index_str);
+    }
+
     code_before +=
         indexable_visitor.code_before + '\n' + index_visitor.code_before;
-    raw_id = indexable_visitor.val + '[' + index_visitor.val + ']';
+    raw_id = indexable_visitor.val + '[' + index_str + ']';
     val = "${" + raw_id + '}';
 }
 
@@ -155,22 +173,29 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntAddTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kString:
         code_before += (boost::format(kStringConcatTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kArray:
         code_before += (boost::format(kArrayConcatTempplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = (boost::format(kArrayValTemplate) % temp_name).str();
         break;
@@ -184,10 +209,17 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Minus) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntMinusTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -202,16 +234,23 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mult) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntMultTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kString:
         code_before += (boost::format(kIntMultTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -227,17 +266,24 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Div) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntDivTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kPath:
     case ST::kRelPath:
         code_before += (boost::format(kPathConcatTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -251,10 +297,17 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Mod) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntModTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -269,17 +322,24 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Less) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntCompTemplate) % temp_name %
-                        lhs_visitor.val % "<" % rhs_visitor.val)
+                        lhs_str % "<" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
         code_before += (boost::format(kStringCompTemplate) % temp_name %
-                        lhs_visitor.val % "<" % rhs_visitor.val)
+                        lhs_str % "<" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -291,17 +351,24 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Great) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntCompTemplate) % temp_name %
-                        lhs_visitor.val % ">" % rhs_visitor.val)
+                        lhs_str % ">" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
         code_before += (boost::format(kStringCompTemplate) % temp_name %
-                        lhs_visitor.val % ">" % rhs_visitor.val)
+                        lhs_str % ">" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -313,17 +380,24 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntCompTemplate) % temp_name %
-                        lhs_visitor.val % "<=" % rhs_visitor.val)
+                        lhs_str % "<=" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
         code_before += (boost::format(kStringCompTemplate) % temp_name %
-                        lhs_visitor.val % "<=" % rhs_visitor.val)
+                        lhs_str % "<=" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -335,17 +409,24 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
+    case ST::kExitCode:
     case ST::kInt:
+        if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
+        if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToInt(rhs_str);
         code_before += (boost::format(kIntCompTemplate) % temp_name %
-                        lhs_visitor.val % ">=" % rhs_visitor.val)
+                        lhs_str % ">=" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
         code_before += (boost::format(kStringCompTemplate) % temp_name %
-                        lhs_visitor.val % ">=" % rhs_visitor.val)
+                        lhs_str % ">=" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -356,21 +437,25 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
 constexpr char kPathEqTemplate[] = "local %1%=`_sushi_file_eq_ %2% %3%`";
 constexpr char kArrayEqTemplate[] = "local %1%=`_sushi_compare_array_ %2% %3%`";
 
-constexpr char kAssignTemplate[] = "local %1%=%2%";
+constexpr char kExprAssignTemplate[] = "local %1%=%2%";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
     auto temp_name = scope_manager->GetNewTemp();
     new_ids.insert(temp_name);
     raw_id = temp_name;
-    switch (type) {
+
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    switch (lhs_type) {
     case ST::kUnit:
-        code_before += (boost::format(kAssignTemplate) % temp_name % "1").str();
+        code_before += (boost::format(kExprAssignTemplate) % temp_name % "1").str();
         val = "${" + temp_name + '}';
         break;
     case ST::kChar:
     case ST::kString:
         code_before += (boost::format(kStringCompTemplate) % temp_name %
-                        lhs_visitor.val % "==" % rhs_visitor.val)
+                        lhs_str % "==" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -378,15 +463,20 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
     case ST::kInt:
     case ST::kExitCode:
     case ST::kFd:
+        if (lhs_type == ST::kExitCode && rhs_type == ST::kInt) {
+            lhs_str = ExitCodeExprToInt(lhs_str);
+        } else if (lhs_type == ST::kInt && rhs_type == ST::kExitCode) {
+            rhs_str = ExitCodeExprToInt(rhs_str);
+        }
         code_before += (boost::format(kIntCompTemplate) % temp_name %
-                        lhs_visitor.val % "==" % rhs_visitor.val)
+                        lhs_str % "==" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
     case ST::kPath:
     case ST::kRelPath:
         code_before += (boost::format(kPathEqTemplate) % temp_name %
-                        lhs_visitor.val % rhs_visitor.val)
+                        lhs_str % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -401,7 +491,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
 }
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, NotEq) {
-    TranslateEqual(lhs_visitor, rhs_visitor, type);
+    TranslateEqual(lhs_visitor, rhs_visitor, lhs_type, rhs_type);
     code_before += (boost::format("%1%=$((1 - %2%))") % raw_id % val).str();
 }
 
@@ -412,8 +502,14 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, And) {
     new_ids.insert(temp_name);
     raw_id = temp_name;
 
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToBool(lhs_str);
+    if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToBool(rhs_str);
+
     code_before += (boost::format(kBoolAndOrTemplate) % temp_name %
-                    lhs_visitor.val % "&&" % rhs_visitor.val)
+                    lhs_str % "&&" % rhs_str)
                        .str();
     val = "${" + temp_name + '}';
 }
@@ -423,8 +519,14 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Or) {
     new_ids.insert(temp_name);
     raw_id = temp_name;
 
+    std::string lhs_str = lhs_visitor.val;
+    std::string rhs_str = rhs_visitor.val;
+
+    if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToBool(lhs_str);
+    if (rhs_type == ST::kExitCode) rhs_str = ExitCodeExprToBool(rhs_str);
+
     code_before += (boost::format(kBoolAndOrTemplate) % temp_name %
-                    lhs_visitor.val % "||" % rhs_visitor.val)
+                    lhs_str % "||" % rhs_str)
                        .str();
     val = "${" + temp_name + '}';
 }
