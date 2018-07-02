@@ -22,7 +22,7 @@ class Environment {
     const Scope *LookUp(const ast::Program *block) const;
     const type::Type *LookUp(const ast::Expression *expr) const;
 
-  private:
+  // private:
     Table<const ast::Identifier *, std::shared_ptr<Scope>> idents_;
     Table<const ast::Program *, std::shared_ptr<Scope>> blocks_;
     Table<const ast::Expression *, std::unique_ptr<type::Type>> typings_;

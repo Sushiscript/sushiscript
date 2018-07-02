@@ -6,6 +6,7 @@
 #include "sushi/scope.h"
 #include "sushi/type-system/type-checking.h"
 #include "sushi/type-system/type.h"
+#include "sushi/scope/scope-check.h"
 #include "gtest/gtest.h"
 #include <iostream>
 #include <string>
@@ -46,6 +47,14 @@ operator<<(std::ostream &os, const std::vector<type::Error> &es) {
     return os;
 }
 
+inline std::ostream &
+operator<<(std::ostream &os, const std::vector<scope::Error> &es) {
+    for (auto &te : es) {
+        os << te.ToString() << '\n';
+    }
+    return os;
+}
+
 } // namespace std
 
 namespace sushi {
@@ -68,8 +77,9 @@ ExpectContainTypings(const TypingTable &typings, const StringTable &atleast) {
             actual.count(kv.first) ? actual[kv.first] : "N/A"s);
         std::string expected_type(kv.second);
         EXPECT_EQ(deduced_type, expected_type);
+        success = success and deduced_type == expected_type;
     }
-    EXPECT_TRUE(success) << "complete typing table:\n" << actual;
+    EXPECT_TRUE(success) << "complete typing table: " << actual;
 }
 
 // borrowed from test/parser/util.h
@@ -80,9 +90,6 @@ inline parser::ParsingResult Parse(const std::string &s) {
     return p.Parse();
 }
 
-inline scope::Environment GenerateScopeInfo(const ast::Program &program) {
-    return {};
-}
 
 inline void WithTypeCheckResult(
     const std::string &source,
@@ -92,7 +99,9 @@ inline void WithTypeCheckResult(
     SCOPED_TRACE(source);
     auto pr = Parse(source);
     ASSERT_TRUE(pr.errors.empty()) << pr.errors;
-    auto env = GenerateScopeInfo(pr.program);
+    scope::Environment env;
+    auto scope_errors = scope::ScopeCheck(pr.program, env);
+    ASSERT_TRUE(scope_errors.empty()) << scope_errors;
     auto errors = type::Check(pr.program, env);
     f(env, errors);
 }
@@ -102,8 +111,7 @@ TypingSuccess(const std::string &source, const StringTable &expect_typings) {
     WithTypeCheckResult(
         source, [&expect_typings](const auto &env, const auto &tes) {
             EXPECT_TRUE(tes.empty()) << tes;
-            // TODO
-            ExpectContainTypings({}, expect_typings);
+            ExpectContainTypings(env.typings_, expect_typings);
         });
 }
 

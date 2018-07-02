@@ -2,6 +2,7 @@
 #include "boost/optional.hpp"
 #include "sushi/util/container.h"
 #include <functional>
+#include <iostream>
 
 #define SIMPLE(t) BuiltInAtom::Type::t
 #define MAKE_SIMPLE(t) type::BuiltInAtom::Make(SIMPLE(t))
@@ -87,7 +88,7 @@ struct DeduceCommandLikeVisitor : ast::CommandLikeVisitor::Const {
         if (not tp) V_RETURN(nullptr);
         auto func_type = tp->ToFunction();
         if (not func_type) {
-            s.TypeError(nullptr, Error::kInvalidFunction);
+            s.TypeError(&fc, Error::kInvalidFunction);
         } else if (CompatibleParams(fc, func_type)) {
             V_RETURN(func_type->result->Copy());
         }
@@ -251,7 +252,7 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     }
 
     static std::vector<Type::Pointer> Multipliable() {
-        return Pack(MAKE_SIMPLE(kInt), MAKE_SIMPLE(kPath));
+        return Pack(MAKE_SIMPLE(kInt), MAKE_SIMPLE(kString));
     }
 
     DeduceResult Mult(const ast::Expression &lhs, const ast::Expression &rhs) {
@@ -289,8 +290,9 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
 
     static bool IsEqualComparable(BuiltInAtom::Type t) {
         std::vector<BuiltInAtom::Type> v{
-            SIMPLE(kUnit),   SIMPLE(kBool), SIMPLE(kChar),     SIMPLE(kInt),
-            SIMPLE(kString), SIMPLE(kPath), SIMPLE(kExitCode), SIMPLE(kFd)};
+            SIMPLE(kUnit),     SIMPLE(kBool),   SIMPLE(kChar),
+            SIMPLE(kInt),      SIMPLE(kString), SIMPLE(kPath),
+            SIMPLE(kExitCode), SIMPLE(kFd),     SIMPLE(kRelPath)};
         return sushi::util::Has(v, t);
     }
 
@@ -365,7 +367,7 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
 
     bool
     ValidRedirections(const std::vector<ast::Redirection> &redirs, bool &here) {
-        bool success = false;
+        bool success = true;
         for (auto &redir : redirs) {
             if (not redir.external) {
                 here = true;
@@ -380,15 +382,19 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
         return success;
     }
 
+    static Type::Pointer HereOrResult(Type::Pointer type, bool here) {
+        return here ? MAKE_SIMPLE(kString) : std::move(type);
+    }
+
     DeduceResult CheckCommandLike(bool success, const ast::CommandLike &cmd) {
         bool here = false;
         auto valid_redirs = ValidRedirections(cmd.redirs, here);
         auto type = DeduceCommandLike(cmd, s);
         success = valid_redirs and type != nullptr and success;
-        if (cmd.pipe_next != nullptr)
+        if (cmd.pipe_next != nullptr) {
             return CheckCommandLike(success, *cmd.pipe_next);
-        return success ? (here ? DeduceResult(MAKE_SIMPLE(kString))
-                               : DeduceResult(std::move(type)))
+        }
+        return success ? DeduceResult(HereOrResult(std::move(type), here))
                        : DeduceResult::Fail();
     }
 
@@ -440,12 +446,16 @@ DeduceResult Deduce(const ast::Expression &expr, State &state) {
     return std::move(v.result);
 }
 
-Type::Pointer SolveRequirement(const DeduceResult &d, Type::Pointer should_be) {
+Type::Pointer SolveRequirement(
+    const DeduceResult &d, Type::Pointer should_be, bool *casted = nullptr) {
     if (d.fail) return nullptr;
-    if (d.empty_array and (should_be->ToMap() or should_be->ToArray())) {
-        return should_be;
+    if (d.empty_array) {
+        if (should_be->ToMap() or should_be->ToArray()) return should_be;
+        return nullptr;
     }
+    if (d.type->Equals(should_be)) return should_be;
     if (ImplicitConvertible(d.type.get(), should_be.get())) {
+        if (casted) *casted = true;
         return d.type->Copy();
     }
     return nullptr;
@@ -465,11 +475,14 @@ Type::Pointer RequireOneOf(
     if (result.fail) return nullptr;
     Type::Pointer result_type;
     for (auto &tp : ts) {
-        auto t = SolveRequirement(result, std::move(tp));
+        bool casted = false;
+        auto t = SolveRequirement(result, std::move(tp), &casted);
         if (not t) continue;
-        if (result_type != nullptr)
+        if (casted and result_type != nullptr) {
             return state.TypeError(&expr, Error::kAmbiguousType);
+        }
         result_type = std::move(t);
+        if (not casted) break;
     }
     if (result_type == nullptr) {
         return state.TypeError(&expr, Error::kInvalidType);
