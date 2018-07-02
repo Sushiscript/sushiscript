@@ -4,8 +4,8 @@
 #include <functional>
 #include <iostream>
 
-#define SIMPLE(t) BuiltInAtom::Type::t
-#define MAKE_SIMPLE(t) type::BuiltInAtom::Make(SIMPLE(t))
+#define SIMPLE(t) Simple::Type::t
+#define MAKE_SIMPLE(t) type::Simple::Make(SIMPLE(t))
 #define V_RETURN(r)                                                            \
     {                                                                          \
         result = r;                                                            \
@@ -53,7 +53,7 @@ DeduceResult RequireThen(
     return DeduceResult::Fail();
 }
 
-optional<BuiltInAtom::Type>
+optional<Simple::Type>
 DeduceSimple(const ast::Expression &expr, State &s) {
     auto t = UnambiguousDeduce(expr, s);
     if (not t) return none;
@@ -159,7 +159,7 @@ struct DeduceLiteralVisitor : ast::LiteralVisitor::Const {
         bool success = true;
         for (int i = 1; i < a.value.size(); ++i) {
             success =
-                SatisfyRequirement(*a.value[i], BuiltInAtom::Make(*elem), s) and
+                SatisfyRequirement(*a.value[i], Simple::Make(*elem), s) and
                 success;
         }
         V_RETURN(success ? Array::Make(*elem) : DeduceResult::Fail());
@@ -174,8 +174,8 @@ struct DeduceLiteralVisitor : ast::LiteralVisitor::Const {
         for (int i = 1; i < m.value.size(); ++i) {
             auto &key_expr = *m.value[i].first;
             auto &val_expr = *m.value[i].second;
-            auto ks = SatisfyRequirement(key_expr, BuiltInAtom::Make(*key), s),
-                 vs = SatisfyRequirement(val_expr, BuiltInAtom::Make(*val), s);
+            auto ks = SatisfyRequirement(key_expr, Simple::Make(*key), s),
+                 vs = SatisfyRequirement(val_expr, Simple::Make(*val), s);
             success = success and ks and vs;
         }
         V_RETURN(success ? Map::Make(*key, *val) : DeduceResult::Fail());
@@ -288,8 +288,8 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
         return DeduceResult::Fail();
     }
 
-    static bool IsEqualComparable(BuiltInAtom::Type t) {
-        std::vector<BuiltInAtom::Type> v{
+    static bool IsEqualComparable(Simple::Type t) {
+        std::vector<Simple::Type> v{
             SIMPLE(kUnit),     SIMPLE(kBool),   SIMPLE(kChar),
             SIMPLE(kInt),      SIMPLE(kString), SIMPLE(kPath),
             SIMPLE(kExitCode), SIMPLE(kFd),     SIMPLE(kRelPath)};
@@ -408,11 +408,11 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
         if (auto a = tp->ToArray())
             V_RETURN(RequireThen(
                 *idx.index, MAKE_SIMPLE(kInt), s,
-                BuiltInAtom::Make(a->element)));
+                Simple::Make(a->element)));
         if (auto m = tp->ToMap())
             V_RETURN(RequireThen(
-                *idx.index, BuiltInAtom::Make(m->key), s,
-                BuiltInAtom::Make(m->value)));
+                *idx.index, Simple::Make(m->key), s,
+                Simple::Make(m->value)));
         if (tp->Equals(MAKE_SIMPLE(kString)))
             V_RETURN(RequireThen(
                 *idx.index, MAKE_SIMPLE(kInt), s, MAKE_SIMPLE(kChar)));
@@ -424,19 +424,6 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     State &s;
     DeduceResult result;
 };
-
-bool ImplicitConvertible(const Type *from, const Type *to) {
-    if (from->Equals(to)) return true;
-    auto simple_from = from->ToSimple(), simple_to = to->ToSimple();
-    if (not(simple_from and simple_to)) return false;
-    auto from_type = simple_from->type, to_type = simple_to->type;
-    if (from_type == to_type) return true;
-    if (from_type == SIMPLE(kExitCode) and
-        (to_type == SIMPLE(kBool) or to_type == SIMPLE(kInt)))
-        return true;
-    if (from_type == SIMPLE(kRelPath) and to_type == SIMPLE(kPath)) return true;
-    return false;
-}
 
 } // namespace
 
@@ -454,7 +441,7 @@ Type::Pointer SolveRequirement(
         return nullptr;
     }
     if (d.type->Equals(should_be)) return should_be;
-    if (ImplicitConvertible(d.type.get(), should_be.get())) {
+    if (Type::ImplicitConvertible(d.type.get(), should_be.get())) {
         if (casted) *casted = true;
         return d.type->Copy();
     }

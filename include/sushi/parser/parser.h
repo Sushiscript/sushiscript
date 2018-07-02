@@ -152,7 +152,7 @@ class Parser {
 
     std::unique_ptr<ast::TypeExpr> TypeInParen(const lexer::Token &);
 
-    boost::optional<type::BuiltInAtom::Type> AssertSimpleType();
+    boost::optional<type::Simple::Type> AssertSimpleType();
 
     std::unique_ptr<ast::MapType> MapType(const lexer::Token &);
 

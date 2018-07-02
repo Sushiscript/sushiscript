@@ -51,9 +51,15 @@ TEST(InterpolationTest, TestRawToken) {
         "h\\a\\ haha ", TK(kRawString), TD(kSegment, "ha haha"),
         TK(kInterDone));
     RawStrIsTokens(
-        R"(i\${i})", TK(kRawString), TD(kSegment, "i${i}"), TK(kInterDone));
+        R"(i\${i)", TK(kRawString), TD(kSegment, "i${i"), TK(kInterDone));
     RawStrIsTokens(
-        R"(i{i})", TK(kRawString), TD(kSegment, "i{i}"), TK(kInterDone));
+        R"(i\${i})", TK(kRawString), TD(kSegment, "i${i"), TK(kInterDone),
+        TK(kRBrace));
+    RawStrIsTokens(
+        R"(i{i)", TK(kRawString), TD(kSegment, "i{i"), TK(kInterDone));
+    RawStrIsTokens(
+        R"(i{i})", TK(kRawString), TD(kSegment, "i{i"), TK(kInterDone),
+        TK(kRBrace));
     RawStrIsTokens(
         R"(h$h\{i\})", TK(kRawString), TD(kSegment, "h$h{i}"), TK(kInterDone));
 }

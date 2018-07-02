@@ -3,43 +3,14 @@
 #include <algorithm>
 #include <iostream>
 
-#define SIMPLE(t) BuiltInAtom::Type::t
-#define MAKE_SIMPLE(t) type::BuiltInAtom::Make(SIMPLE(t))
+#define SIMPLE(t) Simple::Type::t
+#define MAKE_SIMPLE(t) type::Simple::Make(SIMPLE(t))
 
 namespace sushi {
 
 namespace type {
 
 namespace {
-
-Type::Pointer FromTypeExpr(const ast::TypeExpr *expr);
-
-struct ToType : ast::TypeExprVisitor::Const {
-    SUSHI_VISITING(ast::TypeLit, t) {
-        res = BuiltInAtom::Make(t.type);
-    }
-    SUSHI_VISITING(ast::ArrayType, t) {
-        res = Array::Make(t.element);
-    }
-    SUSHI_VISITING(ast::MapType, t) {
-        res = Map::Make(t.key, t.value);
-    }
-    SUSHI_VISITING(ast::FunctionType, t) {
-        Type::Pointer ret = FromTypeExpr(t.result.get());
-        std::vector<Type::Pointer> params(t.params.size());
-        std::transform(
-            begin(t.params), end(t.params), begin(params),
-            [](auto &p) { return FromTypeExpr(p.get()); });
-        res = Function::Make(std::move(params), std::move(ret));
-    }
-    Type::Pointer res;
-};
-
-Type::Pointer FromTypeExpr(const ast::TypeExpr *expr) {
-    ToType to_type;
-    expr->AcceptVisitor(to_type);
-    return std::move(to_type.res);
-}
 
 bool IsAssignable(const ast::Expression *expr) {
     if (auto idx = dynamic_cast<const ast::Indexing *>(expr)) {
@@ -66,7 +37,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         if (not vdef.type) {
             var_type = UnambiguousDeduce(*vdef.value, s);
         } else {
-            auto should_be = FromTypeExpr(vdef.type.get());
+            auto should_be = vdef.type->ToType();
             if (SatisfyRequirement(*vdef.value, should_be->Copy(), s)) {
                 var_type = std::move(should_be);
             }
@@ -78,7 +49,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         std::vector<Type::Pointer> param_types;
         auto fbody = s.FromNewProgram(fdef.body);
         for (auto &p : params) {
-            auto t = FromTypeExpr(p.type.get());
+            auto t = p.type->ToType();
             fbody.InsertName(p.name, t->Copy());
             param_types.push_back(std::move(t));
         }
@@ -89,7 +60,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
     }
     void DeclaredReturnType(
         const ast::FunctionDef &fdef, std::vector<Type::Pointer> params) {
-        auto ret_type = FromTypeExpr(fdef.ret_type.get());
+        auto ret_type = fdef.ret_type->ToType();
         s.InsertName(
             fdef.name, Function::Make(std::move(params), ret_type->Copy()));
         CheckProgram(s.NewFunctionBody(fdef.body, ret_type->Copy()));
@@ -155,7 +126,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         if (not arr)
             return s.TypeError(cond.condition.get(), Error::kInvalidRange);
         auto elem = arr->element;
-        return BuiltInAtom::Make(elem);
+        return Simple::Make(elem);
     }
 
     SUSHI_VISITING(ast::ForStmt, for_) {

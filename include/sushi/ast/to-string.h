@@ -47,8 +47,8 @@ inline std::string ToString(BinaryExpr::Operator op) {
     }
 }
 
-inline std::string ToString(type::BuiltInAtom::Type t) {
-    return type::BuiltInAtom::ToString(t);
+inline std::string ToString(type::Simple::Type t) {
+    return type::Simple::ToString(t);
 }
 
 inline std::string ToString(Redirection::Direction dir) {
@@ -283,7 +283,7 @@ struct Statement2Str : StatementVisitor::Const, Result {
 };
 
 struct Type2Str : TypeExprVisitor::Const, Result {
-    SUSHI_VISITING(TypeLit, t) {
+    SUSHI_VISITING(SimpleType, t) {
         result = ToString(t.type);
     }
     SUSHI_VISITING(ArrayType, a) {

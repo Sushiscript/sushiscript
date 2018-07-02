@@ -10,13 +10,13 @@
 namespace sushi {
 namespace type {
 
-struct BuiltInAtom;
+struct Simple;
 struct Array;
 struct Map;
 struct Function;
 
 using TypeVisitor =
-    sushi::util::DefineVisitor<BuiltInAtom, Array, Map, Function>;
+    sushi::util::DefineVisitor<Simple, Array, Map, Function>;
 
 // highly simplified version of type that currently support only built-in types
 struct Type {
@@ -24,7 +24,7 @@ struct Type {
 
     using Pointer = std::unique_ptr<Type>;
 
-    virtual const BuiltInAtom *ToSimple() const {
+    virtual const Simple *ToSimple() const {
         return nullptr;
     }
     virtual const Array *ToArray() const {
@@ -42,6 +42,8 @@ struct Type {
 
     virtual std::string ToString() const = 0;
 
+    static bool ImplicitConvertible(const Type *from, const Type *to);
+
     std::string ToAtomString() const {
         std::string t = ToString();
         if (ToSimple()) return t;
@@ -55,7 +57,7 @@ struct Type {
     virtual ~Type() = default;
 };
 
-struct BuiltInAtom : Type {
+struct Simple : Type {
     SUSHI_ACCEPT_VISITOR_FROM(Type)
 
     enum class Type {
@@ -85,12 +87,12 @@ struct BuiltInAtom : Type {
         }
     }
 
-    const BuiltInAtom *ToSimple() const override {
+    const Simple *ToSimple() const override {
         return this;
     }
 
     static Pointer Make(Type t) {
-        return std::make_unique<BuiltInAtom>(t);
+        return std::make_unique<Simple>(t);
     }
 
     bool Equals(const sushi::type::Type *rhs) const override {
@@ -107,20 +109,20 @@ struct BuiltInAtom : Type {
         return ToString(type);
     }
 
-    BuiltInAtom(BuiltInAtom::Type type) : type(type) {}
+    Simple(Simple::Type type) : type(type) {}
 
-    BuiltInAtom::Type type;
+    Simple::Type type;
 };
 
 struct Array : Type {
     SUSHI_ACCEPT_VISITOR_FROM(Type)
 
-    Array(BuiltInAtom::Type element) : element(element) {}
+    Array(Simple::Type element) : element(element) {}
 
     const Array *ToArray() const override {
         return this;
     }
-    static Pointer Make(BuiltInAtom::Type t) {
+    static Pointer Make(Simple::Type t) {
         return std::make_unique<Array>(t);
     }
 
@@ -134,28 +136,28 @@ struct Array : Type {
     }
 
     std::string ToString() const override {
-        return "Array " + BuiltInAtom::ToString(element);
+        return "Array " + Simple::ToString(element);
     }
 
     // std::unique_ptr<Type> element;
-    BuiltInAtom::Type element;
+    Simple::Type element;
 };
 
 struct Map : Type {
     SUSHI_ACCEPT_VISITOR_FROM(Type)
 
-    Map(BuiltInAtom::Type key, BuiltInAtom::Type value)
+    Map(Simple::Type key, Simple::Type value)
         : key(key), value(value) {}
 
     const Map *ToMap() const override {
         return this;
     }
-    static Pointer Make(BuiltInAtom::Type k, BuiltInAtom::Type v) {
+    static Pointer Make(Simple::Type k, Simple::Type v) {
         return std::make_unique<Map>(k, v);
     }
     std::string ToString() const override {
-        return "Map " + BuiltInAtom::ToString(key) + " " +
-               BuiltInAtom::ToString(value);
+        return "Map " + Simple::ToString(key) + " " +
+               Simple::ToString(value);
     }
 
     bool Equals(const Type *rhs) const override {
@@ -167,9 +169,9 @@ struct Map : Type {
         return Make(key, value);
     }
 
-    BuiltInAtom::Type key;
+    Simple::Type key;
     // std::unique_ptr<Type> value;
-    BuiltInAtom::Type value;
+    Simple::Type value;
 };
 
 struct Function : Type {
@@ -212,6 +214,22 @@ struct Function : Type {
     std::vector<Pointer> params;
     Pointer result;
 };
+
+inline bool Type::ImplicitConvertible(const Type *from, const Type *to) {
+    if (from->Equals(to)) return true;
+
+    auto simple_from = from->ToSimple(), simple_to = to->ToSimple();
+    if (not(simple_from and simple_to)) return false;
+
+    using T = Simple::Type;
+
+    auto from_type = simple_from->type, to_type = simple_to->type;
+    if (from_type == T::kExitCode and
+        (to_type == T::kBool or to_type == T::kInt))
+        return true;
+    if (from_type == T::kRelPath and to_type == T::kPath) return true;
+    return false;
+}
 
 } // namespace type
 } // namespace sushi

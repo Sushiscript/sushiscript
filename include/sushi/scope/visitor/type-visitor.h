@@ -14,7 +14,7 @@ struct TypeExprVisitor : public ast::TypeExprVisitor::Const {
     TypeExprVisitor(Environment &environment, std::shared_ptr<Scope> &scope)
         : environment(environment), scope(scope){};
 
-    SUSHI_VISITING(ast::TypeLit, type_lit) {}
+    SUSHI_VISITING(ast::SimpleType, type_lit) {}
     SUSHI_VISITING(ast::ArrayType, array_type) {}
     SUSHI_VISITING(ast::MapType, map_type) {}
     SUSHI_VISITING(ast::FunctionType, function_type) {}
@@ -27,7 +27,7 @@ struct TypeVisitor : public type::TypeVisitor::Const {
     TypeVisitor(Environment &environment, std::shared_ptr<Scope> &scope)
         : environment(environment), scope(scope){};
 
-    SUSHI_VISITING(type::BuiltInAtom, built_in_atom);
+    SUSHI_VISITING(type::Simple, built_in_atom);
     SUSHI_VISITING(type::Array, array);
     SUSHI_VISITING(type::Map, map);
     SUSHI_VISITING(type::Function, function);
