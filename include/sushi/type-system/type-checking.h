@@ -15,7 +15,7 @@ Check(const ast::Program &program, scope::Environment &env) {
     std::vector<Error> errors;
     CheckProgram(State(
         bindings, program, env, errors,
-        BuiltInAtom::Make(BuiltInAtom::Type::kExitCode)));
+        Simple::Make(Simple::Type::kExitCode)));
     return errors;
 }
 

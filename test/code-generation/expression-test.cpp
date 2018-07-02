@@ -20,11 +20,11 @@ TEST(ExpressionTest, TestLiteral) {
     env.Insert(&program, scope);
     auto stmt = program.statements[0].get();
 
-    // type::BuiltInAtom type(type::BuiltInAtom::Type::kInt);
+    // type::Simple type(type::Simple::Type::kInt);
 
     env.Insert(
         dynamic_cast<ast::VariableDef *>(stmt)->value.get(),
-        std::make_unique<type::BuiltInAtom>(type::BuiltInAtom::Type::kInt));
+        std::make_unique<type::Simple>(type::Simple::Type::kInt));
 
     CodeGenerator generator;
     auto code = generator.GenCode(program, env);

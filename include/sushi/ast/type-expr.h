@@ -9,13 +9,13 @@
 namespace sushi {
 namespace ast {
 
-struct TypeLit;
+struct SimpleType;
 struct ArrayType;
 struct MapType;
 struct FunctionType;
 
 using TypeExprVisitor =
-    sushi::util::DefineVisitor<TypeLit, ArrayType, MapType, FunctionType>;
+    sushi::util::DefineVisitor<SimpleType, ArrayType, MapType, FunctionType>;
 
 // TODO: refactor after adding higher kinding type
 
@@ -27,42 +27,42 @@ struct TypeExpr {
     virtual ~TypeExpr() = default;
 };
 
-struct TypeLit : TypeExpr {
+struct SimpleType : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
-    TypeLit(type::BuiltInAtom::Type type) : type(type) {}
+    SimpleType(type::Simple::Type type) : type(type) {}
 
     type::Type::Pointer ToType() const override {
-        return type::BuiltInAtom::Make(type);
+        return type::Simple::Make(type);
     }
 
-    type::BuiltInAtom::Type type;
+    type::Simple::Type type;
 };
 
 struct ArrayType : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
-    ArrayType(type::BuiltInAtom::Type element) : element(std::move(element)) {}
+    ArrayType(type::Simple::Type element) : element(std::move(element)) {}
 
     type::Type::Pointer ToType() const override {
         return type::Array::Make(element);
     }
 
-    type::BuiltInAtom::Type element;
+    type::Simple::Type element;
 };
 
 struct MapType : TypeExpr {
     SUSHI_ACCEPT_VISITOR_FROM(TypeExpr);
 
-    MapType(type::BuiltInAtom::Type key, type::BuiltInAtom::Type value)
+    MapType(type::Simple::Type key, type::Simple::Type value)
         : key(key), value(value) {}
 
     type::Type::Pointer ToType() const override {
         return type::Map::Make(key, value);
     }
 
-    type::BuiltInAtom::Type key;
-    type::BuiltInAtom::Type value;
+    type::Simple::Type key;
+    type::Simple::Type value;
 };
 
 struct FunctionType : TypeExpr {

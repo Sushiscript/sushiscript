@@ -3,8 +3,8 @@
 #include <algorithm>
 #include <iostream>
 
-#define SIMPLE(t) BuiltInAtom::Type::t
-#define MAKE_SIMPLE(t) type::BuiltInAtom::Make(SIMPLE(t))
+#define SIMPLE(t) Simple::Type::t
+#define MAKE_SIMPLE(t) type::Simple::Make(SIMPLE(t))
 
 namespace sushi {
 
@@ -126,7 +126,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         if (not arr)
             return s.TypeError(cond.condition.get(), Error::kInvalidRange);
         auto elem = arr->element;
-        return BuiltInAtom::Make(elem);
+        return Simple::Make(elem);
     }
 
     SUSHI_VISITING(ast::ForStmt, for_) {

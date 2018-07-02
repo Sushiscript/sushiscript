@@ -23,8 +23,8 @@ struct TypeVisitor : public type::TypeVisitor::Const {
     };
 
     inline static SimplifiedType
-    BuiltInAtomTypeToSimplifiedType(type::BuiltInAtom::Type built_in_type) {
-        using T = type::BuiltInAtom::Type;
+    SimpleTypeToSimplifiedType(type::Simple::Type built_in_type) {
+        using T = type::Simple::Type;
         using ST = SimplifiedType;
         switch (built_in_type) {
         default: assert(false && "Type is not supposed to be here"); break;
@@ -42,8 +42,8 @@ struct TypeVisitor : public type::TypeVisitor::Const {
 
     SimplifiedType type;
 
-    SUSHI_VISITING(type::BuiltInAtom, built_in_atom) {
-        type = BuiltInAtomTypeToSimplifiedType(built_in_atom.type);
+    SUSHI_VISITING(type::Simple, built_in_atom) {
+        type = SimpleTypeToSimplifiedType(built_in_atom.type);
     }
     SUSHI_VISITING(type::Array, array) {
         type = SimplifiedType::kArray;
@@ -58,11 +58,11 @@ struct TypeVisitor : public type::TypeVisitor::Const {
 
 struct TypeExprVisitor : public ast::TypeExprVisitor::Const {
     using ST = TypeVisitor::SimplifiedType;
-    using BT = type::BuiltInAtom::Type;
+    using BT = type::Simple::Type;
 
     ST type;
 
-    SUSHI_VISITING(ast::TypeLit, type_lit) {
+    SUSHI_VISITING(ast::SimpleType, type_lit) {
         switch (type_lit.type) {
         case BT::kInt: type = ST::kInt; break;
         case BT::kBool: type = ST::kBool; break;

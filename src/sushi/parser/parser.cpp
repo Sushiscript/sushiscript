@@ -710,7 +710,7 @@ unique_ptr<ast::FunctionType> Parser::FunctionType(const Token &func) {
     return FromFunctionTypeParams(std::move(types));
 }
 
-optional<type::BuiltInAtom::Type> Parser::AssertSimpleType() {
+optional<type::Simple::Type> Parser::AssertSimpleType() {
     auto t = s_.AssertLookahead(IsSimpleType, ErrorT::kExpectSimpleType, false);
     if (not t) return none;
     return TypeTokenToType(t->type);
@@ -733,7 +733,7 @@ unique_ptr<ast::TypeExpr> Parser::TypeExpression() {
     if (not t) return nullptr;
     auto l = *t;
     if (IsSimpleType(l.type)) {
-        return make_unique<ast::TypeLit>(TypeTokenToType(l.type));
+        return make_unique<ast::SimpleType>(TypeTokenToType(l.type));
     }
     if (l.type == TokenT::kLParen) return TypeInParen(l);
     if (l.type == TokenT::kArray) return ArrayType(l);
