@@ -46,7 +46,7 @@ TEST(TypeCheckTest, TestImplicitConversion) {
 TEST(TypeCheckTest, TestArrayLiteral) {
     TypingSuccess("{1}", {{"{1}", "Array Int"}});
     TypingSuccess("{1, 2, 3}", {{"{1, 2, 3}", "Array Int"}});
-    TypingSuccess("{/hello, ./hi }", {{"{/hello, ./hi}", "Array Path"}});
+    TypingSuccess("{/hello, ./hi}", {{"{/hello, ./hi}", "Array Path"}});
     TypingSuccess("define a: Array Int = {}; a", {{"a", "Array Int"}});
 }
 
@@ -193,12 +193,12 @@ TEST(TypeCheckTest, TestInterpolation) {
                        {"./${(1 + 2)}", "RelPath"}});
     TypingSuccess("./${'a'}", {{"'a'", "Char"}, {"./${'a'}", "RelPath"}});
     TypingSuccess(
-        "./${./hello }", {{"./hello", "RelPath"}, {"./${./hello}", "RelPath"}});
+        "./${./hello}", {{"./hello", "RelPath"}, {"./${./hello}", "RelPath"}});
     TypingSuccess(
         "./${\"hello\"}",
         {{"\"hello\"", "String"}, {"./${\"hello\"}", "RelPath"}});
     TypingSuccess(
-        "./${/hello }", {{"/hello", "Path"}, {"./${/hello}", "RelPath"}});
+        "./${/hello}", {{"/hello", "Path"}, {"./${/hello}", "RelPath"}});
     TypingError("./${{1}}", Error::kInvalidType, "{1}");
     TypingError("./${stdout}", Error::kInvalidType, "stdout");
 }

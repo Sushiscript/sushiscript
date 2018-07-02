@@ -82,7 +82,7 @@ struct CharConfig : CharacterConfig {
 
 struct RawConfig : CharacterConfig {
     const std::string &RestrictedList() const override {
-        static std::string l = "\"#'; |,)";
+        static std::string l = "\"#'; |,):}";
         return l;
     }
 };
