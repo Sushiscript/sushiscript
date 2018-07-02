@@ -136,10 +136,13 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
     SUSHI_VISITING(ast::VariableDef, var_def) {
         const scope::Scope *scope = environment.LookUp(&program);
         auto new_name = scope_manager->GetNewName(var_def.name, scope);
-        TypeExprVisitor type_expr_visitor;
-        var_def.type->AcceptVisitor(type_expr_visitor);
+
         ExprVisitor expr_visitor(scope_manager, environment, scope);
         var_def.value->AcceptVisitor(expr_visitor);
+
+        auto type = environment.LookUp(var_def.value.get());
+        TypeVisitor type_visitor;
+        type->AcceptVisitor(type_visitor);
 
         // new_ids.merge(expr_visitor.new_ids);
         MergeSets(new_ids, expr_visitor.new_ids);
@@ -147,7 +150,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
 
         code += expr_visitor.code_before + '\n';
 
-        switch (type_expr_visitor.type) {
+        switch (type_visitor.type) {
         default: assert(false && "Type is not supposed to be here");
         case ST::kInt:
         case ST::kBool:
@@ -195,8 +198,6 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
     }
     SUSHI_VISITING(ast::FunctionDef, func_def) {
         const scope::Scope *scope = environment.LookUp(&program);
-        TypeExprVisitor ret_type_visitor;
-        func_def.ret_type->AcceptVisitor(ret_type_visitor);
         auto new_name = scope_manager->GetNewName(func_def.name, scope);
 
         if (!func_def.is_export) new_ids.insert(new_name);
