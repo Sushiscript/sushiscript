@@ -8,6 +8,10 @@ namespace code_generation {
 std::string CodeGenerator::GenCode(
     const ast::Program &program, const scope::Environment &environment,
     std::shared_ptr<ScopeManager> scope_manager) {
+    // TODO: The following rule may change in the future
+    // scope_manager == nullptr means that this is the top program
+    bool is_top_program = (scope_manager == nullptr);
+
     if (!scope_manager) {
         scope_manager = std::make_shared<ScopeManager>();
     }
@@ -28,6 +32,11 @@ std::string CodeGenerator::GenCode(
     for (auto &id : new_ids) {
         scope_manager->Unset(id);
         ret += '\n' + (boost::format(unset_template) % id).str();
+    }
+
+    if (is_top_program) {
+        constexpr char kMainFuncTemplate[] = "main() {\n%1%\n}\nmain\n";
+        ret = (boost::format(kMainFuncTemplate) % AddIndentToEachLine(ret)).str();
     }
 
     return ret;
