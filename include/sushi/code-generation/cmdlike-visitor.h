@@ -55,7 +55,7 @@ struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
     };
 
     void TranslateFinalCmdLike(
-        ast::CommandLike *cmd_like_ptr, const std::string &temp_name) {
+        const ast::CommandLike *cmd_like_ptr, const std::string &temp_name) {
         FuncOrCmdVisitor visitor;
         cmd_like_ptr->AcceptVisitor(visitor);
 

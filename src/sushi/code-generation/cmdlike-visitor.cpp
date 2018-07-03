@@ -96,7 +96,7 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
     if (!is_first_cmd_like) return;
 
     auto next_ptr = func_call.pipe_next.get();
-    auto final_ptr = next_ptr;
+    auto final_ptr = dynamic_cast<const ast::CommandLike*>(&func_call);
     bool final_to_here = false;
     while (next_ptr) {
         CmdLikeVisitor cmd_like_visitor(
@@ -227,7 +227,7 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
     if (!is_first_cmd_like) return;
 
     auto next_ptr = command.pipe_next.get();
-    auto final_ptr = next_ptr;
+    auto final_ptr = dynamic_cast<const ast::CommandLike*>(&command);
     bool final_to_here = false;
     while (next_ptr) {
         CmdLikeVisitor cmd_like_visitor(

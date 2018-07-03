@@ -34,7 +34,7 @@ class CodeGenerator {
     static std::string DecorateTopCode(const std::string &str) {
         constexpr char kMainFuncTemplate[] = "main() {\n%1%\n}\nmain\n";
         std::string ret;
-        ret = (boost::format(kMainFuncTemplate) % AddIndentToEachLine(ret)).str();
+        ret = (boost::format(kMainFuncTemplate) % AddIndentToEachLine(str)).str();
 
         // Add built-in things
         ret = std::string()
