@@ -222,6 +222,7 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
         redir_str += ' ' + redir_item;
     }
     cmd_like_str += redir_str;
+    cmd_like_str = (boost::format("eval \"%1%\"") % cmd_like_str).str();
 
     if (redir_to_here) {
         cmd_like_str = (boost::format("$(%1%)") % cmd_like_str).str();

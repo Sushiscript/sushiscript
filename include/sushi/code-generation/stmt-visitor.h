@@ -287,7 +287,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         // new_ids.merge(value_expr_visitor.new_ids);
         MergeSets(new_ids, value_expr_visitor.new_ids);
 
-        code += value_expr_visitor.code_before;
+        code += value_expr_visitor.code_before + '\n';
 
         auto type = environment.LookUp(return_stmt.value.get());
         TypeVisitor type_visitor;

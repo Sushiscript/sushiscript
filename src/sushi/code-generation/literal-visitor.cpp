@@ -10,20 +10,23 @@ namespace code_generation {
 
 LITERAL_VISITING_IMPL(ast::IntLit, int_lit) {
     auto temp_name = GetTempName();
-    code_before = (boost::format("%1%=$((%2%))") % temp_name %
+    new_ids.insert(temp_name);
+    code_before = (boost::format("local %1%=$((%2%))") % temp_name %
                    std::to_string(int_lit.value))
                       .str();
     val = "${" + temp_name + '}';
 }
 LITERAL_VISITING_IMPL(ast::CharLit, char_lit) {
     auto temp_name = GetTempName();
+    new_ids.insert(temp_name);
     code_before =
-        (boost::format("%1%=\"%2%\"") % temp_name % char_lit.value).str();
+        (boost::format("local %1%=\"%2%\"") % temp_name % char_lit.value).str();
     val = "${" + temp_name + '}';
 }
 LITERAL_VISITING_IMPL(ast::BoolLit, bool_lit) {
     auto temp_name = GetTempName();
-    constexpr char template_[] = "%1%=$((%2%))";
+    new_ids.insert(temp_name);
+    constexpr char template_[] = "local %1%=$((%2%))";
     if (bool_lit.value) {
         code_before = (boost::format(template_) % temp_name % "1").str();
     } else {
@@ -33,11 +36,13 @@ LITERAL_VISITING_IMPL(ast::BoolLit, bool_lit) {
 }
 LITERAL_VISITING_IMPL(ast::UnitLit, unit_lit) {
     auto temp_name = GetTempName();
-    code_before = (boost::format("%1%=0") % temp_name).str();
+    new_ids.insert(temp_name);
+    code_before = (boost::format("local %1%=0") % temp_name).str();
     val = "${" + temp_name + '}';
 }
 LITERAL_VISITING_IMPL(ast::FdLit, fd_lit) {
     auto temp_name = GetTempName();
+    new_ids.insert(temp_name);
 
     std::string fd_str;
     using V = ast::FdLit::Value;
@@ -47,7 +52,7 @@ LITERAL_VISITING_IMPL(ast::FdLit, fd_lit) {
     case V::kStderr: fd_str = "2"; break;
     }
 
-    constexpr char template_[] = "%1%=%2%";
+    constexpr char template_[] = "local %1%=%2%";
     code_before = (boost::format(template_) % temp_name % fd_str).str();
     val = "${" + temp_name + '}';
 }
@@ -64,6 +69,7 @@ LITERAL_VISITING_IMPL(ast::RelPathLit, relPath_lit) {
 
 LITERAL_VISITING_IMPL(ast::ArrayLit, array_lit) {
     auto temp_name = GetTempName();
+    new_ids.insert(temp_name);
 
     std::string lit_inside;
 
@@ -93,6 +99,7 @@ LITERAL_VISITING_IMPL(ast::ArrayLit, array_lit) {
 
 LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
     auto temp_name = GetTempName();
+    new_ids.insert(temp_name);
 
     std::string lit_inside;
 
@@ -133,6 +140,7 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
 void LiteralVisitor::TranslateInterpolation(
     const ast::InterpolatedString &inter_str) {
     auto temp_name = GetTempName();
+    new_ids.insert(temp_name);
     std::string lit_str;
     inter_str.Traverse(
         [this, &lit_str](const std::string &str) { lit_str += str; },
@@ -151,7 +159,7 @@ void LiteralVisitor::TranslateInterpolation(
 
             lit_str += "${" + temp_name + '}';
         });
-    code_before = (boost::format("local %1%=\"%2%\"") % temp_name % lit_str).str();
+    code_before += '\n' + (boost::format("local %1%=\"%2%\"") % temp_name % lit_str).str();
     val = "${" + temp_name + '}';
 }
 

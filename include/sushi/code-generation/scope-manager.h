@@ -10,7 +10,7 @@ namespace code_generation {
 
 class ScopeManager {
     std::map<std::string, int> origin_name_to_int;
-    std::map<std::pair<const scope::Scope *, const std::string &>, std::string>
+    std::map<std::pair<const scope::Scope *, std::string>, std::string>
         new_names_map;
 
   public:

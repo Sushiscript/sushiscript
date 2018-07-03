@@ -51,6 +51,7 @@ EXPR_VISITING_IMPL(ast::Literal, literal) {
     code_before = literal_visitor.code_before;
     val = literal_visitor.val;
     raw_id = literal_visitor.raw_id;
+    MergeSets(new_ids, literal_visitor.new_ids);
 }
 EXPR_VISITING_IMPL(ast::UnaryExpr, unary_expr) {
     auto temp_name = scope_manager->GetNewTemp();
