@@ -157,7 +157,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         MergeSets(new_ids, expr_visitor.new_ids);
 
         code += expr_visitor.code_before;
-        code += '\n' + expr_visitor.val;
+        // expression here does nothing, cmd-like is invoked in code_bofore
+        // code += '\n' + expr_visitor.val;
     }
     SUSHI_VISITING(ast::VariableDef, var_def) {
         const scope::Scope *scope = environment.LookUp(&program);

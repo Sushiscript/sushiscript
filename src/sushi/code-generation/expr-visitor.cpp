@@ -141,6 +141,7 @@ EXPR_VISITING_IMPL(ast::CommandLike, cmd_like) {
     code_before = cmdlike_visitor.code_before;
     val = cmdlike_visitor.val;
     raw_id = cmdlike_visitor.raw_id;
+    MergeSets(new_ids, cmdlike_visitor.new_ids);
 }
 EXPR_VISITING_IMPL(ast::Indexing, indexing) {
     ExprVisitor indexable_visitor(scope_manager, environment, scope, true);

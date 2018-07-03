@@ -15,10 +15,12 @@ unset a)");
 }
 
 TEST(StatementTest, Command) {
-    CodeGenSuccess("! echo \"hello\"", R"(_sushi_t_="echo"
-_sushi_t_0_="hello"
+    CodeGenSuccess("! echo \"hello\"", R"(local _sushi_t_="echo"
+local _sushi_t_0_="hello"
 ${_sushi_t_} ${_sushi_t_0_}
 local _sushi_t_1_=$?
-${_sushi_t_1_}
-)");
+
+unset _sushi_t_0_
+unset _sushi_t_
+unset _sushi_t_1_)");
 }

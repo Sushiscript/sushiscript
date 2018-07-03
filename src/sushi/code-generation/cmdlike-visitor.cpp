@@ -145,6 +145,8 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
 
     cmd_like_str = cmd_visitor.val;
 
+    MergeSets(new_ids, cmd_visitor.new_ids);
+
     //  parameters
     for (auto &inter : command.parameters) {
         LiteralVisitor inter_visitor(scope_manager, environment, scope);

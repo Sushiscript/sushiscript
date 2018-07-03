@@ -151,7 +151,7 @@ void LiteralVisitor::TranslateInterpolation(
 
             lit_str += "${" + temp_name + '}';
         });
-    code_before = (boost::format("%1%=\"%2%\"") % temp_name % lit_str).str();
+    code_before = (boost::format("local %1%=\"%2%\"") % temp_name % lit_str).str();
     val = "${" + temp_name + '}';
 }
 
