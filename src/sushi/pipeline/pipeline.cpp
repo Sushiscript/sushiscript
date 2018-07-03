@@ -18,7 +18,8 @@ namespace sushi {
 namespace pipeline {
 
 #define PRINT_ERROR(POSITION, ERROR_TYPE, OTHERS)                              \
-    std::cout << "error:" << (POSITION) << ":" << (ERROR_TYPE) << " " << OTHERS;
+    std::cout << "error:" << (POSITION) << ":" << (ERROR_TYPE) << " " << OTHERS\
+              << std::endl;
 
 Pipeline::Pipeline(int argc, const char *argv[]) {
     config = Parser(argc, argv);

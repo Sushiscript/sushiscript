@@ -68,3 +68,7 @@ target_link_libraries(scope-test ${CONAN_LIBS_GTEST})
 target_link_libraries(code-gen-test ${CONAN_LIBS_GTEST})
 target_link_libraries(pipeline-test ${CONAN_LIBS_GTEST})
 target_link_libraries(type-check-test ${CONAN_LIBS_GTEST})
+
+# set the install directory
+set(CMAKE_INSTALL_PREFIX /usr/local)
+install (TARGETS sushi RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)

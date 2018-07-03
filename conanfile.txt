@@ -1,6 +1,6 @@
 [requires]
 boost/1.66.0@conan/stable
-gtest/1.8.0@conan/stable
+gtest/1.8.0@bincrafters/stable
 
 [options]
 boost:shared=True
@@ -13,3 +13,5 @@ ycm
 [imports]
 bin, *.dll -> ./bin
 lib, *.dylib -> ./bin
+# for linux gtest
+lib, *.so -> ./bin @ root_package=gtest
