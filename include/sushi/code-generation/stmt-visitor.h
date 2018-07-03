@@ -342,7 +342,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         type->AcceptVisitor(type_visitor);
 
         if (if_stmt.false_body.statements.empty()) {
-            code += condition_visitor.code_before;
+            code += condition_visitor.code_before + '\n';
             if (type_visitor.type == ST::kBool) {
                 code += (boost::format(kIfStmtPartTemplate) %
                          condition_visitor.val % true_body)
@@ -354,13 +354,13 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
                             .str();
             }
         } else {
-            code += condition_visitor.code_before;
+            code += condition_visitor.code_before + '\n';
             CodeGenerator false_body_gen;
             std::string false_body = false_body_gen.GenCode(
                 if_stmt.false_body, environment, scope_manager);
             false_body = CodeGenerator::AddIndentToEachLine(false_body);
 
-            code += condition_visitor.code_before;
+            code += condition_visitor.code_before + '\n';
             if (type_visitor.type == ST::kBool) {
                 code += (boost::format(kIfStmtFullTemplate) %
                          condition_visitor.val % true_body % false_body)
