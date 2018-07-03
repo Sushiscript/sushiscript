@@ -8,7 +8,7 @@
 namespace sushi {
 namespace pipeline {
 
-const std::string kBashHeader = "#/bin/bash\n\n";
+const std::string kBashHeader = "#!/bin/bash\n\n";
 const std::string kSushiVersion = "SushiScript Version 0.0.1\n";
 const std::string kNoInputError = "sushi: error: not input files\n";
 const std::string kUnKownError = "sushi: error: unkown options/arguements\n\n"

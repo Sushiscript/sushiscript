@@ -16,7 +16,7 @@ class Pipeline {
     Pipeline(int argc, const char *argv[]);
     void Main();
     void DisplayMessage();
-    void ExecSigleFile(std::string file_path);
+    void ExecSingleFile(std::string file_path);
     void BuildSingleFile(std::string file_path, std::string output_path);
     static std::string TransToSushi(std::string);
     static Config Parser(int argc, const char *argv[]);

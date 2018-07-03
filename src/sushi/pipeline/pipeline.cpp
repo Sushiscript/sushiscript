@@ -28,7 +28,7 @@ Pipeline::Pipeline(int argc, const char *argv[]) {
 void Pipeline::Main() {
     switch (config.command_type) {
     case Config::CommandType::Run:
-        ExecSigleFile(config.input_path.front());
+        ExecSingleFile(config.input_path.front());
         break;
     case Config::CommandType::Build:
         BuildSingleFile(config.input_path.front(), config.output_path);
@@ -41,7 +41,7 @@ void Pipeline::DisplayMessage() {
     std::cout << kMessageDick.at(config.command_type);
 }
 
-void Pipeline::ExecSigleFile(std::string file_path) {
+void Pipeline::ExecSingleFile(std::string file_path) {
     std::ifstream in(file_path);
     std::stringstream buffer;
     buffer << in.rdbuf();
@@ -92,7 +92,8 @@ std::string Pipeline::TransToSushi(std::string s) {
 
     // code gen
     code_generation::CodeGenerator generator;
-    return generator.GenCode(result.program, enviroment);
+    auto codes =  generator.GenCode(result.program, enviroment);
+    return (kBashHeader + codes);
 }
 
 Config Pipeline::Parser(int argc, const char *argv[]) {
