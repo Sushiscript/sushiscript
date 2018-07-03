@@ -98,6 +98,9 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
     auto next_ptr = func_call.pipe_next.get();
     auto final_ptr = dynamic_cast<const ast::CommandLike*>(&func_call);
     bool final_to_here = false;
+    if (next_ptr == nullptr) {
+        final_to_here = redir_to_here;
+    }
     while (next_ptr) {
         CmdLikeVisitor cmd_like_visitor(
             scope_manager, environment, scope, false);
@@ -233,6 +236,9 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
     auto next_ptr = command.pipe_next.get();
     auto final_ptr = dynamic_cast<const ast::CommandLike*>(&command);
     bool final_to_here = false;
+    if (next_ptr == nullptr) {
+        final_to_here = redir_to_here;
+    }
     while (next_ptr) {
         CmdLikeVisitor cmd_like_visitor(
             scope_manager, environment, scope, false);
@@ -262,7 +268,7 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
     if (final_to_here) {
         // if has redir to here, use a temp var to store stdout
         code_before +=
-            (boost::format("%1%=%2%") % temp_name % cmd_like_str).str();
+            (boost::format("local %1%=%2%") % temp_name % cmd_like_str).str();
         val = "${" + temp_name + '}';
     } else {
         // if no redir to here, use a temp var to store $?

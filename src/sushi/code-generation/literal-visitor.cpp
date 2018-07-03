@@ -10,7 +10,6 @@ namespace code_generation {
 
 LITERAL_VISITING_IMPL(ast::IntLit, int_lit) {
     auto temp_name = GetTempName();
-    new_ids.insert(temp_name);
     code_before = (boost::format("local %1%=$((%2%))") % temp_name %
                    std::to_string(int_lit.value))
                       .str();
@@ -18,14 +17,12 @@ LITERAL_VISITING_IMPL(ast::IntLit, int_lit) {
 }
 LITERAL_VISITING_IMPL(ast::CharLit, char_lit) {
     auto temp_name = GetTempName();
-    new_ids.insert(temp_name);
     code_before =
         (boost::format("local %1%=\"%2%\"") % temp_name % char_lit.value).str();
     val = "${" + temp_name + '}';
 }
 LITERAL_VISITING_IMPL(ast::BoolLit, bool_lit) {
     auto temp_name = GetTempName();
-    new_ids.insert(temp_name);
     constexpr char template_[] = "local %1%=$((%2%))";
     if (bool_lit.value) {
         code_before = (boost::format(template_) % temp_name % "1").str();
@@ -36,13 +33,11 @@ LITERAL_VISITING_IMPL(ast::BoolLit, bool_lit) {
 }
 LITERAL_VISITING_IMPL(ast::UnitLit, unit_lit) {
     auto temp_name = GetTempName();
-    new_ids.insert(temp_name);
     code_before = (boost::format("local %1%=0") % temp_name).str();
     val = "${" + temp_name + '}';
 }
 LITERAL_VISITING_IMPL(ast::FdLit, fd_lit) {
     auto temp_name = GetTempName();
-    new_ids.insert(temp_name);
 
     std::string fd_str;
     using V = ast::FdLit::Value;
@@ -69,7 +64,6 @@ LITERAL_VISITING_IMPL(ast::RelPathLit, relPath_lit) {
 
 LITERAL_VISITING_IMPL(ast::ArrayLit, array_lit) {
     auto temp_name = GetTempName();
-    new_ids.insert(temp_name);
 
     std::string lit_inside;
 
@@ -99,7 +93,6 @@ LITERAL_VISITING_IMPL(ast::ArrayLit, array_lit) {
 
 LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
     auto temp_name = GetTempName();
-    new_ids.insert(temp_name);
 
     std::string lit_inside;
 
@@ -140,13 +133,11 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
 void LiteralVisitor::TranslateInterpolation(
     const ast::InterpolatedString &inter_str) {
     auto temp_name = GetTempName();
-    new_ids.insert(temp_name);
     std::string lit_str;
     inter_str.Traverse(
         [this, &lit_str](const std::string &str) { lit_str += str; },
         [this, &lit_str](const ast::Expression &expr) {
             auto temp_name = scope_manager->GetNewTemp();
-            new_ids.insert(temp_name);
             ExprVisitor expr_visitor(scope_manager, environment, scope);
             expr.AcceptVisitor(expr_visitor);
             // new_ids.merge(expr_visitor.new_ids);
