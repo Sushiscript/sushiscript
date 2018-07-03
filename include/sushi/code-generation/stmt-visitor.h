@@ -464,8 +464,9 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         if (for_stmt.condition.IsRange()) {
             // For to iterate
             auto scope = environment.LookUp(&program);
+            auto body_scope = environment.LookUp(&for_stmt.body);
             auto new_name =
-                scope_manager->GetNewName(for_stmt.condition.ident_name, scope);
+                scope_manager->GetNewName(for_stmt.condition.ident_name, body_scope);
             ExprVisitor expr_visitor(scope_manager, environment, scope, false);
             for_stmt.condition.condition->AcceptVisitor(expr_visitor);
 

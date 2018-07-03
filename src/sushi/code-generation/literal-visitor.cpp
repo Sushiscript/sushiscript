@@ -88,7 +88,7 @@ LITERAL_VISITING_IMPL(ast::ArrayLit, array_lit) {
         (boost::format(kArrayLitCodeBeforeTemplate) % temp_name % lit_inside)
             .str();
 
-    val = "${" + temp_name + '}';
+    val = "${" + temp_name + "[@]}";
 }
 
 LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
@@ -127,7 +127,7 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
         (boost::format(kMapLitCodeBeforeTemplate) % temp_name % lit_inside)
             .str();
 
-    val = "${" + temp_name + '}';
+    val = "${" + temp_name + "[@]}";
 }
 
 void LiteralVisitor::TranslateInterpolation(
