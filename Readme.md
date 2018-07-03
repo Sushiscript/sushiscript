@@ -8,19 +8,19 @@ Sushiscript is new programming language based on shell, we want to offer a bette
 ## Build
 
 **Prerequisite**
-
++ linux or unix OS
 + [conan](https://conan.io/)
 + [cmake(minimum version 3.5)](https://cmake.org/)
 
-```bash
-mkdir build
+```shell
+mkdir build && cd build
 
 # if in ubuntu maybe install gtest need
 conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan install ..  -s compiler.libcxx=libstdc++11 --build=missing
 
-cmake ..
-make
+# cmake and build
+cmake .. && make install
 ```
 
 ## REFERENCE
