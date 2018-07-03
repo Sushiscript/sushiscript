@@ -49,7 +49,6 @@ script:
   # execute all of the commands which should make the build pass or fail
   - mkdir build && cd build
   # add some remote (I don't know if this is necessary, but I add it anyway)
-  - conan remote add lasote https://api.bintray.com/conan/lasote/conan-repo
   - conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
   # why compiler.libcxx=libstdc++11 ?
   #     for gtest, without this you will face error in the final make
@@ -59,10 +58,10 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then conan install .. -s compiler=apple-clang -s compiler.version=8.1 --build=missing; fi
 
   - cmake ..
-  - make -j4
+  - make -j8
   # run test
   - cd bin
-  - ./lexer-test && ./parser-test && ./scope-test
+  - ./parser-test && ./lexer-test && ./scope-test && ./type-check-test && ./code-gen-test && ./pipeline-test
 
 after_success:
   # so, pass the test...

@@ -14,10 +14,9 @@ Sushiscript is new programming language based on shell, we want to offer a bette
 
 ```bash
 mkdir build
-conan install ..
 
 # if in ubuntu maybe install gtest need
-conan remote add lasote https://api.bintray.com/conan/lasote/conan-repo
+conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan install ..  -s compiler.libcxx=libstdc++11 --build=missing
 
 cmake ..
