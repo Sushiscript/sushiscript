@@ -26,7 +26,7 @@ inline void CodeGenSuccess(const std::string &source, const std::string &expect_
 
     CodeGenerator code_gen;
     auto code = code_gen.GenCode(res.program, env);
-    EXPECT_EQ(code, expect_res);
+    EXPECT_EQ(code, CodeGenerator::DecorateTopCode(expect_res));
 }
 
 } // namespace test

@@ -7,7 +7,7 @@ namespace code_generation {
 // Variable Definitions
 
 // _sushi_unit_
-constexpr char kSushiUnitDef[] = R"(declare -r _sushi_unit_=0)";
+constexpr char kSushiUnitDef[] = R"(declare -r _sushi_unit_='')";
 // _sushi_func_ret_
 constexpr char kSushiFuncRetDef[] = R"(declare _sushi_func_ret_=0)";
 // _sushi_func_map_ret_

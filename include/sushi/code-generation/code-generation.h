@@ -5,6 +5,7 @@
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
 #include "sushi/ast.h"
+#include "builtin-bash.h"
 
 namespace sushi {
 namespace code_generation {
@@ -27,6 +28,25 @@ class CodeGenerator {
             else
                 ret += kIndentString + s + '\n';
         }
+        return ret;
+    }
+
+    static std::string DecorateTopCode(const std::string &str) {
+        constexpr char kMainFuncTemplate[] = "main() {\n%1%\n}\nmain\n";
+        std::string ret;
+        ret = (boost::format(kMainFuncTemplate) % AddIndentToEachLine(ret)).str();
+
+        // Add built-in things
+        ret = std::string()
+            + kSushiUnitDef + '\n'
+            + kSushiFuncRetDef + '\n'
+            + kSushiFuncMapRetDef + '\n'
+            + kSushiAbsFuncDef + '\n'
+            + kSushiDupStrFuncDef + '\n'
+            + kSushiPathConcatFuncDef + '\n'
+            + kSushiFileEqFuncDef + '\n'
+            + kSushiCompArrayFuncDef + '\n'
+            + ret;
         return ret;
     }
 };

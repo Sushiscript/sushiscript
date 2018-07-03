@@ -1,6 +1,7 @@
 #include "sushi/code-generation/code-generation.h"
 #include "sushi/code-generation/stmt-visitor.h"
 #include "sushi/code-generation/util.h"
+#include "sushi/code-generation/builtin-bash.h"
 
 namespace sushi {
 namespace code_generation {
@@ -35,8 +36,7 @@ std::string CodeGenerator::GenCode(
     }
 
     if (is_top_program) {
-        constexpr char kMainFuncTemplate[] = "main() {\n%1%\n}\nmain\n";
-        ret = (boost::format(kMainFuncTemplate) % AddIndentToEachLine(ret)).str();
+        ret = DecorateTopCode(ret);
     }
 
     return ret;
