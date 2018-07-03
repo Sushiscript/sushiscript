@@ -131,6 +131,7 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
         val = "${" + temp_name + '}';
     } else {
         // if no redir to here, use a temp var to copy function return value
+        code_before += cmd_like_str + '\n';
         TranslateFinalCmdLike(final_ptr, temp_name);
     }
 }
@@ -255,13 +256,14 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
     raw_id = temp_name;
 
     // call
-    if (final_ptr) {
+    if (final_to_here) {
         // if has redir to here, use a temp var to store stdout
         code_before +=
             (boost::format("%1%=%2%") % temp_name % cmd_like_str).str();
         val = "${" + temp_name + '}';
     } else {
         // if no redir to here, use a temp var to store $?
+        code_before += cmd_like_str + '\n';
         TranslateFinalCmdLike(final_ptr, temp_name);
     }
 }
