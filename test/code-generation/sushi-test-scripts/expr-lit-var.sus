@@ -1,0 +1,31 @@
+# literal
+define i : Int = 1
+define b : Bool = true
+define u = ()
+define fd : FD = stdin
+define ex : ExitCode = ! true
+define p : Path = /path/to/file
+define rp : RelPath = ./path/to/file
+define s : String = "abc"
+define c : Char = 'a'
+define f_i () : Int = return 1
+define f_a () : Array Int = return {1, 2}
+define f_m () : Map String Int = return {"a": 1, "b": 2}
+define a : Array Int = {1, 2}
+define m : Map String Int = {"a":1, "b": 2}
+
+# variable as right value
+define v_i = i
+define v_b = b
+define v_u = u
+define v_fd = fd
+define v_ex = ex
+define v_p = p
+define v_rp = rp
+define v_s = s
+define v_c = c
+define v_f_i = f_i
+define v_f_a = f_a
+define v_f_m = f_m
+define v_a = a
+define v_m = m
