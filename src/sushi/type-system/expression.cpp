@@ -85,7 +85,7 @@ struct DeduceCommandLikeVisitor : ast::CommandLikeVisitor::Const {
 
     SUSHI_VISITING(ast::FunctionCall, fc) {
         auto tp = s.LookupIdentType(fc.func);
-        if (not tp) V_RETURN(nullptr);
+        if (not tp) V_RETURN(s.TypeError(&fc, Error::kMissingTypeDecl));
         auto func_type = tp->ToFunction();
         if (not func_type) {
             s.TypeError(&fc, Error::kInvalidFunction);
