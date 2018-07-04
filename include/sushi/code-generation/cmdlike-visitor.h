@@ -96,14 +96,8 @@ struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
                                    .str();
                 break;
             case ST::kMap:
-                auto temp = scope_manager->GetNewTemp();
-                new_ids.insert(temp);
                 code_before += (boost::format(kMapVarCodeBeforeTemplate) %
-                                temp % temp_name)
-                                   .str();
-                code_before += '\n';
-                code_before += (boost::format(kVarDefMapTemplate) % temp_name %
-                                ("\"${" + temp + "}\""))
+                                temp_name % "_sushi_func_map_ret_")
                                    .str();
                 break;
             }

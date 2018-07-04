@@ -95,7 +95,7 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
 
     std::string lit_inside;
 
-    constexpr char kMapLitCodeBeforeTemplate[] = "local %1%=(%2%)";
+    constexpr char kMapLitCodeBeforeTemplate[] = "local -A %1%=(%2%)";
     constexpr char kMapItemTemplate[] = "[%1%]=%2%";
 
     bool is_first = false;

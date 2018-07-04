@@ -10,9 +10,27 @@ define fus () =
   ! read xxx
   ! echo "fus:\"${xxx}\" hhhh"
 
+# Function Returning Array / Map
+define ro () : Array Int =
+  return {1,2,3}
+
+define dah () : Map String Int =
+  return {"a": 1, "b": 2}
+
+# Function With Array / Map as Param
+define fo (arr : Array Int) =
+  ! echo ${arr[1]}
+
+define krah (map : Map String Int) =
+  ! echo ${map["a"]}
+
 # Function Call
 foo(123)
 define str = bar("something")
+define arr = ro()
+define map = dah()
+fo({0, 3, 4})
+krah({"a": 5, "b": 4})
 
 # Pipe
 foo(123) | ! grep "1"
