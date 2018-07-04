@@ -87,7 +87,6 @@ LITERAL_VISITING_IMPL(ast::ArrayLit, array_lit) {
     code_before +=
         (boost::format(kArrayLitCodeBeforeTemplate) % temp_name % lit_inside)
             .str();
-
     val = "${" + temp_name + "[@]}";
 }
 
@@ -104,7 +103,7 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
         ExprVisitor key_visitor(scope_manager, environment, scope);
         ExprVisitor val_visitor(scope_manager, environment, scope);
         i.first->AcceptVisitor(key_visitor);
-        i.first->AcceptVisitor(val_visitor);
+        i.second->AcceptVisitor(val_visitor);
         code_before +=
             key_visitor.code_before + '\n' + val_visitor.code_before + '\n';
         // new_ids.merge(key_visitor.new_ids);
@@ -126,8 +125,11 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
     code_before +=
         (boost::format(kMapLitCodeBeforeTemplate) % temp_name % lit_inside)
             .str();
-
-    val = "${" + temp_name + "[@]}";
+    auto map_lit_inside_temp_name = scope_manager->GetNewTemp();
+    new_ids.insert(map_lit_inside_temp_name);
+    code_before += '\n' +
+        (boost::format(kMapVarCodeBeforeTemplate) % map_lit_inside_temp_name % temp_name).str();
+    val = "${" + temp_name + "}";
 }
 
 void LiteralVisitor::TranslateInterpolation(

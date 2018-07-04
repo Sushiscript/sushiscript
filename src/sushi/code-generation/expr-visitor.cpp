@@ -38,7 +38,7 @@ EXPR_VISITING_IMPL(ast::Variable, variable) {
             code_before =
                 (boost::format(kMapVarCodeBeforeTemplate) % temp % new_name)
                     .str();
-            val = (boost::format(R"("$%1%")") % temp).str();
+            val = (boost::format(R"("${%1%}")") % temp).str();
             new_ids.insert(temp);
             break;
         }

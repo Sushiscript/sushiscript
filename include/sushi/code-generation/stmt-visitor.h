@@ -133,18 +133,18 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
             } else if (lval_simplified_type == ST::kRelPath && rval_simplified_type == ST::kPath) {
                 rval_str = RelPathExprToPath(rval_str);
             }
-            code += (boost::format(kAssignTemplate) % lvalue_expr_visitor.val %
+            code += (boost::format(kAssignTemplate) % lvalue_expr_visitor.raw_id %
                     rval_str)
                         .str();
             break;
         case ST::kMap:
             code += (boost::format(kAssignMapTemplate) %
-                     lvalue_expr_visitor.val % rval_str)
+                     lvalue_expr_visitor.raw_id % rval_str)
                         .str();
             break;
         case ST::kArray:
             code += (boost::format(kAssignArrayTemplate) %
-                     lvalue_expr_visitor.val % rval_str)
+                     lvalue_expr_visitor.raw_id % rval_str)
                         .str();
             break;
         }
