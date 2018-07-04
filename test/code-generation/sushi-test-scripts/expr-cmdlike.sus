@@ -1,0 +1,20 @@
+# Function
+define foo (a : Int) =
+  ! echo "${a}"
+
+define bar (a : String) =
+  return a
+
+define fus () =
+  define xxx = ""
+  ! read xxx
+  ! echo "fus:\"${xxx}\" hhhh"
+
+# Function Call
+foo(123)
+define str = bar("something")
+
+# Pipe
+foo(123) | ! grep "1"
+foo(123) | fus ()
+

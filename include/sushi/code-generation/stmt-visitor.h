@@ -255,6 +255,7 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
     SUSHI_VISITING(ast::FunctionDef, func_def) {
         const scope::Scope *scope = environment.LookUp(&program);
         auto new_name = scope_manager->GetNewName(func_def.name, scope);
+        auto body_scope = environment.LookUp(&func_def.body);
 
         if (!func_def.is_export) new_ids.insert(new_name);
 
@@ -263,9 +264,10 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         constexpr char kParamAssignTemplate[] = "local -n %1%=%2%";
         for (int i = 0; i < func_def.params.size(); ++i) {
             auto &param = func_def.params[i];
+            auto new_param_name = scope_manager->GetNewName(param.name, body_scope);
             std::string line;
-            line = (boost::format(kParamAssignTemplate) % param.name %
-                    std::to_string(i + 1))
+            line = (boost::format(kParamAssignTemplate) % new_param_name %
+                    ('$' + std::to_string(i + 1)))
                        .str();
             param_assign_part += line + '\n';
         }

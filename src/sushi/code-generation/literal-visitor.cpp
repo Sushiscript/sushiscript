@@ -33,7 +33,7 @@ LITERAL_VISITING_IMPL(ast::BoolLit, bool_lit) {
 }
 LITERAL_VISITING_IMPL(ast::UnitLit, unit_lit) {
     auto temp_name = GetTempName();
-    code_before = (boost::format("local %1%=0") % temp_name).str();
+    code_before = (boost::format("local %1%=''") % temp_name).str();
     val = "${" + temp_name + '}';
 }
 LITERAL_VISITING_IMPL(ast::FdLit, fd_lit) {
