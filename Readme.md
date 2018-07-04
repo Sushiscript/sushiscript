@@ -15,7 +15,7 @@ Sushiscript is new programming language based on shell, we want to offer a bette
 ```shell
 mkdir build && cd build
 
-# if in ubuntu maybe install gtest need
+# for ubuntu, mac os do not need "-s compiler.libcxx=libstdc++11"
 conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
 conan install ..  -s compiler.libcxx=libstdc++11 --build=missing
 
