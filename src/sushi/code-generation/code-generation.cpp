@@ -1,7 +1,7 @@
 #include "sushi/code-generation/code-generation.h"
+#include "sushi/code-generation/builtin-bash.h"
 #include "sushi/code-generation/stmt-visitor.h"
 #include "sushi/code-generation/util.h"
-#include "sushi/code-generation/builtin-bash.h"
 
 namespace sushi {
 namespace code_generation {

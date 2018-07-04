@@ -127,8 +127,9 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
             .str();
     auto map_lit_inside_temp_name = scope_manager->GetNewTemp();
     new_ids.insert(map_lit_inside_temp_name);
-    code_before += '\n' +
-        (boost::format(kMapVarCodeBeforeTemplate) % map_lit_inside_temp_name % temp_name).str();
+    code_before += '\n' + (boost::format(kMapVarCodeBeforeTemplate) %
+                           map_lit_inside_temp_name % temp_name)
+                              .str();
     val = "${" + temp_name + "}";
 }
 
@@ -152,7 +153,8 @@ void LiteralVisitor::TranslateInterpolation(
 
             lit_str += "${" + temp_name + '}';
         });
-    code_before += '\n' + (boost::format("local %1%=\"%2%\"") % temp_name % lit_str).str();
+    code_before +=
+        '\n' + (boost::format("local %1%=\"%2%\"") % temp_name % lit_str).str();
     val = "${" + temp_name + '}';
 }
 

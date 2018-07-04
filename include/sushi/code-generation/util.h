@@ -1,8 +1,8 @@
 #ifndef SUSHI_CODE_GEN_UTIL_H_
 #define SUSHI_CODE_GEN_UTIL_H_
 
-#include "sushi/scope/visitor/type-visitor.h"
 #include "sushi/scope.h"
+#include "sushi/scope/visitor/type-visitor.h"
 #include <unordered_set>
 
 template <typename T>
@@ -23,7 +23,7 @@ inline ST GetType(const scope::Environment &env, const ast::Expression *expr) {
     return visitor.type;
 }
 
-}
-}
+} // namespace code_generation
+} // namespace sushi
 
 #endif

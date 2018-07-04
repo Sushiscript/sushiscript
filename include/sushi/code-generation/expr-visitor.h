@@ -16,11 +16,13 @@ namespace code_generation {
 
 #define EXPR_VISITOR_TRANSLATE_DEF(T, op)                                      \
     void Translate##op(                                                        \
-        const T &lhs_visitor, const T &rhs_visitor, const ST &lhs_type, const ST &rhs_type)
+        const T &lhs_visitor, const T &rhs_visitor, const ST &lhs_type,        \
+        const ST &rhs_type)
 
 #define EXPR_VISITOR_TRANSLATE_IMPL(T, op)                                     \
     void ExprVisitor::Translate##op(                                           \
-        const T &lhs_visitor, const T &rhs_visitor, const ST &lhs_type, const ST &rhs_type)
+        const T &lhs_visitor, const T &rhs_visitor, const ST &lhs_type,        \
+        const ST &rhs_type)
 
 constexpr char kMapVarCodeBeforeTemplate[] =
     R"(local %1%=`declare -p %2%`

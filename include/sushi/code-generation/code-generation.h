@@ -4,8 +4,8 @@
 #include "./scope-manager.h"
 #include "boost/algorithm/string.hpp"
 #include "boost/format.hpp"
-#include "sushi/ast.h"
 #include "builtin-bash.h"
+#include "sushi/ast.h"
 
 namespace sushi {
 namespace code_generation {
@@ -34,19 +34,14 @@ class CodeGenerator {
     static std::string DecorateTopCode(const std::string &str) {
         constexpr char kMainFuncTemplate[] = "main() {\n%1%\n}\nmain\n";
         std::string ret;
-        ret = (boost::format(kMainFuncTemplate) % AddIndentToEachLine(str)).str();
+        ret =
+            (boost::format(kMainFuncTemplate) % AddIndentToEachLine(str)).str();
 
         // Add built-in things
-        ret = std::string()
-            + kSushiUnitDef + '\n'
-            + kSushiFuncRetDef + '\n'
-            + kSushiFuncMapRetDef + '\n'
-            + kSushiAbsFuncDef + '\n'
-            + kSushiDupStrFuncDef + '\n'
-            + kSushiPathConcatFuncDef + '\n'
-            + kSushiFileEqFuncDef + '\n'
-            + kSushiCompArrayFuncDef + '\n'
-            + ret;
+        ret = std::string() + kSushiUnitDef + '\n' + kSushiFuncRetDef + '\n' +
+              kSushiFuncMapRetDef + '\n' + kSushiAbsFuncDef + '\n' +
+              kSushiDupStrFuncDef + '\n' + kSushiPathConcatFuncDef + '\n' +
+              kSushiFileEqFuncDef + '\n' + kSushiCompArrayFuncDef + '\n' + ret;
         return ret;
     }
 };

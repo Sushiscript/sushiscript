@@ -100,7 +100,6 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         // new_ids.merge(rvalue_expr_visitor.new_ids);
         MergeSets(new_ids, rvalue_expr_visitor.new_ids);
 
-
         auto lvalue_type = environment.LookUp(assignment.lvalue.get());
         auto rvalue_type = environment.LookUp(assignment.value.get());
 
@@ -126,15 +125,20 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         case ST::kString:
         case ST::kChar:
         case ST::kFunc:
-            if (lval_simplified_type == ST::kExitCode && rval_simplified_type == ST::kBool) {
+            if (lval_simplified_type == ST::kExitCode &&
+                rval_simplified_type == ST::kBool) {
                 rval_str = ExitCodeExprToBool(rval_str);
-            } else if (lval_simplified_type == ST::kExitCode && rval_simplified_type == ST::kInt) {
+            } else if (
+                lval_simplified_type == ST::kExitCode &&
+                rval_simplified_type == ST::kInt) {
                 rval_str = ExitCodeExprToInt(rval_str);
-            } else if (lval_simplified_type == ST::kRelPath && rval_simplified_type == ST::kPath) {
+            } else if (
+                lval_simplified_type == ST::kRelPath &&
+                rval_simplified_type == ST::kPath) {
                 rval_str = RelPathExprToPath(rval_str);
             }
-            code += (boost::format(kAssignTemplate) % lvalue_expr_visitor.raw_id %
-                    rval_str)
+            code += (boost::format(kAssignTemplate) %
+                     lvalue_expr_visitor.raw_id % rval_str)
                         .str();
             break;
         case ST::kMap:
@@ -202,11 +206,16 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         case ST::kString:
         case ST::kChar:
         case ST::kFunc:
-            if (var_def.type && var_simplified_type == ST::kExitCode && rval_simplified_type == ST::kBool) {
+            if (var_def.type && var_simplified_type == ST::kExitCode &&
+                rval_simplified_type == ST::kBool) {
                 rval_str = ExitCodeExprToBool(rval_str);
-            } else if (var_def.type && var_simplified_type == ST::kExitCode && rval_simplified_type == ST::kInt) {
+            } else if (
+                var_def.type && var_simplified_type == ST::kExitCode &&
+                rval_simplified_type == ST::kInt) {
                 rval_str = ExitCodeExprToInt(rval_str);
-            } else if (var_def.type && var_simplified_type == ST::kRelPath && rval_simplified_type == ST::kPath) {
+            } else if (
+                var_def.type && var_simplified_type == ST::kRelPath &&
+                rval_simplified_type == ST::kPath) {
                 rval_str = RelPathExprToPath(rval_str);
             }
             if (var_def.is_export) {
@@ -435,16 +444,21 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
 
             std::string case_str = case_visitor.val;
 
-            if (case_simplified_type == ST::kExitCode && switched_simplified_type == ST::kBool) {
+            if (case_simplified_type == ST::kExitCode &&
+                switched_simplified_type == ST::kBool) {
                 case_str = ExitCodeExprToBool(case_str);
-            } else if (case_simplified_type == ST::kExitCode && switched_simplified_type == ST::kInt) {
+            } else if (
+                case_simplified_type == ST::kExitCode &&
+                switched_simplified_type == ST::kInt) {
                 case_str = ExitCodeExprToInt(case_str);
-            } else if (case_simplified_type == ST::kRelPath && switched_simplified_type == ST::kPath) {
+            } else if (
+                case_simplified_type == ST::kRelPath &&
+                switched_simplified_type == ST::kPath) {
                 case_str = RelPathExprToPath(case_str);
             }
 
-            temp_code += (boost::format(template_[select_template]) %
-                          case_str % switched_visitor.val)
+            temp_code += (boost::format(template_[select_template]) % case_str %
+                          switched_visitor.val)
                              .str();
             CodeGenerator body_gen;
             auto body_code =
@@ -458,7 +472,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
                 CodeGenerator body_gen;
                 auto body_code = body_gen.GenCode(
                     default_case->body, environment, scope_manager);
-                temp_code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+                temp_code +=
+                    '\n' + CodeGenerator::AddIndentToEachLine(body_code);
             }
         }
         // fi
@@ -471,8 +486,8 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
             // For to iterate
             auto scope = environment.LookUp(&program);
             auto body_scope = environment.LookUp(&for_stmt.body);
-            auto new_name =
-                scope_manager->GetNewName(for_stmt.condition.ident_name, body_scope);
+            auto new_name = scope_manager->GetNewName(
+                for_stmt.condition.ident_name, body_scope);
             ExprVisitor expr_visitor(scope_manager, environment, scope, false);
             for_stmt.condition.condition->AcceptVisitor(expr_visitor);
 
