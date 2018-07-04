@@ -84,7 +84,7 @@ struct DeduceCommandLikeVisitor : ast::CommandLikeVisitor::Const {
     }
 
     SUSHI_VISITING(ast::FunctionCall, fc) {
-        auto tp = s.LookupName(fc.func);
+        auto tp = s.LookupIdentType(fc.func);
         if (not tp) V_RETURN(nullptr);
         auto func_type = tp->ToFunction();
         if (not func_type) {
@@ -195,7 +195,7 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     DeductionVisitor(State &s) : s(s) {}
 
     SUSHI_VISITING(ast::Variable, var) {
-        auto p = s.LookupName(var.var);
+        auto p = s.LookupIdentType(var.var);
         if (not p) V_RETURN(DeduceResult::Fail());
         V_RETURN(DeduceResult(std::move(p)));
     }
