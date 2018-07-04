@@ -20,16 +20,16 @@ constexpr char kVarDefMapTemplate[] = "local -A %1%=(); eval \"%1%=(%2%)\"";
 constexpr char kVarDefExpoTemplate[] = "declare -x%1% %2%=%3%";
 
 constexpr char kFuncDefTemplate[] =
-    R"(%1% () {
+    R"(local %1%=%1%
+%1% () {
 %2%
-}
-local %1%=%1%)";
+})";
 constexpr char kFuncDefExpoTemplate[] =
-    R"(%1% () {
+    R"(local %1%=%1%
+%1% () {
 %2%
 }
-export -f %1%
-local %1%=%1%)";
+export -f %1%)";
 
 constexpr char kReturnStmtNotBoolTemplate[] = "_sushi_func_ret_=%1%; return 0";
 constexpr char kReturnStmtBoolTemplate[] =
