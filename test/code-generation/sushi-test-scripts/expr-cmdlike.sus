@@ -36,3 +36,22 @@ krah({"a": 5, "b": 4})
 foo(123) | ! grep "1"
 foo(123) | fus ()
 
+# Redirection
+# From/To File
+fus () redirect from ./test_input, to ./test_output_0
+foo(12345) | fus() redirect to ./test_output_1
+# To Here
+define res = foo(12345) redirect to here
+! echo ${res}
+# To FD
+define i : FD = stderr
+foo(-1) redirect to i
+foo(-2) redirect to stderr
+! echo "-3", redirect to i
+! echo "-4", redirect to stderr
+
+# FD to FD
+define diin() =
+  ! echo "err here", redirect to stderr
+
+diin() redirect stderr to stdout
