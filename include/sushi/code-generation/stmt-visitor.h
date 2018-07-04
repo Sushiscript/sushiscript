@@ -31,7 +31,7 @@ constexpr char kFuncDefExpoTemplate[] =
 export -f %1%
 local %1%=%1%)";
 
-constexpr char kReturnStmtNotBoolTemplate[] = "_sushi_func_ret_=%1%";
+constexpr char kReturnStmtNotBoolTemplate[] = "_sushi_func_ret_=%1%; return 0";
 constexpr char kReturnStmtBoolTemplate[] =
     R"(_sushi_func_ret_=%1%
 if [[ _sushi_func_ret_ -ne 0 ]]; then
@@ -39,9 +39,9 @@ if [[ _sushi_func_ret_ -ne 0 ]]; then
 else
     return 1
 fi)";
-constexpr char kReturnStmtArrayTemplate[] = "_sushi_func_ret_=(%1%)";
+constexpr char kReturnStmtArrayTemplate[] = "_sushi_func_ret_=(%1%); return 0";
 constexpr char kReturnStmtMapTemplate[] =
-    R"foo(eval "_sushi_func_map_ret_=(%1%)")foo";
+    R"foo(eval "_sushi_func_map_ret_=(%1%)"; return 0)foo";
 
 constexpr char kIfStmtPartTemplate[] = "if [[ %1% -ne 0 ]]; then\n%2%\nfi";
 constexpr char kIfStmtFullTemplate[] =
