@@ -413,8 +413,9 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, LessEq) {
         break;
     case ST::kChar:
     case ST::kString:
+        // Use "! a > b" to replace "a <= b"
         code_before += (boost::format(kStringCompTemplate) % temp_name %
-                        lhs_str % "<=" % rhs_str)
+                        ("! " + lhs_str) % ">" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
@@ -442,8 +443,9 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, GreatEq) {
         break;
     case ST::kChar:
     case ST::kString:
+        // Use "! a < b" to replace "a >= b"
         code_before += (boost::format(kStringCompTemplate) % temp_name %
-                        lhs_str % ">=" % rhs_str)
+                        ("! " + lhs_str) % "<" % rhs_str)
                            .str();
         val = "${" + temp_name + '}';
         break;
