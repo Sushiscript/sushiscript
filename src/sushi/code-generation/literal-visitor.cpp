@@ -130,7 +130,7 @@ LITERAL_VISITING_IMPL(ast::MapLit, map_lit) {
     code_before += '\n' + (boost::format(kMapVarCodeBeforeTemplate) %
                            map_lit_inside_temp_name % temp_name)
                               .str();
-    val = "${" + temp_name + "}";
+    val = "${" + map_lit_inside_temp_name + "}";
 }
 
 void LiteralVisitor::TranslateInterpolation(

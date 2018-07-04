@@ -173,6 +173,7 @@ constexpr char kArrayValTemplate[] = "${%1%[@]}";
 constexpr char kIntAddTemplate[] = "local %1%=$((%2% + %3%))";
 constexpr char kStringConcatTemplate[] = R"(local %1%="%2%%3%")";
 constexpr char kArrayConcatTempplate[] = "local %1%=(%2% %3%)";
+constexpr char kMapMergeTemplate[] = "local %1%=(%2% %3%)";
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
     auto temp_name = scope_manager->GetNewTemp();
@@ -183,6 +184,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
     std::string rhs_str = rhs_visitor.val;
 
     switch (lhs_type) {
+    default: assert(false && "Type is not supposed to be here");
     case ST::kExitCode:
     case ST::kInt:
         if (lhs_type == ST::kExitCode) lhs_str = ExitCodeExprToInt(lhs_str);
@@ -204,7 +206,17 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Add) {
                            .str();
         val = (boost::format(kArrayValTemplate) % temp_name).str();
         break;
-    default: assert(false && "Type is not supposed to be here");
+    case ST::kMap:
+        code_before +=
+            (boost::format(kMapMergeTemplate) % temp_name % lhs_str % rhs_str)
+                .str();
+        auto map_lit_inside_temp_name = scope_manager->GetNewTemp();
+        new_ids.insert(map_lit_inside_temp_name);
+        code_before += '\n' + (boost::format(kMapVarCodeBeforeTemplate) %
+                               map_lit_inside_temp_name % temp_name)
+                                  .str();
+        val = "${" + map_lit_inside_temp_name + "}";
+        break;
     }
 }
 
