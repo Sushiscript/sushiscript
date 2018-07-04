@@ -512,7 +512,7 @@ EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, Equal) {
 
 EXPR_VISITOR_TRANSLATE_IMPL(ExprVisitor, NotEq) {
     TranslateEqual(lhs_visitor, rhs_visitor, lhs_type, rhs_type);
-    code_before += (boost::format("%1%=$((1 - %2%))") % raw_id % val).str();
+    code_before += '\n' + (boost::format("%1%=$((1 - %2%))") % raw_id % val).str();
 }
 
 constexpr char kBoolAndOrTemplate[] = "%1%=$((%2% %3% %4%))";
