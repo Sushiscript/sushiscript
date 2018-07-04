@@ -54,7 +54,7 @@ script:
   #     for gtest, without this you will face error in the final make
   # why --build=missing
   #     for conan can't download pre build libs, you need build it by yourself
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan install .. -s compiler.libcxx=libstdc++11 --build=missing; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then conan install .. -s compiler.libcxx=libstdc++11 --build=gtest; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx"   ]]; then conan install .. -s compiler=apple-clang -s compiler.version=8.1 --build=missing; fi
 
   - cmake ..
