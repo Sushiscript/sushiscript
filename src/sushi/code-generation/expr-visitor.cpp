@@ -31,7 +31,7 @@ EXPR_VISITING_IMPL(ast::Variable, variable) {
         case ST::kChar:
         case ST::kFunc: val = "${" + new_name + '}'; break;
         case ST::kArray:
-            val = (boost::format("\"${%1%[@]}\"") % new_name).str();
+            val = (boost::format("${%1%[@]}") % new_name).str();
             break;
         case ST::kMap:
             auto temp = scope_manager->GetNewTemp();

@@ -51,7 +51,7 @@ constexpr char kIfStmtExitCodePartTemplate[] =
 constexpr char kIfStmtExitCodeFullTemplate[] =
     "if [[ %1% -eq 0 ]]; then\n%2%\nelse\n%3%\nfi";
 
-constexpr char kForStmtIterTemplate[] = "for %1% in %2%; do\n%3%\ndone";
+constexpr char kForStmtIterTemplate[] = "for %1% in \"%2%\"; do\n%3%\ndone";
 constexpr char kForStmtWhileTemplate[] = "while [[ %1% -ne 0 ]]; do\n%2%\ndone";
 constexpr char kForStmtWhileExitCodeTemplate[] =
     "while [[ %1% -eq 0 ]]; do\n%2%\ndone";
