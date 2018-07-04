@@ -382,11 +382,15 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
 
         bool is_first_case = true;
 
-        auto default_case = &*std::find_if(
+        const ast::SwitchStmt::Case *default_case = nullptr;
+        auto default_case_iter = std::find_if(
             switch_stmt.cases.begin(), switch_stmt.cases.end(),
             [](const ast::SwitchStmt::Case &case_) -> bool {
                 return case_.condition == nullptr;
             });
+        if (default_case_iter != switch_stmt.cases.end()) {
+            default_case = &*default_case_iter;
+        }
 
         auto switched_type = environment.LookUp(switch_stmt.switched.get());
         TypeVisitor visitor;
@@ -449,11 +453,13 @@ struct StmtVisitor : public ast::StatementVisitor::Const {
         }
         // default case
         {
-            temp_code += "else";
-            CodeGenerator body_gen;
-            auto body_code = body_gen.GenCode(
-                default_case->body, environment, scope_manager);
-            temp_code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+            if (default_case) {
+                temp_code += "else";
+                CodeGenerator body_gen;
+                auto body_code = body_gen.GenCode(
+                    default_case->body, environment, scope_manager);
+                temp_code += '\n' + CodeGenerator::AddIndentToEachLine(body_code);
+            }
         }
         // fi
         temp_code += "\nfi";
