@@ -1,0 +1,176 @@
+# unary
+
+# not
+# not var
+define fal = false
+define not_fal = not fal
+define tr = true
+define not_tr = not tr
+# not lit
+not_fal = not false
+not_tr = not true
+
+# +
+# + var
+define pos = 1
+define pos_pos = + pos
+define neg = -1
+define pos_neg = + neg
+# + lit
+pos_pos = + 1
+pos_neg = + (-1)
+
+# -
+# - var
+define neg_pos = -pos
+define neg_neg = -neg
+# - lit
+neg_pos = -1
+neg_neg = - (-1)
+
+
+# binary
+
+# +
+# Int + Int
+define ai = 1
+define ai_plus = ai + 2
+
+# String + String
+define as = "a"
+define as_plus = as + "b"
+
+# Array + Array
+define aai = {1,2,3}
+define aai_plus = aai + {4,5}
+
+# Map + Map
+define amsi = {"a": 1, "b": 2}
+define amsi_plus = amsi + {"c": 3}
+
+# -
+# Int - Int
+define ai_minus = ai - 2
+
+# *
+# Int * Int
+define ai_mult = ai * 2
+
+# String * Int
+define as_mult = as * 3
+
+# //
+# Int // Int
+define ai_div = ai // 2
+
+# RelPath // RelPath
+define arp = ./path
+define arp_div = arp // ./to
+
+# Path // RelPath
+define ap = /path
+define ap_div = ap // ./to
+
+# %
+# Int % Int
+define ai_mod = ai % 2
+
+# ==/!=
+# Unit == Unit
+define au = ()
+define au_eq = (au == ())
+# Unit != Unit
+define au_ne = (au != ())
+
+# Bool == Bool
+define ab_eq_0 = (fal == tr)
+define ab_eq_1 = (fal == fal)
+define ab_eq_2 = (tr == tr)
+# Bool != Bool
+define ab_ue_0 = (fal != tr)
+define ab_ue_1 = (fal != fal)
+define ab_ue_2 = (tr != tr)
+
+# Char == Char
+define ac = 'a'
+define ac_eq_0 = (ac == 'a')
+define ac_eq_1 = (ac == 'b')
+# Char != Char
+define ac_ne_0 = (ac != 'a')
+define ac_ne_1 = (ac != 'b')
+
+# Int == Int
+define pos_eq = (pos == 1)
+define neg_eq = (neg == 1)
+# Int != Int
+define pos_ne = (pos != 1)
+define neg_ne = (neg != 1)
+
+# String == String
+define as_eq_0 = (as == "a")
+define as_eq_1 = (as == "b")
+# String != String
+define as_ne_0 = (as != "a")
+define as_ne_1 = (as != "b")
+
+# Path == Path
+define ap_eq_0 = (ap == /path)
+# Path != Path
+define ap_ne_0 = (ap != /path)
+
+# ExitCode == ExitCode
+define ex = ! true
+define ex_eq = (ex == ! true)
+# ExitCode != ExitCode
+define ex_ne = (ex != ! true)
+
+# FD == FD
+define fd = stdin
+define fd_eq = (fd == stdin)
+# FD != FD
+define fd_ne = (fd != stdout)
+
+# Array == Array
+define arr = {1,2,3}
+define arr_eq = (arr == {1,2,3})
+# Array != Array
+define arr_ne = (arr != {1,2,3})
+
+
+# Char < Char
+define c_lt = (ac < '0')
+# Char > Char
+define c_gt = (ac > '0')
+
+# Int < Int
+define ai_lt = (ai < -1)
+# Int > Int
+define ai_gt = (ai > -1)
+
+# String < String
+define as_lt = (as < "0")
+# String > String
+define as_gt = (as > "0")
+
+
+# Char <= Char
+define c_le = (ac <= '0')
+# Char >= Char
+define c_ge = (ac >= '0')
+
+# Int <= Int
+define ai_le = (ai <= -1)
+# Int >= Int
+define ai_ge = (ai >= -1)
+
+# String <= String
+define as_le = (as <= "0")
+# String >= String
+define as_ge = (as >= "0")
+
+
+# or and
+# Bool or Bool
+define ab_or = (fal or true)
+# Bool and Bool
+define ab_and = (tr and false)

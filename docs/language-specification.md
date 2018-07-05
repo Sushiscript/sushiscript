@@ -47,9 +47,94 @@ Following punctuations are meaningful:
 	| "Path" | "RelPath" | "Array" | "Map" | "ExitCode" | "FD"
 ```
 
-### 2.4 Interpolation
+### 2.4 Character
 
-Interpolation is a lexical construct that embed expression in some special contexts (typically string interpolation). If  `identifier` is provided after `$` , lexer suspend the enclosing context and eagerly recognize the first possible identifier.
+```
+<line break> = '\n'
+<whitespace> = ' ' | '\t'
+```
+
+#### 2.4.1 Character Escaping
+
+Special characters inside string-like token can be expressed by escaping character, by putting a `\\` before a character to escape it. There are different meaningful escaped character in different context (specified below).  **Escaping a character that doesn't have special meaning in current context preserves the original character.** In some contexts there are characters that have to be escaped to avoid lexical ambiguity.
+
+_TODO: string escaped characters may be incomplete_
+
+```
+<tradition special> =
+  '\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
+```
+
+
+#### 2.4.2 Raw Mode
+
+The raw mode of lexer is turned on in special contexts (typically when [invoking shell command](#3.1.4.2 Invoking Command)) where getting rid of the "lexical restriction" conforms better to the tradition of shell and is more intuitive and convenient for users.
+
+```
+<raw token>    = <raw char>*
+<raw char>     = [^<raw restrict>] | <raw escape>
+<raw restrict> = ' ' | ';' | '"' | "'" | '\' | '|' | ',' | ')' | ':' | '}'
+<raw escape>   = '\' (<raw restrict> | <interpolate char>)
+```
+
+#### 2.4.3 Character inside `String` literal
+
+```
+<string char> = [^<string restrict>] | <string escape>
+<string escape>
+  = '\' ( <string restrict> | <interpolate char>)
+  | <tradition special>
+<string restrict> = '"'
+```
+
+#### 2.4.4 Character inside `Char` literal
+
+```
+<char char> = [^<char restrict>] | <tradition special>
+<char restrict> = "'"
+```
+
+### 2.5 Literals
+
+#### 2.5.1 Bool & Unit & FD
+
+```
+<bool literal> = "true" | "false"
+<unit literal> = "()"
+<fd literal>   = "stdin" | "stdout" | "stderr"
+```
+
+#### 2.5.2 Integer
+
+_TODO: integer literal of various radix support_
+
+```
+<integer> = ('+' | '-')? <digit>+
+```
+
+#### 2.5.3 Character
+
+```
+<char literal> = "'" <char char> "'"
+```
+
+#### 2.5.4 String
+
+```
+<string literal> = '"' ( <string char> | <interpolation> ) * '"'
+```
+
+#### 2.5.5 Path
+
+```
+<path literal> = "~" ('/' <path tail>)? | '/' <path tail>?
+<relpath literal> = '.'+ ('/' <path tail>)?
+<path tail>    = (<raw char> | <interpolation>)*
+```
+
+### 2.6 Interpolation
+
+Interpolation is a lexical construct that embed expression in some special contexts (typically string interpolation).
 
 ```
 <interpolation> = "${" ... "}"
@@ -62,90 +147,44 @@ ${ ... "${ ... }" ... }
 "${ ... "${ ... }" ... }"
 ```
 
-### 2.5 Character
+#### 2.6.1 Interpolation Context
+
+There are various contexts where interpolation can appear (such as `string literal`). The lexer yield control tokens to interact with the parser, so that the parser know when to:
+
+1. Enter a interpolation context
+2. Extract a "normal" string segment
+3. Start parsing an interpolated expression
+4. Exit the interpolation context
+
+##### 2.6.1.1 Enter a Context
+
+Each context has its unique indicator of entering its interpolation context. So the parser can start to parse corresponding literal.
+
+##### 2.6.1.2 Extract a Segment
+
+Depending on the character configuration of context, the lexer try to extract as many consecutive normal characters as possible to form a segment for the interpolation context.
+
+##### 2.6.1.3 Start of Interpolated Expression
+
+In all interpolation contexts, character sequence `${` is recognized as an indicator of the start of an interpolated expression. Then lexer enters the normal context for recognizing tokens for the following expression, until the parser recognizes a matching `}` for `${`, the interpolation context is resumed.
+
+##### 2.6.1.4 Exit the Context
+
+Depending on the character configuration of context, the lexer yields a control token to indicate the end of the interpolation context typically when a restricted character of the context is found, such as `"` for `string literal` and `<space>` for `path literal`.
+
+##### 2.6.1.5 Example
 
 ```
-<line break> = '\n'
-<whitespace> = ' ' | '\t'
+"hello${a + b}!"
 ```
 
-#### 2.5.1 Character Escaping
-
-Special characters inside string-like token can be expressed by escaping character, by putting a `\\` before a character to escape it. There are different meaningful escaped character in different context (specified below).  **Escaping a character that doesn't have special meaning in current context preserves the original character.** In some contexts there are characters that have to be escaped to avoid lexical ambiguity.
-
-_TODO: string escaped characters may be incomplete_
-
-```
-<tradition special> =
-  '\' ('a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' | '\')
-```
-
-
-#### 2.5.2 Raw Mode
-
-The raw mode of lexer is turned on in special contexts (typically when [invoking shell command](#3.1.4.2 Invoking Command)) where getting rid of the "lexical restriction" conforms better to the tradition of shell and is more intuitive and convenient for users.
-
-```
-<raw token>    = <raw char>*
-<raw char>     = [^<raw restrict>] | <raw escape>
-<raw restrict> = ' ' | ';' | '"' | "'" | '\' | '|' | ',' | ')'
-<raw escape>   = '\' (<raw restrict> | <interpolate char>)
-```
-
-#### 2.5.3 Character inside `String` literal
-
-```
-<string char> = [^<string restrict>] | <string escape>
-<string escape>
-  = '\' ( <string restrict> | <interpolate char>)
-  | <tradition special>
-<string restrict> = '"'
-```
-
-#### 2.5.4 Character inside `Char` literal
-
-```
-<char char> = [^<char restrict>] | <tradition special>
-<char restrict> = "'"
-```
-
-### 2.6 Literals
-
-#### 2.6.1 Bool & Unit & FD
-
-```
-<bool literal> = "true" | "false"
-<unit literal> = "()"
-<fd literal>   = "stdin" | "stdout" | "stderr"
-```
-
-#### 2.6.2 Integer
-
-_TODO: integer literal of various radix support_
-
-```
-<integer> = ('+' | '-')? <digit>+
-```
-
-#### 2.6.3 Character
-
-```
-<char literal> = "'" <char char> "'"
-```
-
-#### 2.6.4 String
-
-```
-<string literal> = '"' ( <string char> | <interpolation> ) * '"'
-```
-
-#### 2.6.5 Path
-
-```
-<path literal> = "~" ('/' <path tail>)? | '/' <path tail>?
-<relpath literal> = '.'+ ('/' <path tail>)?
-<path tail>    = (<raw char> | <interpolation>)*
-```
+1. The first `"` is recognized as the start of an `string literal`
+2. The segment `hello` is recognized.
+3. `${` is recognized as the start of interpolated expression.
+4. Then the normal context of lexer recognized `identifier: a`, `+` , `identifier: b` and `}`.
+5. `}` is considered the end of interpolation expression. The parser tells lexer to resumed the interpolation context.
+6. The segment `!` is recognized.
+7. `"` is recognized as the end of the `string literal` and a control token is yielded.
 
 ### 2.7 Misc
 
@@ -249,11 +288,10 @@ When the last character of a line is `\`, **this backslash**, **next line break*
 ```
 <command> = '!' <comamnd param>* <command end>
 <command param>
-  = <interpolation>
-  | <raw token>
+  = <raw token>
   | <string literal>
   | <char literal>
-<command end> = <line break> | ';'
+<command end> = <line break> | ','
 ```
 
 ##### 3.1.4.4 Redirection
@@ -329,7 +367,7 @@ If there's no line break before `<program>`, the indentation level of that block
 
 ```
 <define func> =
-  "export"? "define" <identifier> '(' <param list>? ')' '=' <program>
+  "export"? "define" <identifier> '(' <param list>? ')' (':' <type>)? '=' <program>
 <param list>  = <param dec> (',' <param dec>)*
 <param dec>   = <identifier> ':' <type>
 ```
@@ -354,7 +392,7 @@ If there's no line break before `<program>`, the indentation level of that block
 #### 3.2.4 if
 
 ```
-<if>   = "if" <expression> ':' <program> <else>?
+<if>   = "if" <expression> (':' | <line break>) <program> <else>?
 <else> = "else" ':'? <program>
 ```
 
@@ -366,11 +404,13 @@ The `if` and its matching `else` must be in same level of indentation, if two or
 
 ```
 <switch>  = "switch" <expression> <case>+ <default>?
-<case>    = "case" <expression> ':' <program>
+<case>    = "case" <expression> (':' | <line break>) <program>
 <default> = "default" ':'? <program>
 ```
 
 `<case>` and `<default>` both introduce new block on corresponding `<program>`.
+
+Indentations of `<case>`s must be equal or more than `<switch>`, and all indentations of `<case>`s must be identical.
 
 #### 3.2.6 for
 
@@ -516,7 +556,7 @@ A specific type `<E' : T'>` in the _body_, whenever it is instantiated, add `T'`
 
 When `<E'>` is deduced with actual type `TA`, it instantiates the `T'` to `TA` in `<E''>`, and add `TA1` to the required types of `<E''>`. Then when `<E''>` is deduced with `TA2`, `<E'' : TA2>` is checked against the _satisfaction_ condition of the requirement with required type `TA1`.
 
-### 4.5 Buit-in Types
+### 4.5 Built-in Types
 
 #### 4.5.1 Simple Types
 
@@ -532,8 +572,8 @@ When `<E'>` is deduced with actual type `TA`, it instantiates the `T'` to `TA` i
 
 #### 4.5.2 Parameterized Types
 
-- `Array [element]`: Linear sequence of values with type `[Element]`.
-- `Map [Key] [Value]`: Associative structure that map a values of type `[Key]` to values of type `[Value]`
+- `Array [element]`: Linear sequence of values with simple type `[Element]`.
+- `Map [Key] [Value]`: Associative structure that map a values of simple type `[Key]` to values of simple type `[Value]`.
 - `Function [Ret] [Param1] [Param2] ...`: Function with parameters of type `[Param1], [Param2]` and return type `[Ret]`.
 
 #### 4.5.3 Implicit Conversion
@@ -551,7 +591,7 @@ _Not (planned to) implement yet_
 #### 4.7.1 Array Literal
 
 ```
-<array literal : Array T> = [<T>, <T>, ...] | []
+<array literal : Array T> = {<T>, <T>, ...} | {}
 ```
 
 Array Literal is of type `Array T` when all of it's element are well-typed and of same type `T`.
@@ -632,11 +672,12 @@ Empty array and map literals satisfy all requirement whose required types contai
 
 ```
 <int div : Int> = <Int> // <Int>
-<path join : Path> = <Path | RelPath> // <RelPath>
+<path join1 : Path> = <RelPath> // <RelPath>
+<path join2 : Path> = <Path> // <RelPath>
 ```
 
 - `<int div>` integer division.
-- `<path concat>` applying the right-hand relative path to the left-hand path.
+- `<path join>` applying the right-hand relative path to the left-hand path(absolute or relative).
 
 ##### `%`
 
@@ -723,8 +764,8 @@ _todo: what happens when out of range?_
 
 ```
 <redirect to here : String> = (<function call : Ret> | command) redirect to here
-<redirect output> = redirect to <Path | FD>
-<redirect input>  = redirect from <Path>
+<redirect output> = redirect to   <RelPath | Path | FD>
+<redirect input>  = redirect from <RelPath | Path>
 ```
 
 - `<redirect to here>` if the redirected command if a function call, the original return value of function is discarded(_todo: to be discussed_). The value of whole command expression is the output of the command as a string
@@ -778,7 +819,7 @@ The type of ondition expression of `if` statement is required to be `Bool`.
 
 ```
 <switch> = switch <T>
-		   case <T | Function Bool T>: ...
+		   case <T>: ...
 ```
 
 The required types of expression following `case` are:
@@ -800,308 +841,587 @@ The required types of expression following `case` are:
 
 ## 6. Translation
 
-### 6.0 Prologue
+### 6.0 Before Statements
 
-#### 6.0.1 Simple Translation Example
+#### 6.0.1 Scope
 
-```sushi
-for i in [1, 2, 3, 4, 5]:
-  ! ./random.out redirect to ./inputs/in${i}
-  ! ./a.out redirect to ./outputs/out${i} , from ./inputs/in${i}
+Unlike bash, statements like `if` / `for` have scope in sushi. To implement this, 
+
+1. Sushi records all the definition in a scope, and when the scope exits, sushi does `unset` to all the variables.
+
+	```bash
+	if true:
+	  define a : Int = 1
+	  define b = "test"
+	  
+	-->
+	
+	if [[ 1 -ne 0 ]]; then
+	  local a=$((1))
+	  local b="test"
+	  unset a
+	  unset b
+	fi
+	```
+
+	
+
+2. If there are identifiers having the same name, sushi will translate them into different names by adding suffix `_scope_<num>`. (`<num>` is a number.)
+
+	```bash
+	define a = 1
+	if true:
+	  define a = 2
+	  define b = "test"
+	
+	-->
+	
+	local a=$((1))
+	if [[ 1 != 0 ]]; then
+	  local a_scope_1=$((2))
+	  local b="test"
+	  unset a_scope_1
+	  unset b
+	fi
+	```
+
+#### 6.0.2 Temporary Variable
+
+Temporary variables are like `_sushi_t_<num>_`. They are maintained by sushi.
+
+#### 6.0.3 Built-in Variables/Functions
+
++ Identifiers with prefix `_sushi_` are usually a variable maintained by sushi. It's not recommended to use such identifiers directly.
+
++ Variables
+  + `_sushi_unit_`: A special variable represent `Unit` in sushi. It has a read-only default value `0`.
+  + `_sushi_func_ret_`: A variable temporarily store the function return.
+
++ Functions: **Return** means "echo ..."
+  + `_sushi_abs_`: Get the absolute value of the parameter
+    + Parameters: **1** parameter means the number to get abs.
+    + Return: The absolute value of the parameter.
+  + `_sushi_dup_str_`: Duplicate a string for particular times.
+    + Parameters: **2** parameters. The 1st for the string to duplicate. The 2nd for times to duplicate.
+    + Return: String par1 duplicated for par2 times.
+  + `_sushi_path_concat_`: Concat 2 path.
+    + Parameters: **2** parameters. 2 paths to concat.
+    + Return: The concat res of 2 paths.
+  + `_sushi_file_eq_`: Compare 2 file path.
+  	+ Parameters: **2** parameters. 2 path to compare.
+  	+ Return: `1` if 2 path refer to the same file, otherwise `0`. Besides, exit status will be `0` if they are the same, otherwise exit status will be `1 `(Opposite to the "echo return").
+
+#### 6.0.4 "Code before"
+
+One expression in sushi can be translated to a few lines bash script. To make it easier to explain, the translation is separated to 2 parts, which is "code before" and "value"(or "val").
+
+"code before" means the code before "val", usually a few lines, and "val" is an expression of bash. "val" can be just an identifier. For example, to translate interpolation,
+
+```
+define a = "c"
+define b = "d"
+define c = "0" + "${"ab" + ${a + b}}"
 ```
 
-Traslate to -->
+-->
 
 ```bash
-for i in ($((0)) $((1)) $((2)) $((3)) $((5))); do
-  ./random.out > ./inputs/in${i}
-  ./a.out > ./outputs/out${i} < ./inputs/in${i}
-done
+a="c"
+b="d"
+_sushi_t_0_="${a}${b}" # With post-order, the interpolation `${a + b}` is firstly translated and stored in a temporary variable _sushi_t_0_
+_sushi_t_1_="ab${_sushi_t_0_}" # Then the interpolation `${"a" + "b" + ${a + b}}` is translated and stored in _sushi_t_1_, and this is the identifier the interpolation finally becomes
+c="0${_sushi_t_1_}" # Use _sushi_t_1_ to replace the interpolation, this is like translating `define c = "0" + _sushi_t_1_`
 ```
 
-#### 6.0.2 Wrapped by a `main` function
-
-It might seem weird that all the codes translated are wrapped in a `main` function, and call main function at the end. We do this because we use `local` as many as possible. `local` ensures that the variables are just **in** the function scope.
-
-### 6.1 Definition
-
-|type       |declare option  |translated like                   |
-|:---------:|:--------------:|:--------------------------------:|
-|Int        |-i              |`declare -i a=1`                  |
-|Bool       |-i              |`declare -i a=1`(true)            |
-|String     |                |`declare a="abc"`                 |
-|Path       |                |`declare a="/foo"`                |
-|RelPath    |                |`declare a="./bar"`               |
-|Unit       |                |`declare unit=""`                 |
-|FD         |                |`0`(stdin)/`1`(stdout)/`2`(stderr)|
-|ExitCode   |-i              |`gcc; declare -i code=$?`         |
-|Array      |-a              |`declare -a arr=("a" "b" "c")`    |
-|Map        |-A              |`declare -A map=(["a"]="b")`      |
-|Function   |-f              |`declare -f func="otherfunc"`     |
-|No Specific|                |Inferred from rhs                 |
-
-#### 6.1.1 Variable Definition
-
-+ `define` statement will be all translated into `local` statement
-+ `export` statement will be all translated into `declare` statement, with option `-gx`
-+ If type is not specified in the definition, the variable's type will be infered from the right value
-+ For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value.
-+ For `Function` type: function name in definition and identifier of Function type are not the same. Identifier of Function type is actually a string. In the translated code, we use `$func` to call the function. Function name in definition can be directly called by `func`.
-+ For `Bool` type, we treat it as integer. In translation, false is `0` and true is `1`, which seems opposite to bash's **exit status**.
-
-##### Example
+For the interpolation `${"a" + "b" + ${a + b}}`,
 
 ```bash
-# define a : Int = 10
-local -i a=10
-# define s : String = "abc"
-local s="abc"
-# export define ex : String = "def"
-declare -gx ex="def"
-# define arr : Array Int = [1, 2, 3]
-local -ai arr=($((1)) $((2)) $((3)))
-# define map : Map String String = { "a": "abc", "b": "def" }
-local -A map=(
-  ["a"]="abc"
-  ["b"]="def"
-)
-# define b = a
-local -i b=$a
-# define exit : ExitCode = ! gcc
-gcc
-local -i exit=$?
+# code before
+_sushi_t_0_="${a}${b}"
+_sushi_t_1_="ab${_sushi_t_0_}"
+# val
+${_sushi_t_1_} # this is what in "c=" assignment statement
 ```
 
-#### 6.1.2 Function Definition
+### 6.1 Assignment
 
-+ Both `define` and `export` statement will be translated into the following style
+##### `<variable | indexing> = <expr>`
 
+Refer to **6.2.2 Variable** , **6.2.3 Literal** and **6.2.6 Indexing**.
+
+**Note** that assignments on **Map** are different in "MapLit as right value" and "Map Variable as right value".
+
+#### 6.1.1 Simple Type Assignment
+
+`<t_lhs>=<t_rhs>`
+
+#### 6.1.2 Array Assignment
+
+`<t_lhs>=(<t_rhs>)`
+
+#### 6.1.3 Map Assignment
+
+`eval "<t_lhs>=(<t_rhs>)"`
+
+### 6.2 Expression
+
+Except **Variable** and **Indexing**, the following expressions only have **right value** translation.
+
+`<expr>` is expression in sushi, `<t_expr>` is the translated expression **"value"** in bash.
+
+Because `<expr>` may be translated to multiple statements in bash, `<t_expr>` is only the **final identifier**;
+Another situation is that `<expr>` can be translated directly to one expression in bash, then it will be the **expression** in bash (like `"string"`, `$((2 + 2))` and etc).
+
+#### 6.2.1 Interpolation
+Interpolation is that expressions can be interpolated in PathLit, RelPathLit, StringLit.
+`<expr>` -> ``` $<t_expr> ```
+`<t_expr>` is the identifier which `<expr>` finally becomes, but interpolation is usually translated to a few lines. Interpolations are traversed with post-order. Each expression in an interpolation will be translated and stored in a temporary variable. Finally, a temporary variable will replace the interpolation. An example is following.
+```plain
+define a = "c"
+define b = "d"
+define c = "0" + "${"ab" + ${a + b}}"
+```
+
+-->
+
+```bash
+a="c"
+b="d"
+_sushi_t_0_="${a}${b}" # With post-order, the interpolation `${a + b}` is firstly translated and stored in a temporary variable _sushi_t_0_
+_sushi_t_1_="ab${_sushi_t_0_}" # Then the interpolation `${"a" + "b" + ${a + b}}` is translated and stored in _sushi_t_1_, and this is the identifier the interpolation finally becomes
+c="0${_sushi_t_1_}" # Use _sushi_t_1_ to replace the interpolation, this is like translating `define c = "0" + _sushi_t_1_`
+```
+#### 6.2.2 Variable
+As left value: `<identifier>` -> `<identifier>`
+As right value: `<identifier>` -> 
+
+- **Array type** as right value: `"${<t_id>[@]}"`
+
+- **Map type** as right value:
   ```bash
-  func_name() {
-    local first_para_name=$0
-    local second_para_name=$1
-    # func body
-    echo -ne "return_value"
-  }
+  # code before
+  _sushi_t_0_=`declare -p t_map`
+  _sushi_t_0_=${_sushi_t_0_#*=}
+  _sushi_t_0_=${_sushi_t_0_:1:-1}
+  
+  # val
+  $_sushi_t_0_
   ```
 
-+ Return value will be "returned" by using `echo -ne`.
+  
 
-+ But for `export`, an `export` follows the function.
+- **Simple type**: `<identifier>` -> `$<identifier>`
 
-##### Example
+Exception:
++ **Bool type** as condition (translation will be wrapped in `[[ ]]`): `<identifier>` -> `$<identifier> != 0`
+
+#### 6.2.3 Literal
+
+##### ArrayLit
+`[<expr>, <expr>, ...]` -> `$<t_expr> $<t_expr> ...`
+ArrayLit of `<expr>` is translated to **Indexed Array** in bash. It's `<expr>s` split by space character. `<expr>s` can only be simple types and they have the same types.
+
+##### BoolLit
+Ascondition wrapped in `[[ ]]`: `true` -> `(1 -ne 0)`, `false` -> `(0 -ne 0)`
+As right value in assignment: `true` -> `1`, `false` -> `0`
+
+##### CharLit
+`'c'` -> `"c"`
+CharLit will be translated directly into string.
+
+##### FdLit
+`stdin` -> `0`
+`stdout` -> `1`
+`stderr` -> `2`
+FdLit will be translated to the relative number.
+
+##### IntLit
+`100` -> `$((100))`
+IntLit will be translated to "arithmetic" in bash. Int literal will be wrapped by `$(( ))`.
+
+##### MapLit
+`{ <expr> : <expr>, <expr> : <expr>, ... }` -> `[$<t_expr>]=$<t_expr> [$<t_expr>]=$<t_expr> ...`
+MapLit of `<expr>` is translated to **Associative Array** in bash. K-V pairs are like `[<key>]=<value>`, and they are split by space character.
+
+##### PathLit
+This is an interpolated string, refer to **Interpolation** part.
+
+##### RelPathLit
+This is an interpolated string, refer to **Interpolation** part.
+
+##### StringLit
+This is an interpolated string, refer to **Interpolation** part.
+
+##### UnitLit
+`Unit` is a type in sushi. It will be translated to a special variable in bash named `_sushi_unit_`.
+
+#### 6.2.4 UnaryExpr
+##### Not (`not`)
+`not <expr>`
++ **Bool** not:
+  + As condition wrapped in `[[ ]]`: `(! $<t_expr> -ne 0)`
+    `not` will be translated to `!`.
+  + As right value in assignment: `$((! $<t_expr>))`
+##### Pos (`+`)
++ **Int** abs: `+<expr>` -> ``` `_sushi_abs_ $<t_expr>` ```
+	`_sushi_abs_` is a function that return absolute value of the 1st parameter.
+	`+` is only applied to Int type. It will be translated to "pass `<t_expr>` to a built-in function `_sushi_abs_` and get its output" like above.
+##### Neg (`-`)
++ **Int** neg: `-<expr>` -> `$((-$<t_expr>))`
+`-` is only applied to Int type. It will be translated to "a `$(( ))` wraps `-$<t_expr>`" like above.
+
+#### 6.2.5 BinaryExpr
+##### Add (`+`)
+`<expr> + <expr>` ->
++ **Int** addition: `$(($<t_expr> + $<t_expr>))`
++ **String** concat: `"${<t_expr>}${<t_expr>}"`
++ **Array** concat: `<expr>` may be ArrayLit/Variable.
+	+ ArrayLit: `<t_expr>` without `( )`. `<t_expr>` will be elements in array split by space.
+		e.g. `[1, 2, 3]` -> `1 2 3` (ArrayLit is translated to `(1 2 3)` in general, but different here.)
+	+ Variable: `${<t_expr>[@]}`. `<t_expr>` will be an identifier in bash.
+		e.g. `arr` -> `${arr[@]}`
+	+ The final result will be stored in a temp variable, and `<t_expr>` is its identifier. For example,
+```bash
+define arr = [1, 2]
+define res = arr + [3, 4] + [5, 6]
+-->
+local -a arr=(1 2)
+_sushi_t_0_=(${arr[@]} 3 4)
+_sushi_t_1_=(${_sushi_t_0_[@]} 5 6)
+local -a res=(${_sushi_t_1_[@]})
+```
++ **Map** merge: `<expr>` may be MapLit/Variable
+	+ MapLit: `<t_expr>` without `( )`. `<t_expr>` will be elements in array split by space.
+		e.g. `{"k0": 1, "k1": 2}` -> `["k0"]=1 ["k1"]=2` (ArrayLit is translated to `(["k0"]=1 ["k1"]=2)` in general, but different here.)
+	+ Variable: ``` `_sushi_extract_map_ ${!<t_expr>[@]} ${<t_expr>[@]}` ```. `<t_expr>` will be an identifier in bash. (`_sushi_extract_map_` is a built-in function. It receives the keys and values from parameter, and return a string like `["key0"]=val0 ["key1"]=val1 ["key2"]=val2 ...`)
+		e.g. `arr` -> `${arr[@]}`
+	+ The final result will be stored in a temp variable, and `<t_expr>` is its identifier. For example,
+```bash
+define map = {"a": 1, "b": "c"}
+define res = map + {"c": 3, "d": 4} + {"e": 5, "f": 6}
+-->
+local -A map=(["a"]=$((1)) ["b"]="c")
+_sushi_t_0_=(`_sushi_extract_map_ ${!map[@]} ${map[@]}` ["c"]=$((3)) ["d"]=$((4)))
+_sushi_t_1_=(`_sushi_extract_map_ ${!_sushi_t_0_[@]} ${_sushi_t_0_[@]}` ["e"]=$((5)) ["f"]=$((6)))
+local -A res=(`_sushi_extract_map_ ${!_sushi_t_1_[@]} ${_sushi_t_1_[@]}`)
+```
+
+##### Minus (`-`)
+`<expr_0> - <expr_0>` ->
++ **Int** subtraction: `$(($<t_expr_0> - $<t_expr_1>))`
+
+##### Multiply (`*`)
+`<expr_0> * <expr_1>` ->
++ **Int** multiplication: `$(($<t_expr_0> - $<t_expr_1>))`
++ **String** duplication: ``` `_sushi_dup_str_ $<t_expr_0> $<t_expr_1>` ```
+	`_sushi_dup_str_` is a function that duplicate string.
+	`<expr_0>` should be String type and `<expr_1>` should be Int type.
+
+##### Divide (`//`)
+`<expr_0> // <expr_1>` ->
++ **Integer** division: `$(($<t_expr_0> / $<t_expr_1>))`
++ **Path** concat: ``` `_sushi_path_concat_ $<t_expr_0> $<t_expr_1>` ```
+	`_sushi_path_concat_` is a function that concat paths.
+
+##### Mod (`%`)
+`<expr_0> % <expr_1>` ->
++ **Int** modulo operation: `$(($<t_expr_0> % $<t_expr_1>))`
+
+##### Less than (`<`), Greater than (`>`), Less / Equal (`<=`), Greater / Equal (`>=`)
+
+`<expr_0> {<|>|<=|>=} <expr_1>` ->
++ **Char** ascii comparison  / **String** lexical order comparison
+  + As condition wrapped in `[[ ]]`: `$<t_expr_0> {<|>|<=|>=} $<t_expr_1>`
+  + As right value in assignment:
+    ``` $(($<t_expr_0> {<|>|<=|>=} $<t_expr_1>)) ```
++ **Int** comparison
+  + As condition wrapped in `[[ ]]`: `$<t_expr_0> -{lt|gt|le|ge} $<t_expr_1>`
+  + As right value in assignment:
+    ``` $(($<t_expr_0> {<|>|<=|>=} $<t_expr_1>)) ```
+
+##### Equal (`==`), NotEqual (`!=`)
+
+`<expr_0> {==|!=} <expr_1>` ->
+
++ **Unit**
+	+ As condition wrapped in `[[ ]]`:
+		+ `==`: `(1 -ne 0)`
+		+ `!=`: `(0 -ne 0)`
+	+ As right value:
+		+ `==`: `1`
+		+ `!=`: `0`
+
++ **Bool/Char/Int/String/ExitCode/FD**
+
+	+ As condition wrapped in `[[ ]]`: `(<t_expr_0> {==|!=} <t_expr_1>)`
+	+ As right value: `$((<t_expr_0> {==|!=} <t_expr_1>))`
+
++ **Path**
+
+	+ As condition wrapped in `[[ ]]`: `(<t_expr_0> -ef <t_expr_1>)`
+	+ As right value:``` `_sushi_file_eq_ <t_expr_0> <t_expr_1>` ```
+
++ **Array**
+
+	+ As condition wrapped in `[[ ]]`:
+
+		```bash
+		# code before
+		_sushi_t_0_=0
+		if [[ ${#<t_expr_0>[@]} -eq ${#<t_expr_1>[@]} ]]; then _sushi_t_0_=1; fi
+		if [[ _sushi_t_0_ -eq 1 ]]; then
+		  for ((i = 0; i < ${#<t_expr_0>[@]}; i++)); do
+		    if [[ <t_expr_0>[i] -ne <t_expr_1>[i] ]]; then
+		      _sushi_t_0_=0
+		      break
+		    fi
+		  done
+		fi
+		
+		# val
+		(_sushi_t_0_ -ne 0)
+		```
+
+	+ As right value:
+
+		Code before is the same, val is only `_sushi_t_0_`
+
+
+##### And (`and`), Or (`or`)
+`<expr_0> {and|or} <expr_1>` ->
++ **Bool** logical operation
+  + As condition wrapped in `[[]]`: `$<t_expr_0> {&& | ||} $<t_expr_1>`
+    `<expr_0>`
+  + As right value in assignment:
+    ``` $(($<t_expr_0> {&& | ||} $<t_expr_1>)) ```
+
+#### 6.2.5 CommandLike
+
+##### Redirection
+
+> As described in **4.7.8 Redirection**
+```plain
+<redirect to here : String> = (<function call : Ret> | command) redirect to here
+<redirect output> = redirect <FdLit>? to <Path | FD>
+<redirect input>  = redirect <FdLit>? from <Path>
+```
+
++ **redirect to here**
+	+ CommandLike with **redirect to here** will be wrapped by double ``` ` ```. It's like ``` `<t_func_call>` ``` or ``` `<t_command>` ```.
++ **redirect input/output**
+	`redirect <FdLit> {to|from} <Path | FD> {append}?` ->
+	+ `<t_FdLit> > <t_Path | t_FD>` if redirect **to** without "append"
+	+ `<t_FdLit> >> <t_Path | t_FD>` if redirect **to** with "append"
+	+ `<t_FdLit> < <t_Path | t_FD>` if redirect **from** (always without "append")
+	+ `<t_FdLit>` and `<t_FD>` above is the relative number and `<t_Path>` above is the translated path.
+
+##### Command
+
+`! <cmd> <params> <redirection>` ->
++ `<t_cmd> <t_params> <t_redir>; _sushi_t_0_=$?` if not "to here"
++ ```_sushi_t_0_=`<t_cmd> <t_params> <t_redir>` ``` if "to here"
+
+The final identifier(`<t_expr>`) is `"_sushi_t_0_"` (0 may be changed to other number depending on the current temp variables count).
+
+`<cmd>` is an interpolation and `<params>` is a group of interpolation, so they are translated as how interpolations are translated. `<redirection>` is translated as described above.
+
+##### FunctionCall
+
+`<func> <params> <redirection>` ->
+
+- `<t_func> <t_params> <t_redir>; _sushi_t_0_=$_sushi_func_ret_` if not "to here"`
+	- `_sushi_t_0_` 's assignment may be different depending on the **return type**
+- ```_sushi_t_0_=`<t_func> <t_params> <t_redir>` ``` if "to here"
+
+The final identifier(`<t_expr>`) is `"_sushi_t_0_"` (0 may be changed to other number depending on the current temp variables count).
+
+Detail:
+
++ `<func>`
+  + Function identifier name.
++ `<params>`
+  + All the params will be translated to variable in bash, and be used as reference in function.
+  + If Literal is used in function call, it will be stored in a temp variable first.
++ `<redirection>`
+  + See above.
++ Function's return will be restored in a global variable `_sushi_func_ret_`
+
+##### As right value
+
+Code before is like above, val is `_sushi_t_0_`
+
+#### 6.2.6 Indexing
+
+`<expr0>[<expr1>]` ->
+
++ As right value
+	+ **Array**: `${<t_expr0>[<t_expr1>]}`
+	  + `<expr1>` must be Int type.
+	+ **Map**: `${t_expr0}[<t_expr1>]`
+	  + `<expr1>` must be String type.
++ As left value
+	+ `<t_expr0>[<t_expr1>]`
+
+
+
+### 6.3 VariableDef
+
+`export? define <id> (: <type>)? = <expr>` ->
+
++ `local <id>=<t_expr>` if not export
++ `declare -gx <id>=<t_expr>` if export
++ `<type>` is ignored in translation. `<t_expr>` is the translation's final identifier like described before.
++ Declaration with assignment is relative to assignment. Refer to **6.1 Assignment**
+
+Exception:
+
++ **Map**: Declare and then assignment. If right value is variable, translation result declare the variable first, and use `eval` to assign. Otherwise, if right value is MapLit, no `eval` is needed (Refer to **6.1 Assignment**) For example
 
 ```bash
-# define Add(a : Int, b : Int) : Int =
-#   return a + b
-Add() {
-  local -i a=$0
-  local -i b=$1
-  echo -ne $((a + b))
+define m : Map String Int = { "a": 1, "b": 2 }
+define m_0 : Map String Int = m
+
+-->
+
+local -A m=(["a"]=1 ["b"]=2)
+local -A m_0=(); eval "m_0=(`_sushi_extract_map_ ${!<m>[@]} ${<m>[@]}`)"
+```
+
+### 6.4 FunctionDef
+
+```
+export? define <id> (<params>) =
+  <program>
+```
+
+->
+
++ Function name is `<id>`.
++ Parameters' translations are to get parameters' references:
+  + `local -n <param_id>=$1`
++ Parameters are acquired inside the function body and before all the other statement
++ `export -f <id>` will be below the function definition if "export"
+
+For example,
+
+```bash
+export define foo (a : Int, b : Array Int, c : String Int) =
+  ! echo "${a}"
+
+-->
+
+foo () {
+  local -n a=$1
+  local -n b=$2
+  local -n c=$3
+  local _sushi_t_0_=${a}
+  echo "${_sushi_t_0_}"
 }
-
-# export define Subtract(a : Int, b : Int) : Int =
-#   return a - b
-Subtract() {
-  local -i a=$0
-  local -i b=$1
-  echo -ne $((a - b))
-}
-export -f Subtract
+export foo
 ```
 
-### 6.2 Assignment
 
-#### 6.2.1 Assignment
 
-+ For `Int` type, right value of the assignment will be treated as arithmetic. And the right part will be surrounded by `$(())`.
-+ For `ExitCode` type, right value can be a **command**. In this circumstance, the value of this `ExitCode` will be the command's exit status. Command will be executed first, then its exit status become the variable's value. (Just like what's in Definition part)
-+ For other type, right value of the assignment will be treated as string. And the right part will be surrounded by `""`.
+### 6.5 ReturnStmt
 
-##### Example
+`return <expr>` ->
 
-```bash
-# define x : Int = 10
-# x = 20
-# x = 10 + 20
-# define y = 20
-# x = x + y
-# y = "abc"
-local -i x=10
-x=$((20))
-x=$((10 + 20))
-local y=20
-x=$((x + y))
-y="abc"
++ Return type is not Bool`_sushi_func_ret_=<t_expr>; return 0`
 
++ Return type is Bool 
+
+	```bash
+	_sushi_func_ret_=<t_expr>
+	if [[ _sushi_func_ret_ -ne 0 ]]; then
+	  return 0
+	else
+	  return 1
+	fi
+	```
+
+Assignment may be different depending on `<expr>` type.
+
+### 6.6 IfStmt
+
+```plain
+if <expr>: <program>
+else: <program>?
 ```
 
-### 6.3 if
-
-#### 6.3.1 if
-
-For convenience, all the "condition"s are surrounded by `[[]]`.
-
-When the condition is `Bool` type, the condition will be translated to `!= 0`, for example
+-->
 
 ```bash
-# define t : Bool = true
-# define f : Bool = false
-# if t:
-#   ! echo "true"
-# if f:
-#   ! echo "false"
-declare -i t=1
-declare -i f=0
-if [[ $t != 0 ]]; then
-  echo "true"
-fi
-if [[ $f != 0 ]]; then
-  echo "false"
-fi
-```
-
-##### Example
-
-```bash
-# define a : Int = 1
-# define b : Int = 2
-# if a + b == 3:
-#   ! echo "ok"
-# else:
-#   ! echo "no"
-local -i a=1
-local -i b=2
-if [[ $((a + b)) == 3 ]]; then
-  echo "ok"
+if [[ <t_expr> ]]; then
+  <t_program>
 else
-  echo "no"
+  <t_program>
 fi
+```
 
-# define a = "abc"
-# define b = "def"
-# if a + b == "abcdef":
-#   ! echo "ok"
-# else:
-#   ! echo "no"
-local a="abc"
-local b="def"
-if [[ $a$b == "abcdef" ]]; then
-  echo "ok"
+`<expr>` can only be Bool type.
+
+### 6.7 Switch
+
+```
+switch <val : T>
+case <cond : T>:
+  <program0>
+case <cond_func : Function Bool T>:
+  <program1>
+default:
+  <program2>
+```
+
+-->
+
+```bash
+if [[ <t_val> == <t_cond> ]]; then
+  <t_program0>
+elif <t_cond_func> <t_val>
+  <t_program1>
 else
-  echo "no"
+  <t_program2>
 fi
 ```
 
-### 6.4 switch
 
-#### 6.4.1 switch
 
-`switch` will be translated into `case`, every case ends with `;;`.
+### 6.8 ForStmt
 
-##### Example
+#### For as while
 
-```bash
-# switch input
-# case "y":
-#   ! echo "ok"
-# case "n":
-#   ! echo "no"
-# default:
-#   ! echo "Input again"
-case $input in
-  "y")
-    echo "ok"
-    ;;
-  "n")
-    echo "no"
-    ;;
-  *)
-    echo "Input again"
-    ;;
-esac
 ```
-
-### 6.5 for
-
-#### 6.5.1 for
-
-`for` statement has 2 types
-
-+ `for <identifier> in <expression>`, this is to iterate the expression
-+ `for <expression>`, this is equal to `while` in other language
-+ `break`, `continue` will be traslated as it is
-
-##### Example
-
+for <expr>:
+  <program>
+```
+-->
 ```bash
-# define arr = [4, 5, 6]
-# for i in arr:
-#   ! echo "${i}"
-declare -a arr=(4 5 6)
-for i in ${arr[@]}; do
-  echo ${i}
-done
-# for i in arr:
-#   if i == 2:
-#     break
-#   ! echo "${i}"
-for i in ${arr[@]}; do
-  if [[ $i == "5" ]]; then
-    break
-  fi
-  echo ${i}
-done
-
-# define cnt = 5
-# for cnt > 0: # Used as `while`
-#   ! echo "${cnt}"
-#   cnt = cnt - 1
-local -i cnt=5
-while [[ $cnt > 0 ]]; do
-  echo "${cnt}"
-  cnt=$(($cnt-1))
-done
-# for cnt < 5:
-#   if cnt < 4:
-#     ! echo "continue"
-#     cnt = cnt + 1
-#     continue
-#   ! echo "not continue"
-#   break
-while [[ $cnt < 5 ]]; do
-  if [[ $cnt < 4 ]]; then
-    echo "continue"
-    cnt=$(($cnt + 1))
-    continue
-  fi
-  echo "not continue"
-  break
+while [[ <t_expr> ]]; do
+  <t_program>
 done
 ```
 
-### 6.6 Scope
+`<expr>` above can only be Bool type.
 
-#### 6.6.1 Scope
+#### For to iterate
 
-Scope here is a scope of identifiers. In sushi, one program has one scope. The difference from bash is that only **function** has a scope in bash, while **if** can also introduce a program (with a scope). This difference force sushi to manage the scope itself.
-
-Only when **duplicate** identifier name is used, sushi will rename the identifier denpending on the duplicate times, and finally `unset` it at the end of scope.
-
-```bash
-# define a = 1
-# if true:
-#   define a = 2
-#   for false:
-#     define a = 3
-local -i a=1
-if [[ 1 != 0 ]]; then
-  local -i a_1=2
-  while [[ 0 != 0 ]]; do
-    local -i a_2=3
-    unset a_2
-  done
-  unset a_1
-fi
-unset a
 ```
+for <ident> in <expr>:
+  <program>
+```
+-->
+```bash
+for <ident> in ${<t_expr>[@]}; do
+  <t_program>
+done
+```
+
+`<expr>` above can only be Array type.
+
+
+
+### 6.9 LoopControlStmt
+
+`break <num>` -> `break <num>`
+
+`continue <num>` -> `continue <num>`

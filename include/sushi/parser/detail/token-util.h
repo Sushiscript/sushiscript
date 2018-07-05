@@ -32,7 +32,7 @@ bool IsType(lexer::Token::Type);
 
 bool IsTypeLookahead(lexer::Token::Type t);
 
-type::BuiltInAtom::Type TypeTokenToType(lexer::Token::Type);
+type::Simple::Type TypeTokenToType(lexer::Token::Type);
 
 bool IsLiteral(lexer::Token::Type);
 

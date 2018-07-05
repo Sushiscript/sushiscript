@@ -7,7 +7,7 @@ namespace parser {
 namespace detail {
 
 using lexer::Token;
-using type::BuiltInAtom;
+using type::Simple;
 
 #define TT(t) Token::Type::t
 
@@ -116,8 +116,8 @@ bool IsTypeLookahead(Token::Type t) {
     return IsType(t) or t == TT(kLParen);
 }
 
-BuiltInAtom::Type TypeTokenToType(Token::Type t) {
-    using TP = type::BuiltInAtom::Type;
+Simple::Type TypeTokenToType(Token::Type t) {
+    using TP = type::Simple::Type;
     switch (t) {
     case TT(kInt): return TP::kInt;
     case TT(kBool): return TP::kBool;

@@ -81,6 +81,12 @@ TEST(SimpleSequence, TestConnected) {
         "./path/and'c'", TK(kPathLit), TD(kSegment, "./path/and"),
         TK(kInterDone), TD(kCharLit, 'c'));
     NoIndentStrIsToks(
+        "./path/and:", TK(kPathLit), TD(kSegment, "./path/and"),
+        TK(kInterDone), TK(kColon));
+    NoIndentStrIsToks(
+        "./path/and}", TK(kPathLit), TD(kSegment, "./path/and"),
+        TK(kInterDone), TK(kRBrace));
+    NoIndentStrIsToks(
         "./path/and#comment", TK(kPathLit), TD(kSegment, "./path/and"),
         TK(kInterDone));
 }

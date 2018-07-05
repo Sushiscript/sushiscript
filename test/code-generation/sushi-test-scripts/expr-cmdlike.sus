@@ -1,0 +1,57 @@
+# Function
+define foo (a : Int) =
+  ! echo "${a}"
+
+define bar (a : String) =
+  return a
+
+define fus () =
+  define xxx = ""
+  ! read xxx
+  ! echo "fus:\"${xxx}\" hhhh"
+
+# Function Returning Array / Map
+define ro () : Array Int =
+  return {1,2,3}
+
+define dah () : Map String Int =
+  return {"a": 1, "b": 2}
+
+# Function With Array / Map as Param
+define fo (arr : Array Int) =
+  ! echo ${arr[1]}
+
+define krah (map : Map String Int) =
+  ! echo ${map["a"]}
+
+# Function Call
+foo(123)
+define str = bar("something")
+define arr = ro()
+define map = dah()
+fo({0, 3, 4})
+krah({"a": 5, "b": 4})
+
+# Pipe
+foo(123) | ! grep "1"
+foo(123) | fus ()
+
+# Redirection
+# From/To File
+fus () redirect from ./test_input, to ./test_output_0
+foo(12345) | fus() redirect to ./test_output_1
+# To Here
+define res = foo(12345) redirect to here
+! echo ${res}
+# To FD
+define i : FD = stderr
+foo(-1) redirect to i
+foo(-2) redirect to stderr
+! echo "-3", redirect to i
+! echo "-4", redirect to stderr
+
+# FD to FD
+define diin() =
+  ! echo "err here", redirect to stderr
+
+diin() redirect stderr to stdout

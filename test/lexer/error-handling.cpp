@@ -16,17 +16,18 @@ TEST(ErrorHandling, TestUnclosedString) {
     NoIndentStrIsToks<true>(
         R"("unclosed string)", TL(kStringLit, 1, 1),
         TDL(kSegment, "unclosed string", 1, 2),
-        TEL(kUnclosedStringQuote, 1, 17));
+        TEL(kUnclosedStringQuote, 1, 17), TL(kInterDone, 1, 17));
     NoIndentStrIsToks<true>(
         "\"cannot close in next line\n\"", TL(kStringLit, 1, 1),
         TDL(kSegment, "cannot close in next line", 1, 2),
-        TEL(kUnclosedStringQuote, 1, 27), TL(kLineBreak, 1, 27),
-        TDL(kIndent, 0, 2, 1), TL(kStringLit, 2, 1),
-        TEL(kUnclosedStringQuote, 2, 2));
+        TEL(kUnclosedStringQuote, 1, 27), TL(kInterDone, 1, 27),
+        TL(kLineBreak, 1, 27), TDL(kIndent, 0, 2, 1), TL(kStringLit, 2, 1),
+        TEL(kUnclosedStringQuote, 2, 2), TL(kInterDone, 2, 2));
     NoIndentStrIsToks<true>(
         "\"error\nrecovery", TL(kStringLit, 1, 1), TDL(kSegment, "error", 1, 2),
-        TEL(kUnclosedStringQuote, 1, 7), TL(kLineBreak, 1, 7),
-        TDL(kIndent, 0, 2, 1), TDL(kIdent, "recovery", 2, 1));
+        TEL(kUnclosedStringQuote, 1, 7), TL(kInterDone, 1, 7),
+        TL(kLineBreak, 1, 7), TDL(kIndent, 0, 2, 1),
+        TDL(kIdent, "recovery", 2, 1));
 }
 
 TEST(ErrorHandling, TestUnclosedChar) {

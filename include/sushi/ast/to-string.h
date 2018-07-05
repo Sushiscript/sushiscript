@@ -47,19 +47,8 @@ inline std::string ToString(BinaryExpr::Operator op) {
     }
 }
 
-inline std::string ToString(type::BuiltInAtom::Type t) {
-    using T = type::BuiltInAtom::Type;
-    switch (t) {
-    case T::kInt: return "Int";
-    case T::kBool: return "Bool";
-    case T::kUnit: return "()";
-    case T::kFd: return "FD";
-    case T::kExitCode: return "ExitCode";
-    case T::kPath: return "Path";
-    case T::kRelPath: return "RelPath";
-    case T::kString: return "String";
-    case T::kChar: return "Char";
-    }
+inline std::string ToString(type::Simple::Type t) {
+    return type::Simple::ToString(t);
 }
 
 inline std::string ToString(Redirection::Direction dir) {
@@ -294,7 +283,7 @@ struct Statement2Str : StatementVisitor::Const, Result {
 };
 
 struct Type2Str : TypeExprVisitor::Const, Result {
-    SUSHI_VISITING(TypeLit, t) {
+    SUSHI_VISITING(SimpleType, t) {
         result = ToString(t.type);
     }
     SUSHI_VISITING(ArrayType, a) {
