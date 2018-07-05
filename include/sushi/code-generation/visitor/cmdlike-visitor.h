@@ -57,7 +57,9 @@ struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
 
     struct RedirsProcessResult {
         bool final_to_here;
-        const ast::CommandLike *cmd_like;
+        const ast::CommandLike *final_ptr;
+        RedirsProcessResult(bool final_to_here = false, const ast::CommandLike *final_ptr = nullptr)
+            : final_to_here(final_to_here), final_ptr(final_ptr) {}
     };
 
     RedirsProcessResult ProcessRedirs(const ast::CommandLike &cmd_like) {
@@ -130,7 +132,7 @@ struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
             cmd_like_str = (boost::format("$(%1%)") % cmd_like_str).str();
         }
 
-        if (!is_first_cmd_like) return { false, nullptr };
+        if (!is_first_cmd_like) return RedirsProcessResult();
 
         auto next_ptr = cmd_like.pipe_next.get();
         auto final_ptr = dynamic_cast<const ast::CommandLike *>(&cmd_like);
@@ -159,7 +161,7 @@ struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
                 final_to_here = true;
         }
 
-        return { final_to_here, final_ptr };
+        return RedirsProcessResult(final_to_here, final_ptr);
     }
 
     void ProcessCall(const ast::CommandLike &cmd_like, const RedirsProcessResult &redir_res) {
@@ -174,9 +176,8 @@ struct CmdLikeVisitor : public ast::CommandLikeVisitor::Const {
                 (boost::format("local %1%=%2%") % temp_name % cmd_like_str).str();
             val = "${" + temp_name + '}';
         } else {
-            // if no redir to here, use a temp var to copy function return value
             code_before += cmd_like_str + '\n';
-            TranslateFinalCmdLike(redir_res.cmd_like, temp_name);
+            TranslateFinalCmdLike(redir_res.final_ptr, temp_name);
         }
     }
 

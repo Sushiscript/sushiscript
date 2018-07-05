@@ -183,13 +183,37 @@ STMT_VISITING_IMPL(ast::FunctionDef, func_def) {
     // Params assignment
     std::string param_assign_part;
     constexpr char kParamAssignTemplate[] = "local -n %1%=%2%";
+    constexpr char kSimpleParamAssignTemplate[] = "local %1%=%2%";
     for (int i = 0; i < func_def.params.size(); ++i) {
         auto &param = func_def.params[i];
         auto new_param_name = scope_manager->GetNewName(param.name, body_scope);
         std::string line;
-        line = (boost::format(kParamAssignTemplate) % new_param_name %
-                ('$' + std::to_string(i + 1)))
-                    .str();
+
+        auto type = GetTypeFromTypeExpr(param.type.get());
+
+        switch (type) {
+        case ST::kInt:
+        case ST::kBool:
+        case ST::kUnit:
+        case ST::kFd:
+        case ST::kExitCode:
+        case ST::kPath:
+        case ST::kRelPath:
+        case ST::kString:
+        case ST::kChar:
+        case ST::kFunc:
+            line = (boost::format(kSimpleParamAssignTemplate) % new_param_name %
+                    ('$' + std::to_string(i + 1)))
+                        .str();
+            break;
+        case ST::kArray:
+        case ST::kMap:
+            line = (boost::format(kParamAssignTemplate) % new_param_name %
+                    ('$' + std::to_string(i + 1)))
+                        .str();
+            break;
+        }
+
         param_assign_part += line + '\n';
     }
 

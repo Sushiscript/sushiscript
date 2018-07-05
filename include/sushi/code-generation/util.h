@@ -23,6 +23,12 @@ inline ST GetType(const scope::Environment &env, const ast::Expression *expr) {
     return visitor.type;
 }
 
+inline ST GetTypeFromTypeExpr(const ast::TypeExpr *type_expr) {
+    TypeExprVisitor visitor;
+    type_expr->AcceptVisitor(visitor);
+    return visitor.type;
+}
+
 } // namespace code_generation
 } // namespace sushi
 

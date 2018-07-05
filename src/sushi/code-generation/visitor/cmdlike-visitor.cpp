@@ -19,11 +19,32 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
         MergeSets(new_ids, expr_visitor.new_ids);
 
         code_before += expr_visitor.code_before + '\n';
-        // use raw_id("variable name") to pass parameter
-        cmd_like_str += ' ' + expr_visitor.raw_id;
+        // <del>use raw_id("variable name") to pass parameter</del>
+        // pass simple type by val
+        // pass array/map by name
+        auto type = GetType(environment, expr.get());
+        switch (type) {
+        case ST::kInt:
+        case ST::kBool:
+        case ST::kUnit:
+        case ST::kFd:
+        case ST::kExitCode:
+        case ST::kPath:
+        case ST::kRelPath:
+        case ST::kString:
+        case ST::kChar:
+        case ST::kFunc:
+            cmd_like_str += ' ' + expr_visitor.val;
+        case ST::kMap:
+        case ST::kArray:
+            cmd_like_str += ' ' + expr_visitor.raw_id;
+            break;
+        }
     }
 
     auto redir_res = ProcessRedirs(func_call);
+    if (redir_res.final_to_here == false && redir_res.final_ptr == nullptr)
+        return;
     ProcessCall(func_call, redir_res);
 }
 
@@ -51,6 +72,8 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
     }
 
     auto redir_res = ProcessRedirs(command);
+    if (redir_res.final_to_here == false && redir_res.final_ptr == nullptr)
+        return;
     ProcessCall(command, redir_res);
 }
 
