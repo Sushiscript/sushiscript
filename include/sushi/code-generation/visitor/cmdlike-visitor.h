@@ -1,11 +1,10 @@
 #ifndef SUSHI_CODE_GEN_CMDLIKE_VISITOR_H_
 #define SUSHI_CODE_GEN_CMDLIKE_VISITOR_H_
 
-#include "./expr-visitor.h"
-#include "./scope-manager.h"
-#include "./type-visitor.h"
 #include "sushi/ast.h"
 #include "sushi/scope.h"
+#include "sushi/code-generation/scope-manager.h"
+#include "sushi/code-generation/visitor/type-visitor.h"
 
 #include <unordered_set>
 

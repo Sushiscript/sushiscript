@@ -3,7 +3,6 @@
 
 #include "sushi/ast.h"
 #include "sushi/code-generation/scope-manager.h"
-
 #include <unordered_set>
 
 namespace sushi {

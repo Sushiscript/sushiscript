@@ -1,5 +1,7 @@
-#include "sushi/code-generation/expr-visitor.h"
-#include "sushi/code-generation/stmt-visitor.h"
+#include "sushi/code-generation/visitor/expr-visitor.h"
+#include "sushi/code-generation/visitor/literal-visitor.h"
+#include "sushi/code-generation/visitor/cmdlike-visitor.h"
+#include "sushi/code-generation/visitor/stmt-visitor.h"
 #include "sushi/code-generation/util.h"
 
 namespace sushi {

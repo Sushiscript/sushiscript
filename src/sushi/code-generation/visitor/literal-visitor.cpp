@@ -1,7 +1,5 @@
-#include "sushi/code-generation/literal-visitor.h"
 #include "boost/format.hpp"
-#include "sushi/code-generation/expr-visitor.h"
-#include "sushi/code-generation/util.h"
+#include "sushi/code-generation.h"
 
 namespace sushi {
 namespace code_generation {

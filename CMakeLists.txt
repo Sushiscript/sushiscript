@@ -29,8 +29,9 @@ file(GLOB_RECURSE SCOPE_TEST_SRC  ${SUSHI_TEST_DIR}/scope/*.cpp
     ${SUSHI_TEST_DIR}/scope/visitor/*.cpp)
 
 file(GLOB_RECURSE SUSHI_CODE_GEN_SRC
-    ${SUSHI_SRC_DIR}/sushi/code-generation/*.cpp)
-file(GLOB CODE_GEN_TEST_SRC ${SUSHI_TEST_DIR}/code-generation/*.cpp)
+    ${SUSHI_SRC_DIR}/sushi/code-generation/*.cpp
+    ${SUSHI_SRC_DIR}/sushi/code-generation/visitor/*.cpp)
+file(GLOB_RECURSE CODE_GEN_TEST_SRC ${SUSHI_TEST_DIR}/code-generation/*.cpp)
 
 file(GLOB_RECURSE SUSHI_PIPELINE_SRC
     ${SUSHI_SRC_DIR}/sushi/pipeline/*.cpp)

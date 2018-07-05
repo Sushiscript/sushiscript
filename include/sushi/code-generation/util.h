@@ -2,7 +2,7 @@
 #define SUSHI_CODE_GEN_UTIL_H_
 
 #include "sushi/scope.h"
-#include "sushi/scope/visitor/type-visitor.h"
+#include "sushi/code-generation/visitor/type-visitor.h"
 #include <unordered_set>
 
 template <typename T>
