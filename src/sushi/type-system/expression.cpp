@@ -53,8 +53,7 @@ DeduceResult RequireThen(
     return DeduceResult::Fail();
 }
 
-optional<Simple::Type>
-DeduceSimple(const ast::Expression &expr, State &s) {
+optional<Simple::Type> DeduceSimple(const ast::Expression &expr, State &s) {
     auto t = UnambiguousDeduce(expr, s);
     if (not t) return none;
     auto st = t->ToSimple();
@@ -84,8 +83,8 @@ struct DeduceCommandLikeVisitor : ast::CommandLikeVisitor::Const {
     }
 
     SUSHI_VISITING(ast::FunctionCall, fc) {
-        auto tp = s.LookupName(fc.func);
-        if (not tp) V_RETURN(nullptr);
+        auto tp = s.LookupIdentType(fc.func);
+        if (not tp) V_RETURN(s.TypeError(&fc, Error::kMissingTypeDecl));
         auto func_type = tp->ToFunction();
         if (not func_type) {
             s.TypeError(&fc, Error::kInvalidFunction);
@@ -195,7 +194,7 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
     DeductionVisitor(State &s) : s(s) {}
 
     SUSHI_VISITING(ast::Variable, var) {
-        auto p = s.LookupName(var.var);
+        auto p = s.LookupIdentType(var.var);
         if (not p) V_RETURN(DeduceResult::Fail());
         V_RETURN(DeduceResult(std::move(p)));
     }
@@ -407,12 +406,10 @@ struct DeductionVisitor : ast::ExpressionVisitor::Const {
         if (not tp) V_RETURN(DeduceResult::Fail());
         if (auto a = tp->ToArray())
             V_RETURN(RequireThen(
-                *idx.index, MAKE_SIMPLE(kInt), s,
-                Simple::Make(a->element)));
+                *idx.index, MAKE_SIMPLE(kInt), s, Simple::Make(a->element)));
         if (auto m = tp->ToMap())
             V_RETURN(RequireThen(
-                *idx.index, Simple::Make(m->key), s,
-                Simple::Make(m->value)));
+                *idx.index, Simple::Make(m->key), s, Simple::Make(m->value)));
         if (tp->Equals(MAKE_SIMPLE(kString)))
             V_RETURN(RequireThen(
                 *idx.index, MAKE_SIMPLE(kInt), s, MAKE_SIMPLE(kChar)));

@@ -42,7 +42,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
                 var_type = std::move(should_be);
             }
         }
-        s.InsertName(vdef.name, std::move(var_type));
+        s.InsertType(vdef.name, std::move(var_type));
     }
     std::vector<Type::Pointer> ExtractParamTypes(const ast::FunctionDef &fdef) {
         auto &params = fdef.params;
@@ -50,7 +50,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         auto fbody = s.FromNewProgram(fdef.body);
         for (auto &p : params) {
             auto t = p.type->ToType();
-            fbody.InsertName(p.name, t->Copy());
+            fbody.InsertType(p.name, t->Copy());
             param_types.push_back(std::move(t));
         }
         if (param_types.empty()) {
@@ -61,7 +61,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
     void DeclaredReturnType(
         const ast::FunctionDef &fdef, std::vector<Type::Pointer> params) {
         auto ret_type = fdef.ret_type->ToType();
-        s.InsertName(
+        s.InsertType(
             fdef.name, Function::Make(std::move(params), ret_type->Copy()));
         CheckProgram(s.NewFunctionBody(fdef.body, ret_type->Copy()));
     }
@@ -72,7 +72,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         Type::Pointer ret = new_state.return_type == nullptr
                                 ? MAKE_SIMPLE(kUnit)
                                 : std::move(new_state.return_type);
-        s.InsertName(
+        s.InsertType(
             fdef.name, Function::Make(std::move(params), std::move(ret)));
     }
     SUSHI_VISITING(ast::FunctionDef, fdef) {
@@ -133,7 +133,7 @@ struct CheckStatementVisitor : ast::StatementVisitor::Const {
         if (for_.condition.IsRange()) {
             auto tp = GetIdentType(for_.condition);
             if (not tp) return;
-            s.FromNewProgram(for_.body).InsertName(
+            s.FromNewProgram(for_.body).InsertType(
                 for_.condition.ident_name, std::move(tp));
         } else {
             SatisfyRequirement(

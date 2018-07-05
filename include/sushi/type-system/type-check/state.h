@@ -19,11 +19,11 @@ struct State {
         : bindings(bindings), program(program), env(env), errors(errors),
           return_type(std::move(return_type)) {}
 
-    void InsertName(const std::string &name, Type::Pointer tp) {
+    void InsertType(const std::string &name, Type::Pointer tp) {
         auto def_scope = env.LookUp(&program);
         bindings[def_scope][name] = std::move(tp);
     }
-    Type::Pointer LookupName(const ast::Identifier &ident) {
+    Type::Pointer LookupIdentType(const ast::Identifier &ident) {
         auto def_scope = env.LookUp(&ident)->LookUp(ident.name)->defined_scope;
         auto &p = bindings[def_scope][ident.name];
         if (p) return p->Copy();

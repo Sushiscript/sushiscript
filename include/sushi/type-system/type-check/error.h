@@ -18,7 +18,8 @@ struct Error {
         kRequireSimpleType,
         kInvalidIndexable,
         kInvalidFunction,
-        kWrongNumOfParams
+        kWrongNumOfParams,
+        kMissingTypeDecl
     };
     Error(const ast::Expression *expr, Tp type) : expr(expr), type(type) {}
 
@@ -33,6 +34,7 @@ struct Error {
         case kInvalidIndexable: return "InvalidIndexable";
         case kInvalidFunction: return "InvalidFunction";
         case kWrongNumOfParams: return "WrongNumOfParams";
+        case kMissingTypeDecl: return "MissingTypeDeclaration";
         }
     }
     std::string ToString() const {

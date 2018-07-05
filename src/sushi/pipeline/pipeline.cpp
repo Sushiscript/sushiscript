@@ -42,13 +42,17 @@ void Pipeline::DisplayMessage() {
 }
 
 void Pipeline::ExecSingleFile(std::string file_path) {
-    std::ifstream in(file_path);
-    std::stringstream buffer;
-    buffer << in.rdbuf();
-    in.close();
+    // std::ifstream in(file_path);
+    // std::stringstream buffer;
+    // buffer << in.rdbuf();
+    // in.close();
 
-    auto bash_str = TransToSushi(buffer.str());
-    int result = system(bash_str.c_str());
+    // auto bash_str = TransToSushi(buffer.str());
+    auto output_path = file_path + ".sh";
+    BuildSingleFile(file_path, output_path);
+    auto bash_str = (boost::format("sh -c \"bash %1%\"") % output_path).str();
+
+    assert(system(bash_str.c_str()) == 0);
 }
 
 void Pipeline::BuildSingleFile(std::string file_path, std::string output_path) {

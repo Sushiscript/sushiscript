@@ -38,6 +38,7 @@ TEST(TypeCheckTest, TestFunctionReturn) {
         "false");
     TypingSuccess(
         "define f(): Int = return f ()\nf", {{"f", "Function Int ()"}});
+    TypingError("define f() = return f ()", Error::kMissingTypeDecl, "(f ())");
 }
 
 TEST(TypeCheckTest, TestAssignment) {
