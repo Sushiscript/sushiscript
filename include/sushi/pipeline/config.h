@@ -9,11 +9,11 @@ namespace sushi {
 namespace pipeline {
 
 const std::string kBashHeader = "#!/bin/bash\n\n";
-const std::string kSushiVersion = "SushiScript Version 0.0.1\n";
+const std::string kSushiVersion = "SushiScript Version 0.1.0\n";
 const std::string kNoInputError = "sushi: error: not input files\n";
 const std::string kUnKownError = "sushi: error: unkown options/arguements\n\n"
                                  "'sushi -h' for help\n";
-const std::string kHelpMenu =
+const std::string kHelpMessage =
     "usage: \n"
     "   sushi <file(s)>\n"
     "       (run file(s)\n"
@@ -24,10 +24,7 @@ const std::string kHelpMenu =
     "\n"
     "options: \n"
     "   -v | --version  display sushiscript version\n"
-    "   -h | --help     display sushiscript help menu\n"
-    "options for '-o': \n"
-    "   empty now\n"
-    "";
+    "   -h | --help     display sushiscript help message\n";
 
 struct Config {
     enum CommandType { UnKnown, Void, Run, Build, Version, Help };
@@ -39,9 +36,9 @@ struct Config {
     std::vector<std::string> input_path = std::vector<std::string>{};
 };
 
-const std::map<Config::CommandType, std::string> kMessageDick =
+const std::map<Config::CommandType, std::string> kMessageDict =
     std::map<Config::CommandType, std::string>{
-        {Config::CommandType::Help, kHelpMenu},
+        {Config::CommandType::Help, kHelpMessage},
         {Config::CommandType::Version, kSushiVersion},
         {Config::CommandType::Void, kNoInputError},
         {Config::CommandType::UnKnown, kUnKownError},

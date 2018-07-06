@@ -38,7 +38,7 @@ void Pipeline::Main() {
 }
 
 void Pipeline::DisplayMessage() {
-    std::cout << kMessageDick.at(config.command_type);
+    std::cout << kMessageDict.at(config.command_type);
 }
 
 void Pipeline::ExecSingleFile(std::string file_path) {
