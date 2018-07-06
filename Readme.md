@@ -3,14 +3,17 @@
 [![Build Status](https://travis-ci.org/Sushiscript/sushiscript.svg?branch=master)](https://travis-ci.org/Sushiscript/sushiscript)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/Sushiscript/sushiscrip/issues)
 
-Sushiscript is new programming language based on shell, we want to offer a better experience when use shell.
+Sushiscript is programming language transpiling to [GNU Bash](https://www.gnu.org/software/bash/) and aimed to provide a clean syntax for shell users.
 
-## Build
+## Build & Installation
 
-**Prerequisite**
+### Prerequisite
+
 + linux or unix OS
 + [conan](https://conan.io/)
 + [cmake (3.5 or higher)](https://cmake.org/)
+
+### Building
 
 ```shell
 mkdir build && cd build
@@ -25,7 +28,7 @@ cmake .. && make install
 
 ## Browsing the Sources
 
-`sushiscript` is implemented mostly in `c++14` and make a few uses of `boost::optional`, `boost::variant` and some utility functions like `format` and `join`.
+`sushiscript` is implemented mostly in `C++14` and make a few uses of `boost::optional`, `boost::variant` and various utility functions in `boost`, like `format` and `join`.
 
 All sources are located in `src/`, `include/` and `test/`. The structure of `include/`  shows the structure of modules, and although `src/` does follow the top level module structure, it doesn't really distinguish the source files of submodule in a certain module.
 
@@ -33,10 +36,22 @@ Except for testing sources, all header files (`*.h`) are under `include/`, all s
 
 And here are the source files (directories) related to major parts of `sushiscript`.
 
-- Frontend (lexer & parser): `{include, src}/sushi/lexer/`, `{include, src}/sushi/parser/`, `include/sushi/ast/`
-- AST Analyze (scoping & type checking): `{include, src}/sushi/scope/`, `{include, src}/sushi/type-system/`, `include/sushi/ast/`
-- Code Generation: `include/sushi/type-system/type.h`, `include/sushi/scope/scope.h`, `{include, src}/sushi/code-generation/`, `include/sushi/ast/`
-- Main: `{include, src}/pipeline/`, `src/sushi/main.cpp`
+- **Frontend** (lexer & parser)
+  - `{include, src}/sushi/lexer/`
+  - `{include, src}/sushi/parser/`
+  - `include/sushi/ast/`
+- **AST Analyze** (scoping & type checking)
+  - `{include, src}/sushi/scope/`
+  - `{include, src}/sushi/type-system/`
+  - `include/sushi/ast/`
+- **Code Generation**
+  - `include/sushi/type-system/type.h`
+  - `include/sushi/scope/scope.h`
+  - `{include, src}/sushi/code-generation/`
+  - `include/sushi/ast/`
+- **Main**
+  - `{include, src}/pipeline/`
+  - `src/sushi/main.cpp`
 
 ## Syntax Quick Guide
 
@@ -52,7 +67,7 @@ Here we take a quick tour over `sushiscript`'s basic syntax. For detailed inform
 
 ### Literals
 
-```
+```sushi
 1; 100; 0     # integer
 "hello world" # string
 true; false   # boolean
@@ -81,7 +96,7 @@ stdin; stdout; stderr # file descriptor
 
 #### Path Operation
 
-```
+```sushi
 ./hello // ./world # ./hello/world
 /hello // ./world # ./hello/world
 /hello // /world # ERROR, rhs has to be relative path
@@ -89,13 +104,13 @@ stdin; stdout; stderr # file descriptor
 
 #### Command
 
-```
+```sushi
 ! echo "hello world"
 ```
 
 #### Array
 
-```
+```sushi
 {1, 2, 3} # array of int
 {"hi", "world"}  # array of string
 {"hello", 123}   # ERROR, only homogeneous array allowed
@@ -105,7 +120,7 @@ stdin; stdout; stderr # file descriptor
 
 #### Map
 
-```
+```sushi
 {1: 2, 3: 4}             # map from int to int
 {"haha": 1, "hihi": 2}   # map from string to int
 {1: {1, 2, 3}}           # ERROR, cannot map to/from array or map
@@ -116,7 +131,7 @@ stdin; stdout; stderr # file descriptor
 
 #### Types
 
-```
+```sushi
 () # unit
 Bool, Char, Int, Bool
 Fd      # file descriptor
@@ -129,7 +144,7 @@ Map Int Int # map from int to int
 
 #### Variable Definition
 
-```
+```sushi
 define a: Int = 1
 define b: String = "hahaha"
 define c: Array Int = {1, 2, 3}
@@ -138,11 +153,12 @@ define d = ./hello/world # deduced d: RelPath
 
 #### Function
 
-```
+```sushi
 # definition
 define Add(a: Int, b: Int, c: Int): Int =
-	return a + b + c
+    return a + b + c
 define Hello() = ! echo "hello"
+
 # call
 define sum = Add 100 200 300
 Hello() # calling function with no parameter
@@ -150,26 +166,31 @@ Hello() # calling function with no parameter
 
 #### Assignment
 
-```
+```sushi
+# assign to variable
 define a = 1
-a = 2 # assign to variable
+a = 2
+
+# assign to indexing
 define b = {1, 2, 3}
-b[2] = 2 # assign to indexing
 define c = "hello"
+b[2] = 2
 c[0] = "H"
 ```
 
 #### if
 
-```
+```sushi
 if 1 < 2:
-	! echo "one less than two" # indent new block
+    ! echo "one less than two" # indent new block
 else if 1 > 2:
-	! echo "one greater than two"
+    ! echo "one greater than two"
 else: ! echo "one equal to two" # or same line
 
-if ! find some file: # command as condition
-	echo "file found!"
+# command as condition
+if ! find some file:
+    echo "file found!"
+
 # or...
 define success = ! find some file
 if success: echo "file found!"
@@ -177,39 +198,39 @@ if success: echo "file found!"
 
 #### switch
 
-```
+```sushi
 define a = 1
 switch a + 1
 case 1:
-	! echo "one plus one is one"
+    ! echo "one plus one is one"
 case 2:
-	! echo "one plus one is two"
+    ! echo "one plus one is two"
 default:
-	! echo "one plus one is else"
+    ! echo "one plus one is else"
 ```
 
 #### for
 
-```
+```sushi
 define a = 0
 
 for a < 1024: # with only loop condition
-	a = a + a
+    a = a + a
 
 for i in {1, 2, 3, 4}: # array based range loop
-	a = a + i
+    a = a + i
 
 for true:
-	if a == 2: continue
-	if a > 1024: break
-	a = a + a
+    if a == 2: continue
+    if a > 1024: break
+    a = a + a
 ```
 
 ### More on String and Command
 
 #### Interpolation
 
-```
+```sushi
 define name = "Sushi"
 define a: String = "hello ${name}" # interpolation
 define b: String = "say ${"hello ${name}" + "!"} # nested interpolation
@@ -224,7 +245,7 @@ define d: RelPath = ./hello/${name}
 
 #### Redirection
 
-```
+```sushi
 # redirecting command, note the ',' after command
 ! cat somefile, redirect to ./another/file
 ! cat, redirect from ./input-file, to ./output-file
@@ -234,13 +255,13 @@ define d: RelPath = ./hello/${name}
 define content: String = ! cat ./out, redirect to here
 
 # function calls are redirectable, but no need for ','
-define f() = echo "hello"
+define f() = ! echo "hello"
 f() redirect to ./out
 ```
 
 #### Pipe
 
-```
+```sushi
 ! find . | ! sort | ! xargs cat
 function call | ! sort | anotherfunction call
 ```
