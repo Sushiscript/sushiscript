@@ -13,14 +13,14 @@ Sushiscript is new programming language based on shell, we want to offer a bette
 + [cmake (3.5 or higher)](https://cmake.org/)
 
 ```shell
-$ mkdir build && cd build
+mkdir build && cd build
 
 # for ubuntu, mac os do not need "-s compiler.libcxx=libstdc++11"
-$ conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
-$ conan install ..  -s compiler.libcxx=libstdc++11 --build=missing
+conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-conan
+conan install ..  -s compiler.libcxx=libstdc++11 --build=missing
 
 # cmake and build
-$ cmake .. && make install
+cmake .. && make install
 ```
 
 ## Browsing the Sources
