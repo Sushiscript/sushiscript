@@ -69,7 +69,7 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
         code_before += inter_visitor.code_before + '\n';
 
         // cmd doesn't use raw_id
-        cmd_like_str += " \"" + inter_visitor.val + "\"";
+        cmd_like_str += R"( \")" + inter_visitor.val + R"(\")";
     }
 
     auto redir_res = ProcessRedirs(command);
