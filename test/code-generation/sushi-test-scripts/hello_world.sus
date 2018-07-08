@@ -1,0 +1,8 @@
+define a = "Hello World!"
+
+define print(str:String) : String =
+  ! echo "${str}"
+  return str
+
+print a
+

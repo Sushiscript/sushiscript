@@ -34,7 +34,8 @@ CMDLIKE_VISITING_IMPL(ast::FunctionCall, func_call) {
         case ST::kString:
         case ST::kChar:
         case ST::kFunc:
-            cmd_like_str += ' ' + expr_visitor.val;
+            cmd_like_str += R"( \")" + expr_visitor.val + R"(\")";
+            break;
         case ST::kMap:
         case ST::kArray:
             cmd_like_str += ' ' + expr_visitor.raw_id;
@@ -68,7 +69,7 @@ CMDLIKE_VISITING_IMPL(ast::Command, command) {
         code_before += inter_visitor.code_before + '\n';
 
         // cmd doesn't use raw_id
-        cmd_like_str += ' ' + inter_visitor.val;
+        cmd_like_str += R"( \")" + inter_visitor.val + R"(\")";
     }
 
     auto redir_res = ProcessRedirs(command);
